@@ -700,8 +700,8 @@ public sealed class LoanRequestOrchestrator
         var res = await _mediator.Send(cmd with {
             ContractNumber = loan.Contract.ContractNumber,
             NationalCode = loan.Customer.NationalCode!,
-            ProviderType=providerType,
-            FromDate = loan. }, ct);
+            ProviderType=providerType
+          }, ct);
         var policy = _bankPolicyFactory.CreatePolicy<GetCustomerPurchaseDetailsResultDto>(providerType, "PurchaseDetails");
         var decision = policy.Evaluate(res);
         if (!decision.IsSuccess)
