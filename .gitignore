@@ -7,21 +7,12 @@
 bin/
 obj/
 out/
+*.dll
+*.pdb
+*.exe
 
-# Debug and Release folders
+# Other common folders
 [Dd]ebug/
 [Rr]elease/
 x64/
 x86/
-
-# Logs and temp files
-*.log
-*.tmp
-*.db
-*.pdb
-*.dll
-
-# Other common stuff
-node_modules/
-wwwroot/lib/
-.env
