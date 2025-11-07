@@ -1,21 +1,16 @@
 ﻿using Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Command.GetCollateralContractFile
 {
-    public sealed record GetCollateralContractFileResultDto:IBankResponse
+    public sealed record GetCollateralContractFileResultDto : IBankResponse
     {
-        public string ContractFile { get; init; }
-        public decimal ContractNumber { get; init; }       
+        public byte[] ContractFile { get; init; }
+        public decimal ContractNumber { get; init; }
         public int? MessageCode { get; init; }
         public string? Message { get; init; }
         public string[] NextActions { get; set; }
         public string State { get; set; }
-        public string ContractBase64 { get; set; }
+        public string ContractPath { get; set; }
         public string RequestId { get; set; }
     }
 }

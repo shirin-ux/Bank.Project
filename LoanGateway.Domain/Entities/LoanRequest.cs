@@ -66,12 +66,12 @@ namespace LoanService.Domain.Entities
                 Provider = new ProviderInfo(providerType, ApprovalCode, requiresOtp),
                 State = LoanRequestState.Requested,
                 InqueryRequest = new InqueryRequest(null),
-                 GrantRequest = new GrantRequest(null, null, null, null, null),
+                GrantRequest = new GrantRequest(null, null, null, null, null),
                 PayRequest = new PayRequestInfo(null, null),
                 LastDecision = new DecisionStamp(null, null, null, null)
             }.TouchReturn();
         }
-        public void SetRequest(decimal? requestAmount,bool requiresCollateral, CollateralType collateralType)
+        public void SetRequest(decimal? requestAmount, bool requiresCollateral, CollateralType collateralType)
         {
             if (requestAmount.HasValue)
             {
@@ -114,7 +114,7 @@ namespace LoanService.Domain.Entities
             TransitionTo(allowed ? LoanRequestState.Eligible : LoanRequestState.Ineligible, reasonCode, uiMessage);
         }
 
-        public void AttachContract( 
+        public void AttachContract(
             decimal? approvalCode,
             string address,
             DateOnly birthDate,
@@ -124,6 +124,7 @@ namespace LoanService.Domain.Entities
             string mobileNumber,
             string? phoneNumber,
             string postalCode,
+            string contractPath,
              int reasonCode = -1, string? uiMessage = null
             )
         {
@@ -133,7 +134,7 @@ namespace LoanService.Domain.Entities
 
             Contract = new ContractInfo
             {
-                ApprovalCode=approvalCode,
+                ApprovalCode = approvalCode,
                 Address = address,
                 BirthDate = birthDate,
                 NationalCode = nationalCode,
@@ -142,25 +143,31 @@ namespace LoanService.Domain.Entities
                 MobileNumber = mobileNumber,
                 PhoneNumber = phoneNumber,
                 PostalCode = postalCode,
+                ContractPath= contractPath
 
             };
 
             // تغییر وضعیت دامین
             TransitionTo(LoanRequestState.ContractsPrepared, reasonCode, uiMessage);
         }
-        public void AttachCollateralContract(decimal collateralNo, string collateralType, string CollateralDate, decimal approvalCode, decimal collateralAmount, string address,
-                                              DateOnly birthDate,
-                                              decimal cbTrackingCode,
-                                              string? chequeSerial,
-                                              string? collateralIssuer,
-                                              string guarantorNC,
-                                              string nationalCode,
-                                              short installmentCount,
-                                              decimal? loanAmount,
-                                              string mobileNumber,
-                                              string? phoneNumber,
-                                              string postalCode,
-                                               int reasonCode = -1, string? uiMessage = null
+        public void AttachCollateralContract(decimal collateralNo,
+            CollateralType collateralType, 
+            string CollateralDate,
+            decimal? approvalCode,
+            decimal collateralAmount,
+            string address,
+            DateOnly birthDate,
+            string? chequeSerial,
+            string? collateralIssuer,
+            string guarantorNC,
+            string nationalCode,
+            short installmentCount,
+            decimal? loanAmount,
+            string mobileNumber,
+            string? phoneNumber,
+            string postalCode,
+            string contractPath,
+             int reasonCode = -1, string? uiMessage = null
                                               )
         {
             if (collateralNo <= 0)
@@ -176,7 +183,6 @@ namespace LoanService.Domain.Entities
                 CollateralAmount = collateralAmount,
                 Address = address,
                 BirthDate = birthDate,
-                cbTrackingCode = cbTrackingCode,
                 ChequeSerial = chequeSerial,
                 CollateralIssuer = collateralIssuer,
                 GuarantorNC = guarantorNC,
@@ -186,6 +192,7 @@ namespace LoanService.Domain.Entities
                 MobileNumber = mobileNumber,
                 PhoneNumber = phoneNumber,
                 PostalCode = postalCode,
+                ContractPath= contractPath
 
             };
 
@@ -418,9 +425,9 @@ namespace LoanService.Domain.Entities
             InqueryRequest = InqueryRequest with { RequestId = requestId };
             Touch();
         }
-        public void SetInquiryDecision(bool allowed, decimal? maxApproved,  List<StatusItem> statuses, string expire = null)
+        public void SetInquiryDecision(bool allowed, decimal? maxApproved, List<StatusItem> statuses, string expire = null)
         {
-            Inquiry = new InquiryInfo { Allowed = allowed, MaxApprovedAmount = maxApproved,  Statuses= statuses , ExpireAt = expire };
+            Inquiry = new InquiryInfo { Allowed = allowed, MaxApprovedAmount = maxApproved, Statuses = statuses, ExpireAt = expire };
             Touch();
         }
         // --- Mutators (اختیاری) ---
@@ -538,8 +545,10 @@ namespace LoanService.Domain.Entities
         RemittanceReturned = 19,
 
         Unknown = 20,
-        CreditChecked = 21
 
+        CreditChecked = 21,
+
+        InProgress = 22
     }
     public enum DepositType : short
     {

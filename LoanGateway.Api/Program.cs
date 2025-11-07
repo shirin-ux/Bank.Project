@@ -41,7 +41,8 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 var conn = builder.Configuration.GetConnectionString("TransactionDB");
-Console.WriteLine($"TransactionDB connection: {conn}");
+
+
 builder.Services.AddHttpClient("MellatApi", client =>
 {
     client.BaseAddress = new Uri("https://gw4t.chub.behsazan.com");
@@ -51,6 +52,11 @@ builder.Services.AddHttpClient("MellatApi", client =>
     UseCookies = true,
     CookieContainer = new CookieContainer()
 });
+//builder.Services.Configure<MellatPolicyRulesOptions>(
+//    builder.Configuration.GetSection("MellatPolicyRules"));
+
+builder.Services.Configure<MellatPolicyOptions>(
+    builder.Configuration.GetSection("MellatPolicy"));
 
 builder.Services.Configure<MellatApiOptions>(
     builder.Configuration.GetSection("MellatApiOptions"));
@@ -64,10 +70,7 @@ builder.Services.AddScoped<MellatBankProvider>();
 var config = TypeAdapterConfig.GlobalSettings;
 builder.Services.AddSingleton(config);
 
-// ?? Mellat policy options
-builder.Services.Configure<MellatPolicyOptions>(
-    builder.Configuration.GetSection("MellatSettings")
-);
+
 
 // ?? Generic policy
 //builder.Services.AddScoped(typeof(IMellatGenericPolicy<>), typeof(MellatGenericPolicy<>));
@@ -99,21 +102,21 @@ builder.Services.AddHttpClient<MellatBankService>()
     {
         c.BaseAddress = new Uri("https://gw4t.chub.behsazan.com/api/fs-contract-management");
         c.Timeout = TimeSpan.FromSeconds(60);
-    })
-    .ConfigurePrimaryHttpMessageHandler(sp =>
-    {
-
-        var opt = sp.GetRequiredService<IOptions<MellatApiOptions>>().Value;
-        return new HttpClientHandler
-        {
-            Proxy = new WebProxy(opt.Proxy),
-            UseProxy = true
-        };
     });
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly);
-});
+    //.ConfigurePrimaryHttpMessageHandler(sp =>
+    //{
+
+    //    var opt = sp.GetRequiredService<IOptions<MellatApiOptions>>().Value;
+    //    return new HttpClientHandler
+    //    {
+    //        Proxy = new WebProxy(opt.Proxy),
+    //        UseProxy = true
+    //    };
+    //});
+//builder.Services.AddMediatR(cfg =>
+//{
+//    cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly);
+//});
 builder.Services.AddScoped<LoanRequestOrchestrator>();
 
 // ?? Bank services
@@ -129,50 +132,45 @@ builder.Services.AddScoped<IPayResponseInfoRepository, PayResponseInfoRepository
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblies(
-        typeof(CustomerInquiryHandler).Assembly,
-        typeof(DepositRequestHandler).Assembly,
-          typeof(GetCollateralContractFileHandler).Assembly,
-            typeof(GetContractFileHandler).Assembly,
-              typeof(GetCustomerBillingHandler).Assembly,
-
-
+                typeof(CustomerInquiryHandler).Assembly,
+                typeof(DepositRequestHandler).Assembly,
+                typeof(GetCollateralContractFileHandler).Assembly,
+                typeof(GetContractFileHandler).Assembly,
+                typeof(GetCustomerBillingHandler).Assembly,
                 typeof(GetCustomerCreditBalanceHandler).Assembly,
                 typeof(GetCustomerPurchaseDetailsHandler).Assembly,
                 typeof(OtpRequestHandler).Assembly,
                 typeof(RepaymentRequestHandler).Assembly,
                 typeof(SubmitPayRequestHandler).Assembly,
-
-
                 typeof(TransferRegisterHandler).Assembly,
                 typeof(CustomerInquiryStatusHandler).Assembly,
                 typeof(GetInstallmentsHandler).Assembly,
                 typeof(GetPayResponseHandler).Assembly,
                 typeof(ReturnTransferReportHandler).Assembly,
-
                 typeof(TransferInquiryHandler).Assembly
 
     );
 });
 builder.Services.AddScoped<IBankProviderFactory, BankProviderFactory>();
-builder.Services.AddScoped<IBankPolicyFactory, BankPolicyFactory>();
-// ?? Hangfire
-builder.Services.AddHangfire(config =>
-    config.UseSimpleAssemblyNameTypeSerializer()
-          .UseRecommendedSerializerSettings()
-          .UseSqlServerStorage(
-              builder.Configuration.GetConnectionString("Hangfire"),
-              new Hangfire.SqlServer.SqlServerStorageOptions
-              {
-                  SchemaName = "Hangfire",
-                  QueuePollInterval = TimeSpan.FromSeconds(5)
-              }));
-builder.Services.AddHangfireServer();
+//if (!builder.Environment.IsDevelopment())
+//{
+//    // ?? Hangfire
+//    builder.Services.AddHangfire(config =>
+//{
+//    config
+//        .UseSimpleAssemblyNameTypeSerializer()
+//        .UseRecommendedSerializerSettings()
+//        .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection"));
+//});
+
+//    builder.Services.AddHangfireServer();
+//}
 
 // ?? Loan services
 builder.Services.AddScoped<LoanJobRunner>();
 builder.Services.AddScoped<ILoanRequestRepository, LoanRequestRepository>();
 builder.Services.AddScoped(typeof(IBankPolicy<>), typeof(MellatPolicy<>));
-builder.Services.AddScoped<ILoanJobs, HangfireLoanJobs>();
+builder.Services.AddScoped<ILoanOrchestratorJobRunner, LoanOrchestratorJobs>();
 builder.Services.AddCors(o => o.AddPolicy("AllowAll",
     p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 var app = builder.Build();
@@ -187,7 +185,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 
-
+//app.UseHangfireDashboard("/hangfire");
 
 
 app.UseCors("AllowAll");

@@ -15,8 +15,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\providers\Bank.Mellat.Provider\Bank.Mellat.Provider.csproj" />
     <ProjectReference Include="..\LoanGateway.Application\LoanService.Application.csproj" />
+    <ProjectReference Include="..\providers\Bank.Mellat.Provider\Bank.Mellat.Provider.csproj" />
   </ItemGroup>
 
 </Project>

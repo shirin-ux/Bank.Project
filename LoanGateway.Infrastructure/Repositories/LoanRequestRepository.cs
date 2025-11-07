@@ -260,7 +260,8 @@ namespace LoanService.Infrastructure.Repositories
                             loan.Contract.PhoneNumber,
                             loan.Contract.PostalCode,
                             loan.Contract.BirthDate,
-                            loan.Contract.cbTrackingCode
+                            loan.Contract.cbTrackingCode,
+                            loan.Contract.ContractPath
 
                         }, tran);
 
@@ -402,84 +403,96 @@ namespace LoanService.Infrastructure.Repositories
                 }, tran);
 
                 // -------- Aggregate Roots --------
-
-                await conn.ExecuteAsync("ContractInfo_Upsert", new
+                if (loan.Contract is not null)
                 {
-                    LoanRequestId = loan.Id,
-                    loan.Contract.CollateralNo,
-                    loan.Contract.CollateralType,
-                    loan.Contract.CollateralDate,
-                    loan.Contract.ApprovalCode,
-                    loan.Contract.CollateralAmount,
-                    loan.Contract.Address,
-                    loan.Contract.BirthDate,
-                    loan.Contract.cbTrackingCode,
-                    loan.Contract.ChequeSerial,
-                    loan.Contract.CollateralIssuer,
-                    loan.Contract.GuarantorNC,
-                    loan.Contract.NationalCode,
-                    loan.Contract.InstallmentCount,
-                    loan.Contract.LoanAmount,
-                    loan.Contract.MobileNumber,
-                    loan.Contract.PhoneNumber,
-                    loan.Contract.PostalCode
-                }, tran, commandType: CommandType.StoredProcedure);
-
-                await conn.ExecuteAsync("InquiryInfo_Upsert", new
+                    await conn.ExecuteAsync("ContractInfo_Upsert", new
+                    {
+                        LoanRequestId = loan.Id,
+                        loan.Contract.CollateralNo,
+                        loan.Contract.CollateralType,
+                        loan.Contract.CollateralDate,
+                        loan.Contract.ApprovalCode,
+                        loan.Contract.CollateralAmount,
+                        loan.Contract.Address,
+                        loan.Contract.BirthDate,
+                        loan.Contract.cbTrackingCode,
+                        loan.Contract.ChequeSerial,
+                        loan.Contract.CollateralIssuer,
+                        loan.Contract.GuarantorNC,
+                        loan.Contract.NationalCode,
+                        loan.Contract.InstallmentCount,
+                        loan.Contract.LoanAmount,
+                        loan.Contract.MobileNumber,
+                        loan.Contract.PhoneNumber,
+                        loan.Contract.PostalCode,
+                        loan.Contract.ContractPath
+                    }, tran, commandType: CommandType.StoredProcedure);
+                }
+                if (loan.Inquiry is not null)
                 {
-                    LoanRequestId = loan.Id,
-                    loan.Inquiry.Allowed,
-                    loan.Inquiry.MaxApprovedAmount,
-                    loan.Inquiry.Ics,
-                    loan.Inquiry.IcsGrade,
-                    loan.Inquiry.ExpireAt
-                
-                }, tran, commandType: CommandType.StoredProcedure);
+                    await conn.ExecuteAsync("InquiryInfo_Upsert", new
+                    {
+                        LoanRequestId = loan.Id,
+                        loan.Inquiry.Allowed,
+                        loan.Inquiry.MaxApprovedAmount,
+                        loan.Inquiry.Ics,
+                        loan.Inquiry.IcsGrade,
+                        loan.Inquiry.ExpireAt
 
-                await conn.ExecuteAsync("PayResponseInfo_Upsert", new
+                    }, tran, commandType: CommandType.StoredProcedure);
+                }
+                if (loan.PayResponse is not null)
                 {
-                    LoanRequestId = loan.Id,
-                    Code = (int)loan.PayResponse.Code,
-                    loan.PayResponse.BankContractNo,
-                    loan.PayResponse.ApprovedLoanAmount,
-                    loan.PayResponse.ContractDate,
-                    loan.PayResponse.CentralBankTraceCode,
-                    loan.PayResponse.BankSignedContractBase64,
-                    loan.PayResponse.ReceivedAtUtc
+                    await conn.ExecuteAsync("PayResponseInfo_Upsert", new
+                    {
+                        LoanRequestId = loan.Id,
+                        Code = (int)loan.PayResponse.Code,
+                        loan.PayResponse.BankContractNo,
+                        loan.PayResponse.ApprovedLoanAmount,
+                        loan.PayResponse.ContractDate,
+                        loan.PayResponse.CentralBankTraceCode,
+                        loan.PayResponse.BankSignedContractBase64,
+                        loan.PayResponse.ReceivedAtUtc
 
-                }, tran, commandType: CommandType.StoredProcedure);
+                    }, tran, commandType: CommandType.StoredProcedure);
+                }
 
-
-                await conn.ExecuteAsync("TransferInfo_Upsert", new
+                if (loan.Transfer is not null)
                 {
-                    LoanRequestId = loan.Id,
-                    loan.Transfer.TransactionNumber,
-                    loan.Transfer.RegisterCode
+                    await conn.ExecuteAsync("TransferInfo_Upsert", new
+                    {
+                        LoanRequestId = loan.Id,
+                        loan.Transfer.TransactionNumber,
+                        loan.Transfer.RegisterCode
 
-                }, tran, commandType: CommandType.StoredProcedure);
-
-                await conn.ExecuteAsync("RepaymentSnapshot_Upsert", new
+                    }, tran, commandType: CommandType.StoredProcedure);
+                }
+                if (loan.LastRepayment is not null)
                 {
-                    LoanRequestId = loan.Id,
-                    loan.LastRepayment.TrackNumber,
-                    loan.LastRepayment.AccountNo,
-                    loan.LastRepayment.Amount,
-                    loan.LastRepayment.WhenUtc
+                    await conn.ExecuteAsync("RepaymentSnapshot_Upsert", new
+                    {
+                        LoanRequestId = loan.Id,
+                        loan.LastRepayment.TrackNumber,
+                        loan.LastRepayment.AccountNo,
+                        loan.LastRepayment.Amount,
+                        loan.LastRepayment.WhenUtc
 
-                }, tran, commandType: CommandType.StoredProcedure);
-
-                await conn.ExecuteAsync("InstallmentStatus_Upsert", new
+                    }, tran, commandType: CommandType.StoredProcedure);
+                }
+                if (loan.InstallmentStatus is not null)
                 {
-                    LoanRequestId = loan.Id,
-                    loan.InstallmentStatus.Status,
-                    loan.InstallmentStatus.DueDate,
-                    loan.InstallmentStatus.PaidAmount,
-                    loan.InstallmentStatus.NationalCode,
-                    loan.InstallmentStatus.ContractNumber,
-                   
+                    await conn.ExecuteAsync("InstallmentStatus_Upsert", new
+                    {
+                        LoanRequestId = loan.Id,
+                        loan.InstallmentStatus.Status,
+                        loan.InstallmentStatus.DueDate,
+                        loan.InstallmentStatus.PaidAmount,
+                        loan.InstallmentStatus.NationalCode,
+                        loan.InstallmentStatus.ContractNumber,
 
-                }, tran, commandType: CommandType.StoredProcedure);
 
+                    }, tran, commandType: CommandType.StoredProcedure);
+                }
                 tran.Commit();
             }
             catch

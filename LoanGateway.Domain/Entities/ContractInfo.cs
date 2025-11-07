@@ -1,4 +1,6 @@
-﻿namespace LoanService.Domain.Entities;
+﻿using LoanService.Domain.Enum;
+
+namespace LoanService.Domain.Entities;
 
 public sealed class ContractInfo
 {
@@ -34,7 +36,7 @@ public sealed class ContractInfo
     public short? InstallmentCount { get; set; }
 
 
-    public string? CollateralType { get; set; } = null!;
+    public CollateralType? CollateralType { get; set; } = null!;
 
     public decimal? CollateralNo { get; set; }
 
@@ -49,6 +51,7 @@ public sealed class ContractInfo
 
 
     public string? CollateralIssuer { get; set; }
+    public string? ContractPath { get; set; }
 
 
     public string? ChequeSerial { get; set; }

@@ -4,11 +4,12 @@ using LoanService.Domain.Entities;
 
 namespace Common;
 public record ProviderDecisionResult(
-    Result Result,
-    LoanRequestState NextState,
+
+     bool? IsSuccess,
+    LoanRequestState? NextState,
     string UiMessage,
     int ReasonCode,
-    bool Retryable 
+    bool? Retryable 
 );
 //public enum LoanRequestState
 //{ /// <summary>

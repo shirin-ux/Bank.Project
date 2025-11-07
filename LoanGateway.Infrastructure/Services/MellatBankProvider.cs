@@ -19,6 +19,7 @@ using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.ReturnTransferReport;
 using LoanService.Application.UseCase.Query.TransferInquiry;
 using LoanService.Domain.Enum;
+using LoanService.Infrastructure.Extention;
 using MapsterMapper;
 using System.Security.Cryptography.Pkcs;
 using static LoanService.Application.UseCase.Query.CustomerInquiryStatus.CustomerInquiryStatusResultDto;
@@ -154,11 +155,40 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<GetCollateralContractFileResultDto> GetCollateralContractFileAsync(GetCollateralContractFileCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatContractWithCollateralReq>(cmd);
-
+            //var mellatReq = _mapper.Map<MellatContractWithCollateralReq>(cmd);
+            var mellatReq = new MellatContractWithCollateralReq
+            {
+                collateralIssuer = cmd.CollateralIssuer,
+                address = cmd.Address,
+                approvalCode = cmd.ApprovalCode,
+                birthDate = cmd.BirthDate,
+                chequeSerial = cmd.ChequeSerial,
+                collateralAmount = cmd.CollateralAmount,
+                collateralDate = cmd.CollateralDate,
+                collateralNo = cmd.CollateralNo,
+                collateralType = CollateralTypeExtensions.ToMellatValue(cmd.CollateralType),
+                guarantorNC = cmd.GuarantorNC,
+                nationalCode = cmd.NationalCode,
+                installmentCount = cmd.InstallmentCount,
+                loanAmount = cmd.LoanAmount,
+                mobileNumber = cmd.MobileNumber,
+                phoneNumber = cmd.PhoneNumber,
+                postalCode = cmd.PostalCode
+            };
+            int? messageCode = null;
             var response = await client.UploadCollateralFileAsync(mellatReq, ct);
-
-            var result = _mapper.Map<GetCollateralContractFileResultDto>(response);
+            if (!string.IsNullOrWhiteSpace(response.messageCode) && int.TryParse(response.messageCode, out var parsed))
+            {
+                messageCode = parsed;
+            }
+            var result = new GetCollateralContractFileResultDto
+            {
+                ContractFile = response.contractFile,
+                ContractNumber = response.contractNumber,
+                Message = response.message,
+                MessageCode = messageCode
+            };
+            //var result = _mapper.Map<GetCollateralContractFileResultDto>(response);
 
             return result;
         }

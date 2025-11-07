@@ -8,7 +8,7 @@ namespace Common
 {
     public class MellatPolicyOptions
     {
-        public string SectionName { get; set; } = default!;
+        public string RulesPath { get; set; } = string.Empty;
     }
 
 }

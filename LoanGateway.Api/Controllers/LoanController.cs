@@ -35,7 +35,7 @@ namespace LoanGateway.Api.Controllers
             var entity = LoanRequest.Create(cmd.NationalCode,cmd.BirthDate,cmd.PostalCode,cmd.MobileNo,cmd.ProviderType,cmd.ApprovalCode,false);
             await _repo.InsertAsync(entity, ct);
 
-            var result = await _orchestrator.StartInquiryAsync(entity.Id, cmd, entity, ct);
+            var result = await _orchestrator.StartInquiryAsync(cmd, entity, ct);
             return ToHttp(result);
         }
 

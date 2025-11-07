@@ -16,8 +16,8 @@ public class GetCollateralContractFileValidator : AbstractValidator<GetCollatera
         RuleFor(x => x.PostalCode)
             .Matches("^\\d{10}$").WithMessage("کدپستی باید 10 رقمی باشد.");
 
-        RuleFor(x => x.InstallmentCount)
-            .GreaterThan(0);
+        //RuleFor(x => x.InstallmentCount)
+        //    .GreaterThan(0);
 
         RuleFor(x => x.CollateralType).NotEmpty();
     }

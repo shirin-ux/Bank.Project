@@ -8,7 +8,7 @@ namespace Bank.Mellat.Provider.Dtos
 {
    public class MellatCustomerCreditBalanceReq
     {
-        public decimal ContractNumber { get; set; }
-        public string NationalCode { get; set; } = null!;
+        public decimal contractNumber { get; set; }
+        public string nationalCode { get; set; } = null!;
     }
 }

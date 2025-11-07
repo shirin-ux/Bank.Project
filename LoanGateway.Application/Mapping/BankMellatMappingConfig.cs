@@ -26,7 +26,7 @@ public static class BankMellatMappingConfig
             .NewConfig()
               .Map(d => d.MessageCode, s => s.MessageCode)
               .Map(d => d.Message, s => s.Message)
-              .Map(dest => dest.ContractBase64,
+              .Map(dest => dest.ContractFile,
                  src => src.ContractFile != null
                          ? Convert.ToBase64String(src.ContractFile)
                          : string.Empty);
@@ -34,7 +34,7 @@ public static class BankMellatMappingConfig
         // 🔹 مثال: برای فایل قرارداد بدون وثیقه
         TypeAdapterConfig<MellatFileUploadRes, GetContractFileResultDto>
             .NewConfig()
-            .Map(dest => dest.ContractBase64,
+            .Map(dest => dest.ContractFile,
                  src => src.ContractFile != null
                          ? Convert.ToBase64String(src.ContractFile)
                          : string.Empty);

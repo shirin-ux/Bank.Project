@@ -10,8 +10,8 @@ namespace Common
     {
         int? MessageCode { get; }
         string? Message { get; }
-        string[] NextActions { get; set; }
-        string State { get; set; }
+      //  string[] NextActions { get; set; }
+       // string State { get; set; }
         string RequestId { get; set; }
 
     }

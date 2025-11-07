@@ -8,9 +8,9 @@ namespace Bank.Mellat.Provider.Dtos
 {
     public class MellatFileUploadRes
     {
-        public byte[] ContractFile { get; set; } 
-        public decimal ContractNumber { get; set; }
-        public string MessageCode { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
+        public byte[] contractFile { get; set; } 
+        public decimal contractNumber { get; set; }
+        public string messageCode { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
     }
 }
