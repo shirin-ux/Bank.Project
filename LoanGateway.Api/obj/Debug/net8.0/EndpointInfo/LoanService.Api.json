@@ -55,6 +55,13 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "ProviderType",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/BankProviderType"
+            }
           }
         ],
         "responses": {
@@ -463,7 +470,8 @@
             "nullable": true
           },
           "cbTrackingCode": {
-            "type": "string",
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },

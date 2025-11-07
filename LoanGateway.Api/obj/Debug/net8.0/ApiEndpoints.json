@@ -53,6 +53,11 @@
         "Name": "loanId",
         "Type": "System.Guid",
         "IsRequired": true
+      },
+      {
+        "Name": "ProviderType",
+        "Type": "System.String",
+        "IsRequired": false
       }
     ],
     "ReturnTypes": []

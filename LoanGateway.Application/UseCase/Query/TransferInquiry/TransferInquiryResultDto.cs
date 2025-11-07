@@ -11,7 +11,7 @@ public sealed record TransferInquiryResultDto:IBankResponse
 {
     public string RegisterCode { get; init; } = default!;
     public decimal ApprovalCode { get; init; }
-    public string MessageCode { get; init; }
+    public int? MessageCode { get; init; }
     public string? Message { get; init; }
 
     public IReadOnlyList<InquiryDetailDto> InquiryDetails { get; init; } = Array.Empty<InquiryDetailDto>();

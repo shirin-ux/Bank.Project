@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace LoanService.Domain.ValueObjects
 {
-    public sealed record DecisionStamp( // آخرین Reason/Error برای UI/Debug
-        string? ReasonCode,
+    public sealed record DecisionStamp( 
+        int? ReasonCode,
         string? ReasonMessage,
-        string? ErrorCode,
+        int? ErrorCode,
         string? ErrorMessage
     );
 }

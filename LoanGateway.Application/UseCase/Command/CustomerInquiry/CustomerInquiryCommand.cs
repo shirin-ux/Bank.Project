@@ -19,7 +19,7 @@ namespace LoanService.Application.UseCase.Command.CustomerInquiry
         public string? PostalCode { get; init; }  
         public decimal? RequestAmount { get; init; }
         public decimal? ApprovalCode { get; init; }
-        public string? CbTrackingCode { get; init; }
+        public decimal? CbTrackingCode { get; init; }
     
     }
 }

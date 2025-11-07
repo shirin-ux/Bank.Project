@@ -19,8 +19,8 @@ using LoanService.Application.UseCase.Query.GetInstallments;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.TransferInquiry;
 using LoanService.Domain.Entities;
+using LoanService.Domain.Enum;
 using LoanService.Domain.IRepository;
-using LoanService.Domain.ValueObjects;
 using Mapster;
 using MapsterMapper;
 using MediatR;
@@ -61,7 +61,7 @@ public sealed class LoanRequestOrchestrator
         var loan = await RequireAsync(loanId, ct);
 
         if (loan is null)
-            return Result<CustomerInquiryResultDto>.Failure(new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<CustomerInquiryResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
         try
         {
             var res = await _mediator.Send(cmd, ct);
@@ -77,6 +77,14 @@ public sealed class LoanRequestOrchestrator
 
             var d = decision.Value!;
 
+            decimal? amount = cmd.RequestAmount;
+
+            bool requiresCollateral = false;
+            CollateralType collateralType = CollateralType.Unknown;
+
+   
+
+            entity.SetRequest(cmd.RequestAmount, requiresCollateral, collateralType);
             entity.TransitionTo(d.NextState, d.ReasonCode, d.UiMessage);  // KYCChecked/Failed/Ineligible
 
             entity.SetInquiryRequestId(res.RequestId);
@@ -89,33 +97,36 @@ public sealed class LoanRequestOrchestrator
         {
             // retry logic or mark for background retry
             // log
-            return await FailAndReturn<CustomerInquiryResultDto>(entity, new Error("TRANSIENT_ERROR", ex.Message), ct);
+            return await FailAndReturn<CustomerInquiryResultDto>(entity, new Error(loan.LastErrorCode, ex.Message), ct);
         }
         catch (System.Exception ex)
         {
             // log critical
-            return await FailAndReturn<CustomerInquiryResultDto>(entity, new Error("UNEXPECTED", "خطای داخلی رخ داد."), ct);
+            return await FailAndReturn<CustomerInquiryResultDto>(entity, new Error(loan.LastErrorCode, "خطای داخلی رخ داد."), ct);
         }
     }
 
     // ---------------- 2) پاسخ استعلام مشتری (allowed/maxApprovedAmount/...) --------------
-    public async Task<Result<CustomerInquiryStatusResultDto>> GetInquiryResultAsync(Guid loanId, CancellationToken ct)
+    public async Task<Result<CustomerInquiryStatusResultDto>> GetInquiryResultAsync(Guid loanId, BankProviderType ProviderType, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
+
         if (loan is null)
-            return Result<CustomerInquiryStatusResultDto>.Failure(new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<CustomerInquiryStatusResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
         if (string.IsNullOrWhiteSpace(loan.InqueryRequest.RequestId.ToString()))
-            return Result<CustomerInquiryStatusResultDto>.Failure(new Error("REQUEST_ID_MISSING", "برای این وام هنوز requestId استعلام ثبت نشده است."));
+            return Result<CustomerInquiryStatusResultDto>.Failure(new Error(loan.LastErrorCode, "برای این وام هنوز requestId استعلام ثبت نشده است."));
 
-
+        if (loan.Provider?.ApprovalCode is null)
+            return Result<CustomerInquiryStatusResultDto>.Failure(new Error(loan.LastErrorCode, "کد مصوبه یافت نشد."));
 
         var res = await _mediator.Send(new GetCustomerInquiryStatusQuery
         {
-            RequestId = loan.InqueryRequest.RequestId
+            RequestId = loan.InqueryRequest.RequestId,
+            ProviderType= ProviderType
         }, ct);
 
-        var providerType = loan.Provider.ProviderType;
+        var providerType = ProviderType;
 
         var policy = _bankPolicyFactory.CreatePolicy<CustomerInquiryStatusResultDto>(providerType, "CustomerInquiryResult");
 
@@ -125,10 +136,17 @@ public sealed class LoanRequestOrchestrator
             return await FailAndReturn<CustomerInquiryStatusResultDto>(loan, decision.Error!, ct);
 
         var d = decision.Value!;
-        loan.TransitionTo(d.NextState, d.ReasonCode, d.UiMessage);
+      
     
 
-        loan.SetInquiryDecision(res.Allowed,res.MaxApprovedAmount,res.Ics,res.IcsGrade,res.RequestExpireDate);
+        loan.SetInquiryDecision(res.Allowed,res.MaxApprovedAmount,res.StatusList.Select(x=>new InquiryInfo.StatusItem
+        {
+            ResponseCode=x.ResponseCode,
+            ResponseStatus=x.ResponseStatus
+        }).ToList(), res.RequestExpireDate);
+
+        loan.TransitionTo(res.Allowed ? LoanRequestState.Eligible : LoanRequestState.Rejected, d.ReasonCode, d.UiMessage);
+
         await _repo.UpdateAsync(loan, ct);
 
         return Result<CustomerInquiryStatusResultDto>.Success(new CustomerInquiryStatusResultDto
@@ -136,11 +154,10 @@ public sealed class LoanRequestOrchestrator
             RequestId = res.RequestId,
             Allowed = res.Allowed,
             MaxApprovedAmount = res.MaxApprovedAmount,
-            Ics = res.Ics,
-            IcsGrade = res.IcsGrade,
             RequestExpireDate = res.RequestExpireDate,
             Message = d.UiMessage,
             State = loan.State.ToString(),
+            StatusList =res.StatusList.Select(x=>new CustomerInquiryStatusResultDto.StatusItemDto(x.ResponseStatus,x.ResponseCode)).ToList(),
             NextActions = GetNextActions(loan)
         });
     }
@@ -151,13 +168,13 @@ public sealed class LoanRequestOrchestrator
         var loan = await RequireAsync(loanId, ct);
 
         if (loan is null)
-            return Result<GetContractFileResultDto>.Failure(new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<GetContractFileResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
         if (loan.State != LoanRequestState.Eligible)
-            return Result<GetContractFileResultDto>.Failure(new Error("INVALID_STATE", "هنوز مشتری واجد شرایط نشده است."));
+            return Result<GetContractFileResultDto>.Failure(new Error(loan.LastErrorCode, "هنوز مشتری واجد شرایط نشده است."));
 
         if (string.IsNullOrWhiteSpace(loan.Provider.ApprovalCode.ToString()))
-            return Result<GetContractFileResultDto>.Failure(new Error("APPROVAL_REQUIRED", "کد مصوبه بانک ملت مشخص نیست."));
+            return Result<GetContractFileResultDto>.Failure(new Error(loan.LastErrorCode, "کد مصوبه بانک ملت مشخص نیست."));
 
         var res = await _mediator.Send(cmd, ct);
 
@@ -171,8 +188,9 @@ public sealed class LoanRequestOrchestrator
             return await FailAndReturn<GetContractFileResultDto>(loan, decision.Error!, ct);
 
         var d = decision.Value!;
-        loan.AttachContract(contractNumber: res.ContractNumber, reasonCode: d.ReasonCode, uiMessage: d.UiMessage, desc: "Mellat contract (no collateral)",      // یا هر توضیح
-                                 withCollateral: false);
+        var birthDate = DateOnly.ParseExact(cmd.BirthDate, "yyyy/MM/dd");
+        loan.AttachContract(loan.Provider.ApprovalCode,cmd.Address, birthDate, cmd.NationalCode, cmd.InstallmentCount, cmd.LoanAmount, cmd.MobileNumber,
+            cmd.PhoneNumber, cmd.PostalCode, reasonCode: d.ReasonCode, uiMessage: d.UiMessage);
 
         await _repo.UpdateAsync(loan, ct);
 
@@ -194,26 +212,26 @@ public sealed class LoanRequestOrchestrator
 
         if (loan is null)
             return Result<GetCollateralContractFileResultDto>.Failure(
-                new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+                new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
 
         if (loan.State != LoanRequestState.Eligible)
             return Result<GetCollateralContractFileResultDto>.Failure(
-                new Error("INVALID_STATE", "برای دریافت فایل قرارداد با وثیقه باید مشتری واجد شرایط باشد."));
+                new Error(loan.LastErrorCode, "برای دریافت فایل قرارداد با وثیقه باید مشتری واجد شرایط باشد."));
 
 
         if (string.IsNullOrWhiteSpace(loan.Provider.ApprovalCode.ToString()) || !decimal.TryParse(loan.Provider.ApprovalCode.ToString(), out var approvalCode))
             return Result<GetCollateralContractFileResultDto>.Failure(
-                new Error("APPROVAL_REQUIRED", "کد مصوبه بانک ملت مشخص یا معتبر نیست."));
+                new Error(loan.LastErrorCode, "کد مصوبه بانک ملت مشخص یا معتبر نیست."));
 
         if (cmd.CollateralType.Equals(2))
             return Result<GetCollateralContractFileResultDto>.Failure(
-                new Error("COLLATERAL_REQUIRED", "نوع وثیقه (CHEQUE/PROMISSORY) الزامی است."));
+                new Error(loan.LastErrorCode, "نوع وثیقه (CHEQUE/PROMISSORY) الزامی است."));
 
 
         if (string.IsNullOrWhiteSpace(cmd.CollateralNo) || string.IsNullOrWhiteSpace(cmd.CollateralDate))
             return Result<GetCollateralContractFileResultDto>.Failure(
-                new Error("COLLATERAL_DATA_MISSING", "شماره و تاریخ وثیقه الزامی است."));
+                new Error(loan.LastErrorCode, "شماره و تاریخ وثیقه الزامی است."));
 
 
         var res = await _mediator.Send(cmd with { ApprovalCode = Convert.ToDecimal(loan.Provider.ApprovalCode)! }, ct);
@@ -229,9 +247,9 @@ public sealed class LoanRequestOrchestrator
 
         var d = decision.Value!;
 
-
-        loan.AttachContract(contractNumber: res.ContractNumber, reasonCode: d.ReasonCode, uiMessage: d.UiMessage, desc: "Mellat contract (no collateral)",      // یا هر توضیح
-                                 withCollateral: true);
+        var birthDate = DateOnly.ParseExact(cmd.BirthDate, "yyyy/MM/dd");
+        //loan.AttachCollateralContract(loan.Provider.ApprovalCode, cmd.Address, birthDate, cmd.NationalCode, cmd.InstallmentCount, cmd.LoanAmount, cmd.MobileNumber,
+        //    cmd.PhoneNumber, cmd.PostalCode, reasonCode: d.ReasonCode, uiMessage: d.UiMessage);
 
 
         await _repo.UpdateAsync(loan, ct);
@@ -257,19 +275,14 @@ public sealed class LoanRequestOrchestrator
 
         if (loan.State != LoanRequestState.ContractsPrepared)
             return Result<SubmitPayRequestResultDto>.Failure(
-                new Error("INVALID_STATE", "قرارداد باید در وضعیت آماده (ContractsPrepared) باشد."));
+                new Error(loan.LastErrorCode, "قرارداد باید در وضعیت آماده (ContractsPrepared) باشد."));
 
 
-        if (loan.Contract.ContractNumber<0)
+        if (loan.GrantRequest.ContractId<0)
             return Result<SubmitPayRequestResultDto>.Failure(
-                new Error("CONTRACT_MISSING", "شماره قرارداد مشخص نیست."));
+                new Error(loan.LastErrorCode, "شماره قرارداد مشخص نیست."));
 
-        var enriched = cmd with
-        {
-            ContractNumber = loan.Contract.ContractNumber,
-            ContractFile = loan.GrantRequest.SignedContractBase64
-        };
-        var res = await _mediator.Send(enriched, ct);
+        var res = await _mediator.Send(cmd, ct);
 
         var providerType = loan.Provider.ProviderType;
 
@@ -306,10 +319,10 @@ public sealed class LoanRequestOrchestrator
         var loan = await RequireAsync(loanId, ct);
 
         if (loan is null)
-            return Result<GetPayResponseResultDto>.Failure(new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<GetPayResponseResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
         if (string.IsNullOrWhiteSpace(loan.GrantRequest.PayRequestId))
-            return Result<GetPayResponseResultDto>.Failure(new Error("PAYREQUESTID_MISSING", "برای این وام هنوز PayRequestId ثبت نشده است."));
+            return Result<GetPayResponseResultDto>.Failure(new Error(loan.LastErrorCode, "برای این وام هنوز PayRequestId ثبت نشده است."));
 
         var res = await _mediator.Send(new GetPayResponseQuery { PayRequestId = loan.GrantRequest.PayRequestId }, ct);
 
@@ -358,7 +371,7 @@ public sealed class LoanRequestOrchestrator
 
             default:
 
-                loan.MarkTemporaryFailure($"MELLAT.PAYRESP.{code}", d.UiMessage ?? "پاسخ نامعتبر از بانک.");
+                loan.MarkTemporaryFailure(d.ReasonCode, d.UiMessage ?? "پاسخ نامعتبر از بانک.");
                 break;
         }
 
@@ -379,25 +392,25 @@ public sealed class LoanRequestOrchestrator
         var loan = await RequireAsync(loanId, ct);
 
         if (loan is null)
-            return Result<OtpRequestResultDto>.Failure(new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
-        if (loan.Contract.ContractNumber<=0 )
-            return Result<OtpRequestResultDto>.Failure(new Error("CONTRACT_MISSING", "شماره قرارداد معتبر نیست."));
+        //if (loan.Contract.ContractNumber<=0 )
+        //    return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
 
 
         if (loan.State is not LoanRequestState.ContractsPrepared and not LoanRequestState.OtpSent)
-            return Result<OtpRequestResultDto>.Failure(new Error("INVALID_STATE", "در این وضعیت ارسال OTP مجاز نیست."));
+            return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "در این وضعیت ارسال OTP مجاز نیست."));
 
         if (cmd.ServiceType != serviceType.deposit && cmd.ServiceType != serviceType.repayment)
-            return Result<OtpRequestResultDto>.Failure(new Error("OTP_SERVICETYPE_INVALID", "serviceType باید 1 (واریز) یا 2 (بازپرداخت) باشد."));
+            return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "serviceType باید 1 (واریز) یا 2 (بازپرداخت) باشد."));
 
         if (cmd.ServiceType == serviceType.repayment && string.IsNullOrWhiteSpace(cmd.AccountNumber))
-            return Result<OtpRequestResultDto>.Failure(new Error("OTP_ACCOUNT_REQUIRED", "برای serviceType=2، accountNumber الزامی است."));
+            return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "برای serviceType=2، accountNumber الزامی است."));
 
 
         var res = await _mediator.Send(cmd with
         {
-            ContractNumber = loan.Contract.ContractNumber
+            //ContractNumber = loan.GrantRequest.ContractId
         }, ct);
         var providerType = loan.Provider.ProviderType;
 
@@ -433,39 +446,36 @@ public sealed class LoanRequestOrchestrator
         var loan = await RequireAsync(loanId, ct);
 
         if (loan is null)
-            return Result<DepositRequestResultDto>.Failure(new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
-        if (loan.Contract.ContractNumber <= 0)
-            return Result<DepositRequestResultDto>.Failure(new Error("CONTRACT_MISSING", "شماره قرارداد معتبر نیست."));
+        if (loan.Contract.ApprovalCode <= 0)
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
 
 
         if (loan.IsPurchaseCredit)
-            return Result<DepositRequestResultDto>.Failure(new Error("INVALID_PRODUCT", "درخواست واریز وجه صرفاً برای اعتبار در خرید مجاز است."));
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست واریز وجه صرفاً برای اعتبار در خرید مجاز است."));
 
 
         if (loan.RequiresOtp && loan.State is not LoanRequestState.OtpVerified and not LoanRequestState.RemittanceRegistering)
-            return Result<DepositRequestResultDto>.Failure(new Error("OTP_NOT_VERIFIED", "برای ثبت واریز، تایید OTP الزامی است."));
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "برای ثبت واریز، تایید OTP الزامی است."));
 
         if (cmd.PayAmount <= 0)
-            return Result<DepositRequestResultDto>.Failure(new Error("PAY_AMOUNT_INVALID", "payAmount باید بزرگ‌تر از صفر باشد."));
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "payAmount باید بزرگ‌تر از صفر باشد."));
 
         if (!Enum.IsDefined(typeof(depositType), cmd.DepositType))
-            return Result<DepositRequestResultDto>.Failure(new Error("DEPOSIT_TYPE_INVALID", $"depositType باید یکی از مقادیر ({depositType.AnyAccount} ,{depositType.FixedAccount},{depositType.CustomerAccount}) باشد."));
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, $"depositType باید یکی از مقادیر ({depositType.AnyAccount} ,{depositType.FixedAccount},{depositType.CustomerAccount}) باشد."));
 
 
         if (cmd.DepositType == depositType.AnyAccount)
         {
             if (cmd.SellerAccountNo < 0)
-                return Result<DepositRequestResultDto>.Failure(new Error("SELLER_ACCOUNT_REQUIRED", "برای depositType=1، شماره حساب فروشنده الزامی است."));
+                return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "برای depositType=1، شماره حساب فروشنده الزامی است."));
 
             if (string.IsNullOrWhiteSpace(cmd.SellerNationalCode))
-                return Result<DepositRequestResultDto>.Failure(new Error("SELLER_NATIONALCODE_REQUIRED", "برای depositType=1، کد ملی فروشنده الزامی است."));
+                return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "برای depositType=1، کد ملی فروشنده الزامی است."));
         }
 
-        var res = await _mediator.Send(cmd with
-        {
-            ContractNumber = Convert.ToDecimal(loan.Contract.ContractNumber)
-        }, ct);
+        var res = await _mediator.Send(cmd, ct);
         var providerType = loan.Provider.ProviderType;
 
         var policy = _bankPolicyFactory.CreatePolicy<DepositRequestResultDto>(providerType, "DepositRequest");
@@ -508,28 +518,28 @@ public sealed class LoanRequestOrchestrator
     {
         var loan = await RequireAsync(loanId, ct);
         if (loan is null)
-            return Result<RepaymentRequestResultDto>.Failure(new Error("LOAN_NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
-        if (loan.Contract.ContractNumber<=0 )
-            return Result<RepaymentRequestResultDto>.Failure(new Error("CONTRACT_MISSING", "شماره قرارداد معتبر نیست."));
+        if (loan.Contract.ApprovalCode<=0 )
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
 
 
         if (loan.State is not LoanRequestState.Approved and not LoanRequestState.Disbursed)
-            return Result<RepaymentRequestResultDto>.Failure(new Error("INVALID_STATE", "در این وضعیت ثبت بازپرداخت مجاز نیست."));
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "در این وضعیت ثبت بازپرداخت مجاز نیست."));
 
         if (string.IsNullOrWhiteSpace(cmd.AccountNo))
-            return Result<RepaymentRequestResultDto>.Failure(new Error("ACCOUNT_REQUIRED", "accountNo الزامی است."));
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "accountNo الزامی است."));
 
         if (cmd.RepaymentAmount <= 0)
-            return Result<RepaymentRequestResultDto>.Failure(new Error("AMOUNT_INVALID", "repaymentAmount باید بزرگ‌تر از صفر باشد."));
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "repaymentAmount باید بزرگ‌تر از صفر باشد."));
 
         if (!loan.CanPerformRepayment(cmd.OtpCode))
             return Result<RepaymentRequestResultDto>.Failure(
-                new Error("OTP_REQUIRED", "براساس تنظیمات مصوبه، OTP الزامی است."));
+                new Error(loan.LastErrorCode, "براساس تنظیمات مصوبه، OTP الزامی است."));
 
         var res = await _mediator.Send(cmd with
         {
-            ContractNo = loan.Contract.ContractNumber,
+            ContractNo = loan.Contract.ApprovalCode,
             NationalCode = loan.Customer.NationalCode!
         }, ct);
 
@@ -571,12 +581,17 @@ public sealed class LoanRequestOrchestrator
     {
         var loan = await RequireAsync(loanId, ct);
         if (loan is null)
-            return Result<GetInstallmentsResultDto>.Failure(new Error("NOT_FOUND", "درخواست وام یافت نشد."));
+            return Result<GetInstallmentsResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
 
+        //var res = await _mediator.Send(new GetInstallmentsQuery
+        //{
+        //    NationalCode = loan.Customer.NationalCode,
+        //    ContractNumber = loan.Contract.ApprovalCode
+        //}, ct);
         var res = await _mediator.Send(new GetInstallmentsQuery
         {
-            NationalCode = loan.Customer.NationalCode,
-            ContractNumber = loan.Contract.ContractNumber
+            NationalCode = loan.Customer.NationalCode
+            //ContractNumber = loan.Contract.ApprovalCode
         }, ct);
         var providerType = loan.Provider.ProviderType;
 
@@ -627,8 +642,8 @@ public sealed class LoanRequestOrchestrator
         var loan = await RequireAsync(loanId, ct);
         var res = await _mediator.Send(new GetCustomerCreditBalanceCommand
         {
-            NationalCode = loan.Customer.NationalCode!,
-            ContractNumber = Convert.ToDecimal(loan.Contract.ContractNumber)
+            NationalCode = loan.Customer.NationalCode!
+            //ContractNumber = Convert.ToDecimal(loan.Contract.ContractNumber)
         }, ct);
         var providerType = loan.Provider.ProviderType;
 
@@ -664,7 +679,7 @@ public sealed class LoanRequestOrchestrator
     public async Task<Result<GetCustomerBillingResultDto>> GetBillingAsync(Guid loanId, GetCustomerBillingCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
-        var res = await _mediator.Send(cmd with { ContractNumber =loan.Contract.ContractNumber, NationalCode = loan.Customer.NationalCode! }, ct);
+        var res = await _mediator.Send(cmd with { /*ContractNumber =loan.Contract.ContractNumber,*/ NationalCode = loan.Customer.NationalCode! }, ct);
         var providerType = loan.Provider.ProviderType;
 
         var policy = _bankPolicyFactory.CreatePolicy<GetCustomerBillingResultDto>(providerType, "CustomerBilling");
@@ -698,7 +713,7 @@ public sealed class LoanRequestOrchestrator
         
         var providerType = loan.Provider.ProviderType;
         var res = await _mediator.Send(cmd with {
-            ContractNumber = loan.Contract.ContractNumber,
+            //ContractNumber = loan.Contract.ContractNumber,
             NationalCode = loan.Customer.NationalCode!,
             ProviderType=providerType
           }, ct);

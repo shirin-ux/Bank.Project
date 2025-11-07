@@ -20,7 +20,7 @@ public sealed record GetInstallmentsResultDto:IBankResponse
     public decimal DebtAmount { get; init; }                    
     public decimal DiscountedDebtAmount { get; init; }          
     public string? ContractDesc { get; init; }                  
-    public string? MessageCode { get; init; }
+    public int? MessageCode { get; init; }
     public string? Message { get; init; }
 
     public List<InstallmentItemDto> Installments { get; init; } 

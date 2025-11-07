@@ -20,6 +20,8 @@ using LoanService.Application.UseCase.Query.ReturnTransferReport;
 using LoanService.Application.UseCase.Query.TransferInquiry;
 using LoanService.Domain.Enum;
 using MapsterMapper;
+using System.Security.Cryptography.Pkcs;
+using static LoanService.Application.UseCase.Query.CustomerInquiryStatus.CustomerInquiryStatusResultDto;
 
 
 namespace Bank.Mellat.Infrastructure.Services
@@ -27,19 +29,47 @@ namespace Bank.Mellat.Infrastructure.Services
     public class MellatBankProvider(IMellatBankService client, IMapper mapper) : IBankProvider
     {
         private readonly IMellatBankService _client = client;
-        private readonly IMapper _mapper= mapper;
+        private readonly IMapper _mapper = mapper;
 
         public BankProviderType ProviderType => BankProviderType.Mellat;
 
         public async Task<CustomerInquiryResultDto> CustomerInquiryAsync(CustomerInquiryCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatInquiryRegisterReq>(cmd);
+            try
+            {
+                //var mellatReq = _mapper.Map<MellatInquiryRegisterReq>(cmd);
+                var mellatReq = new MellatInquiryRegisterReq
+                {
+                    birthDate = cmd.BirthDate,
+                    mobileNo = cmd.MobileNo,
+                    nationalCode = cmd.NationalCode,
+                    requestAmount = cmd.RequestAmount.ToString(),
+                    approvalCode = cmd.ApprovalCode,
+                    cbTrackingCode = cmd.CbTrackingCode,
+                    configType = cmd.ConfigType,
+                    postalCode = cmd.PostalCode
 
-            var response = await client.RegisterInquiryAsync(mellatReq, ct);
+                };
 
-            var result = _mapper.Map<CustomerInquiryResultDto>(response);
 
-            return result;
+                var response = await client.RegisterInquiryAsync(mellatReq, ct);
+                var result = new CustomerInquiryResultDto
+                {
+                    MessageCode = response.messageCode,
+                    Message = response.message,
+                    RequestId = response.requestId
+                };
+
+                //var result = _mapper.Map<CustomerInquiryResultDto>(response);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+
+                throw;
+            }
+
         }
 
         public async Task<DepositRequestResultDto> DepositRequestAsync(DepositRequestCommand cmd, CancellationToken ct)
@@ -80,12 +110,27 @@ namespace Bank.Mellat.Infrastructure.Services
             var response = await _client.GetInquiryResultAsync(requestId, ct);
 
             DateTime? expire = null;
-            if (!string.IsNullOrWhiteSpace(response.requestExpireDate.ToString()))
+            //if (!string.IsNullOrWhiteSpace(response.requestExpireDate.ToString()))
+            //{
+            //    DateTime.TryParse(response.requestExpireDate.ToString(), out var dt);
+            //    if (dt != default) expire = dt;
+            //}
+            //var result = _mapper.Map<CustomerInquiryStatusResultDto>(response);
+            var result = new CustomerInquiryStatusResultDto
             {
-                DateTime.TryParse(response.requestExpireDate.ToString(), out var dt);
-                if (dt != default) expire = dt;
-            }
-            var result = _mapper.Map<CustomerInquiryStatusResultDto>(response);
+                RequestId = requestId,
+                Allowed = response.allowed,
+                Gender = response.Gender,
+                MaxApprovedAmount = response.maxApprovedAmount,
+                RequestExpireDate = response.requestExpireDate,
+                PostalCodeStatus = response.postalCode,
+                StatusList = response.statusList?
+                             .Select(s => new CustomerInquiryStatusResultDto.StatusItemDto(
+                                 s.responseCode,
+                                 s.responseStatus
+                             ))
+                             .ToList()
+            };
             return result;
         }
 
@@ -102,7 +147,7 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, decimal contractNumber, CancellationToken ct)
         {
-            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { ContractNumber=contractNumber,NationalCode=nationalCode}, ct);
+            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { ContractNumber = contractNumber, NationalCode = nationalCode }, ct);
             var result = _mapper.Map<GetInstallmentsResultDto>(response);
             return result;
         }
@@ -131,7 +176,7 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<GetPayResponseResultDto> GetPayResponseAsync(string payRequestId, CancellationToken ct)
         {
-            var response = await _client.GetPayResponseAsync(new MellatPayReq { PayRequestId=payRequestId}, ct);
+            var response = await _client.GetPayResponseAsync(new MellatPayReq { PayRequestId = payRequestId }, ct);
             var result = _mapper.Map<GetPayResponseResultDto>(response);
             return result;
         }
@@ -193,7 +238,7 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<TransferInquiryResultDto> TransferInquiryAsync(TransferInquiryQuery q, CancellationToken ct)
         {
-            var response = await _client.GetTransferInquiryAsync(new MellatTransferInquiryReq {RegisterCode=q.RegisterCode }, ct);
+            var response = await _client.GetTransferInquiryAsync(new MellatTransferInquiryReq { RegisterCode = q.RegisterCode }, ct);
             var result = _mapper.Map<TransferInquiryResultDto>(response);
             return result;
         }

@@ -11,7 +11,7 @@ public sealed record GetCustomerCreditBalanceResultDto:IBankResponse
 {
     public string NationalCode { get; init; } = default!;
     public IReadOnlyList<ContractCreditItemDto> ContractCreditList { get; init; } = Array.Empty<ContractCreditItemDto>();
-    public string MessageCode { get; init; }
+    public int? MessageCode { get; init; }
     public string? Message { get; init; }
     public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

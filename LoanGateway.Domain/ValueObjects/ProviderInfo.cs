@@ -7,6 +7,12 @@ using System.Threading.Tasks;
 
 namespace LoanService.Domain.ValueObjects
 {
+    /// <summary>
+    /// فقط اطلاعاتی از بانک ارائه‌دهنده دارد
+    /// </summary>
+    /// <param name="ProviderType"></param>
+    /// <param name="ApprovalCode"></param>
+    /// <param name="RequiresOtp"></param>
     public sealed record ProviderInfo(
         BankProviderType ProviderType,
         decimal? ApprovalCode,

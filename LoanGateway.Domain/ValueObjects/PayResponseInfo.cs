@@ -6,7 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace LoanService.Domain.ValueObjects
-{
+{ 
+  
     public sealed record PayResponseInfo(
         PayResponseCode Code,
         decimal BankContractNo,

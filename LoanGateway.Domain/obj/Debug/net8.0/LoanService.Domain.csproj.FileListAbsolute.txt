@@ -1,10 +1,11 @@
-D:\ProjectBank\src\LoanGateway.Domain\bin\Debug\net8.0\LoanService.Domain.deps.json
-D:\ProjectBank\src\LoanGateway.Domain\bin\Debug\net8.0\LoanService.Domain.dll
-D:\ProjectBank\src\LoanGateway.Domain\bin\Debug\net8.0\LoanService.Domain.pdb
 D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\LoanService.Domain.GeneratedMSBuildEditorConfig.editorconfig
 D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\LoanService.Domain.AssemblyInfoInputs.cache
 D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\LoanService.Domain.AssemblyInfo.cs
 D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\LoanService.Domain.csproj.CoreCompileInputs.cache
+D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\LoanService.Domain.sourcelink.json
+D:\ProjectBank\src\LoanGateway.Domain\bin\Debug\net8.0\LoanService.Domain.deps.json
+D:\ProjectBank\src\LoanGateway.Domain\bin\Debug\net8.0\LoanService.Domain.dll
+D:\ProjectBank\src\LoanGateway.Domain\bin\Debug\net8.0\LoanService.Domain.pdb
 D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\LoanService.Domain.dll
 D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\refint\LoanService.Domain.dll
 D:\ProjectBank\src\LoanGateway.Domain\obj\Debug\net8.0\LoanService.Domain.pdb

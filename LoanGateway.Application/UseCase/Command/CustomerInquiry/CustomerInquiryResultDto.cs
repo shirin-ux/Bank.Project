@@ -10,10 +10,10 @@ namespace LoanService.Application.UseCase.Command.CustomerInquiry
     public sealed record CustomerInquiryResultDto:IBankResponse
     {
     
-        public string? MessageCode { get; init; }
+        public int? MessageCode { get; init; }
         public string? Message { get; init; }
-        public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public string[]? NextActions { get; set; }
+        public string? State { get; set; }
+        public string RequestId { get; set; }
     }
 }

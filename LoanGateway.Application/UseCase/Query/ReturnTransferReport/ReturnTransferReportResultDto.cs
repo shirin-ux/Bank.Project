@@ -9,7 +9,7 @@ public sealed record ReturnTransferReportResultDto:IBankResponse
 {
     public IReadOnlyList<ReturnedTransferDto> ReturnedTransfers { get; init; } = Array.Empty<ReturnedTransferDto>();
     public decimal FromId { get; init; }      
-    public string MessageCode { get; init; }
+    public int? MessageCode { get; init; }
     public string Message { get; init; }
     public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ValueObjects\ContractInfo.cs" />
+    <Compile Remove="ValueObjects\InquiryInfo.cs" />
+    <Compile Remove="ValueObjects\PayResponseInfo.cs" />
+    <Compile Remove="ValueObjects\RepaymentSnapshot.cs" />
+    <Compile Remove="ValueObjects\TransferInfo.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Exceptions\" />
   </ItemGroup>
 

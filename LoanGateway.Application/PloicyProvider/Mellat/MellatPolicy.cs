@@ -24,26 +24,39 @@ namespace LoanService.Application.PloicyProvider.Mellat
 
         public Result<ProviderDecisionResult> Evaluate(TResponse response)
         {
-       
-    
-            if (response is null)
-                return Result<ProviderDecisionResult>.Failure(new Error("NULL_RESPONSE", "پاسخ بانک تهی است."));
 
-            var code = response.MessageCode?.Trim() ?? "UNKNOWN";
+
+            if (response is null)
+                return Result<ProviderDecisionResult>.Failure(new Error(-1, "پاسخ بانک تهی است."));
+
+            var code = response.MessageCode ?? 0;
             var msg = response.Message ?? "بدون پیام از بانک.";
 
-            var rulesSection = _config.GetSection($"MellatPolicyRules:{_sectionName}");
-            var rules = rulesSection.Get<Dictionary<string, BankCodeRule>>() ?? new();
+            var sectionRules = _config
+        .GetSection($"MellatPolicyRules:{_sectionName}")
+        .Get<Dictionary<string, BankCodeRule>>() ?? new();
 
-            if (!rules.TryGetValue(code, out var rule))
-                return Result<ProviderDecisionResult>.Failure(new Error($"MELLAT.UNKNOWN.{code}", $"کد ناشناخته از بانک ملت: {msg}"));
+          
+            var commonRules = _config
+                .GetSection("MellatPolicyRules:CommonRules")
+                .Get<Dictionary<string, BankCodeRule>>() ?? new();
 
-            var nextState = Enum.TryParse(rule.NextState, out LoanRequestState parsed) ? parsed : LoanRequestState.Unknown;
+ 
+            if (commonRules.TryGetValue(code.ToString(), out var commonRule)
+                && !sectionRules.ContainsKey(code.ToString()))
+            {
+                sectionRules[code.ToString()] = commonRule;
+            }
 
-            var retryable = rule.Retryable;
+            if (!sectionRules.TryGetValue(code.ToString(), out var rule))
+                return Result<ProviderDecisionResult>.Failure(new Error(code, $"کد ناشناخته از بانک ملت: {msg}"));
+
+            var nextState = Enum.TryParse(rule.NextState, out LoanRequestState parsed)
+                ? parsed
+                : LoanRequestState.Unknown;
 
             return Result<ProviderDecisionResult>.Success(
-                new ProviderDecisionResult(Result.Success(), nextState, rule.UiMessage ?? msg, code, retryable)
+                new ProviderDecisionResult(Result.Success(), nextState, rule.UiMessage ?? msg, code, rule.Retryable)
             );
         }
     }

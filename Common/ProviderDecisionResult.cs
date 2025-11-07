@@ -7,8 +7,8 @@ public record ProviderDecisionResult(
     Result Result,
     LoanRequestState NextState,
     string UiMessage,
-    string ReasonCode,
-  bool Retryable 
+    int ReasonCode,
+    bool Retryable 
 );
 //public enum LoanRequestState
 //{ /// <summary>

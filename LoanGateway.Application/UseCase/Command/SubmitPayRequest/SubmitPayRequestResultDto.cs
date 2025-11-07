@@ -11,7 +11,7 @@ namespace LoanService.Application.UseCase.Command.SubmitPayRequest
     {
         public string? PayRequestId { get; init; }
 
-        public string? MessageCode { get; set; }
+        public int? MessageCode { get; set; }
 
         public string? Message { get; init; }
         public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

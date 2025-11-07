@@ -11,7 +11,7 @@ namespace LoanService.Application.UseCase.Command.GetContractFile
     {
         public string ContractFileBase64 { get; init; } = default!; 
         public decimal ContractNumber { get; init; }               
-        public string? MessageCode { get; init; }
+        public int? MessageCode { get; init; }
         public string? Message { get; init; }
         public string[] NextActions { get; set; }
         public string State { get; set; }

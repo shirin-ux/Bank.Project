@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LoanService.Domain.ValueObjects
 {
-    //آخرین پرداخت مشتری
+
     public sealed record RepaymentSnapshot(
         string? TrackNumber,
         string? AccountNo,

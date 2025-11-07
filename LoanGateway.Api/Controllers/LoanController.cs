@@ -9,6 +9,7 @@ using LoanService.Application.UseCase.Command.SubmitPayRequest;
 using LoanService.Application.UseCase.Command.TransferRegister;
 using LoanService.Application.UseCase.Query.GetInstallments;
 using LoanService.Domain.Entities;
+using LoanService.Domain.Enum;
 using LoanService.Domain.IRepository;
 using Microsoft.AspNetCore.Mvc;
 
@@ -31,7 +32,7 @@ namespace LoanGateway.Api.Controllers
         [HttpPost("start")]
         public async Task<IActionResult> StartInquiry([FromBody] CustomerInquiryCommand cmd, CancellationToken ct)
         {
-            var entity = LoanRequest.Create(cmd.NationalCode,cmd.ProviderType,cmd.ApprovalCode,false);
+            var entity = LoanRequest.Create(cmd.NationalCode,cmd.BirthDate,cmd.PostalCode,cmd.MobileNo,cmd.ProviderType,cmd.ApprovalCode,false);
             await _repo.InsertAsync(entity, ct);
 
             var result = await _orchestrator.StartInquiryAsync(entity.Id, cmd, entity, ct);
@@ -40,9 +41,9 @@ namespace LoanGateway.Api.Controllers
 
         // -------------------- 2) دریافت نتیجه استعلام --------------------
         [HttpGet("{loanId:guid}/inquiry/result")]
-        public async Task<IActionResult> InquiryResult(Guid loanId, CancellationToken ct)
+        public async Task<IActionResult> InquiryResult(Guid loanId, BankProviderType ProviderType, CancellationToken ct)
         {
-            var result = await _orchestrator.GetInquiryResultAsync(loanId, ct);
+            var result = await _orchestrator.GetInquiryResultAsync(loanId, ProviderType, ct);
             return ToHttp(result);
         }
 
@@ -122,8 +123,7 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-
-
+        // ---------------- 11)  --------------
         [HttpPost("deposit")]
         public async Task<IActionResult> DepositRequest(Guid loanId, DepositRequestCommand cmd, CancellationToken ct)
         {

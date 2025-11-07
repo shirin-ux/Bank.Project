@@ -1,7 +1,6 @@
 ﻿
 
 using LoanService.Domain.Entities;
-using LoanService.Domain.ValueObjects;
 
 namespace LoanService.Domain.IRepository
 {

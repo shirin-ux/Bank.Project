@@ -8,7 +8,7 @@ namespace Common
 {
     public interface IBankResponse
     {
-        string? MessageCode { get; }
+        int? MessageCode { get; }
         string? Message { get; }
         string[] NextActions { get; set; }
         string State { get; set; }

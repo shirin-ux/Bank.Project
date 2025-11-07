@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace Common;
 
-public sealed record Error(string Code, string Message)
+public sealed record Error(int? Code, string Message)
 {
     public static Error Provider(string provider, string message)
-          => new($"{provider.ToUpperInvariant()}_ERROR", message);
+          => new(-1, message);
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace LoanService.Domain.ValueObjects
 {
+
     public sealed record ContractInfo(
         string? ApprovalCode,// به‌صورت string ذخیره کن (ملت: DECIMAL؛ سامان ممکن است فرق کند)
          bool  WithCollateral,

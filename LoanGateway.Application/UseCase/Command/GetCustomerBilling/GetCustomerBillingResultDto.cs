@@ -11,7 +11,7 @@ public sealed record GetCustomerBillingResultDto : IBankResponse
 {
     public IReadOnlyList<BillingItemDto> Billings { get; init; } = Array.Empty<BillingItemDto>();
     public string? Message { get; init; }
-    public string MessageCode { get; init; }
+    public int? MessageCode { get; init; }
     public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

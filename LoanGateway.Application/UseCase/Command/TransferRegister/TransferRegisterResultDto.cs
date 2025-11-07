@@ -10,7 +10,7 @@ public sealed record TransferRegisterResultDto:IBankResponse
     public  List<string> ContractsError { get; init; } = new();
     public List<string> TransactionsError { get; init; } = new();
 
-    public string? MessageCode { get; init; }
+    public int? MessageCode { get; init; }
 
     public string? Message { get; init; }
     public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

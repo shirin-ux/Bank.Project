@@ -1,43 +1,44 @@
 ﻿using LoanService.Domain.Enum;
 using LoanService.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Net;
+using static LoanService.Domain.Entities.InquiryInfo;
 
 namespace LoanService.Domain.Entities
 {
     public sealed class LoanRequest // : IAggregateRoot (در صورت داشتن مارکر)
     {
         // -------- Keys / Timestamps --------
-        public Guid Id { get; private set; }
+        public Guid Id { get; set; }
         public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
         public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
 
         // -------- Core --------
         public LoanRequestState State { get; private set; } = LoanRequestState.Requested;
-        public ProviderInfo Provider { get; private set; } = default!;
-        public CustomerInfo Customer { get; private set; } = default!;
+        public ProviderInfo Provider { get; set; } = default!;
+        public CustomerInfo? Customer { get; set; } = default!;
         public bool RequiresOtp { get; private set; }
-
-        public TimeSpan RowVersion { get; set; }
+        public decimal? RequestAmount { get; private set; }
+        public bool RequiresCollateral { get; private set; }
+        public CollateralType CollateralType { get; private set; } = CollateralType.Unknown;
+        public byte[] RowVersion { get; set; }
         public Guid CorrelationId { get; set; }
         // -------- Slices --------
-     
-        public InqueryRequest InqueryRequest { get; private set; }
-        public GrantRequest GrantRequest { get; private set; }
-        public InquiryInfo Inquiry { get; private set; } = new( null, null, null, null, null);
-        public ContractInfo Contract { get; private set; }
-        public PayRequestInfo PayRequest { get; private set; } = new(null, null);
-        public PayResponseInfo PayResponse { get; private set; } 
-        public TransferInfo Transfer { get; private set; } = new(null, null);
-        public RepaymentSnapshot LastRepayment { get; private set; } = new(null, null, null, default);
 
-        public InstallmentStatus InstallmentStatus { get; private set; }
+
+        public string? InquiryRequest_Id { get; set; }
+        public InqueryRequest InqueryRequest { get; set; } = new(null);
+        public GrantRequest? GrantRequest { get; set; } = default!;
+        public InquiryInfo Inquiry { get; set; } = default!;
+        public ContractInfo Contract { get; set; } = default!;
+        public PayRequestInfo PayRequest { get; set; } = new(null, null);
+        public PayResponseInfo PayResponse { get; set; }
+        public TransferInfo Transfer { get; set; } = default!;
+        public RepaymentSnapshot LastRepayment { get; set; } = default!;
+
+        public InstallmentStatus InstallmentStatus { get; set; } = default!;
 
         // -------- Last Decision / Errors --------
-        public DecisionStamp LastDecision { get; private set; } = new(null, null, null, null);
+        public DecisionStamp LastDecision { get; set; } = new(null, null, null, null);
 
         // -------- Convenience flags --------
         public bool IsPurchaseCredit =>
@@ -46,30 +47,52 @@ namespace LoanService.Domain.Entities
         private void Touch() => UpdatedAtUtc = DateTime.UtcNow;
 
 
-      // -------- Error / Reason --------
-        public string? LastReasonCode { get; private set; }
+        // -------- Error / Reason --------
+        public int? LastReasonCode { get; private set; }
         public string? LastReasonMessage { get; private set; }
-        public string? LastErrorCode { get; private set; }
+        public int? LastErrorCode { get; private set; }
         public string? LastErrorMessage { get; private set; }
 
 
         // ===================== Factory =====================
-        public static LoanRequest Create(string nationalCode, BankProviderType provider, decimal? ApprovalCode, bool requiresOtp)
+
+
+        public static LoanRequest Create(string nationalCode, string? birthDate, string? postalCode, string? mobileNo, BankProviderType providerType, decimal? ApprovalCode, bool requiresOtp)
         {
             return new LoanRequest
             {
                 Id = Guid.NewGuid(),
-                Customer = new CustomerInfo(nationalCode, null, null, null, null),
-                Provider = new ProviderInfo(provider, ApprovalCode, requiresOtp),
-                State = LoanRequestState.Requested
+                Customer = new CustomerInfo(nationalCode, birthDate, mobileNo, postalCode, null),
+                Provider = new ProviderInfo(providerType, ApprovalCode, requiresOtp),
+                State = LoanRequestState.Requested,
+                InqueryRequest = new InqueryRequest(null),
+                 GrantRequest = new GrantRequest(null, null, null, null, null),
+                PayRequest = new PayRequestInfo(null, null),
+                LastDecision = new DecisionStamp(null, null, null, null)
             }.TouchReturn();
+        }
+        public void SetRequest(decimal? requestAmount,bool requiresCollateral, CollateralType collateralType)
+        {
+            if (requestAmount.HasValue)
+            {
+                requiresCollateral = requestAmount.Value > 20_000_000;
+                collateralType = requiresCollateral ? CollateralType.PROMISSORY : CollateralType.Unknown;
+            }
+            RequestAmount = requestAmount;
+            RequiresCollateral = requiresCollateral;
+            CollateralType = collateralType;
+        }
+        public void SetCollateralType(CollateralType type)
+        {
+            CollateralType = type;
+            Touch();
         }
         private LoanRequest TouchReturn() { Touch(); return this; }
 
         // ===================== Transitions (domain behavior) =====================
 
         // --- Inquiry ---
-        public void MarkKycChecked(string reasonCode, string uiMessage, string requestId)
+        public void MarkKycChecked(int reasonCode, string uiMessage, string requestId)
         {
             InqueryRequest = InqueryRequest with { RequestId = requestId };
             TransitionTo(LoanRequestState.KYCChecked, reasonCode, uiMessage);
@@ -77,36 +100,110 @@ namespace LoanService.Domain.Entities
 
         public void ApplyInquiryDecision(
             bool allowed, decimal? maxApproved,
-            int? ics = null, Grade? icsGrade = null, DateTime? expire = null,
-            string reasonCode = "INQ.DECISION", string? uiMessage = null)
+            int? ics = null, Grade? icsGrade = null, string? expire = null,
+            int reasonCode = -1, string? uiMessage = null)
         {
-            Inquiry = new InquiryInfo(allowed, maxApproved, ics, icsGrade, expire);
+            Inquiry = new InquiryInfo
+            {
+                Allowed = allowed,
+                ExpireAt = expire,
+                Ics = ics,
+                IcsGrade = icsGrade,
+                MaxApprovedAmount = maxApproved
+            };
             TransitionTo(allowed ? LoanRequestState.Eligible : LoanRequestState.Ineligible, reasonCode, uiMessage);
         }
 
-        public void AttachContract(decimal contractNumber, string reasonCode, string uiMessage, string? desc = null, bool withCollateral = false)
+        public void AttachContract( 
+            decimal? approvalCode,
+            string address,
+            DateOnly birthDate,
+            string nationalCode,
+            short installmentCount,
+            decimal? loanAmount,
+            string mobileNumber,
+            string? phoneNumber,
+            string postalCode,
+             int reasonCode = -1, string? uiMessage = null
+            )
         {
-            if (contractNumber<=0)
-                throw new ArgumentException("contractNumber is required.", nameof(contractNumber));
+            if (Provider?.ApprovalCode == null || Provider.ApprovalCode <= 0)
+                throw new InvalidOperationException("ApprovalCode must be assigned before attaching a contract.");
 
-    
-            Contract = Contract with { ContractNumber = contractNumber, Desc = desc, WithCollateral = withCollateral };
+
+            Contract = new ContractInfo
+            {
+                ApprovalCode=approvalCode,
+                Address = address,
+                BirthDate = birthDate,
+                NationalCode = nationalCode,
+                InstallmentCount = installmentCount,
+                LoanAmount = loanAmount,
+                MobileNumber = mobileNumber,
+                PhoneNumber = phoneNumber,
+                PostalCode = postalCode,
+
+            };
 
             // تغییر وضعیت دامین
             TransitionTo(LoanRequestState.ContractsPrepared, reasonCode, uiMessage);
         }
-        public void MarkApproved(string? reasonCode, string? uiMessage, decimal contractNumber )
+        public void AttachCollateralContract(decimal collateralNo, string collateralType, string CollateralDate, decimal approvalCode, decimal collateralAmount, string address,
+                                              DateOnly birthDate,
+                                              decimal cbTrackingCode,
+                                              string? chequeSerial,
+                                              string? collateralIssuer,
+                                              string guarantorNC,
+                                              string nationalCode,
+                                              short installmentCount,
+                                              decimal? loanAmount,
+                                              string mobileNumber,
+                                              string? phoneNumber,
+                                              string postalCode,
+                                               int reasonCode = -1, string? uiMessage = null
+                                              )
         {
-            if (contractNumber>0)
+            if (collateralNo <= 0)
+                throw new ArgumentException("collateralNo is required.", nameof(collateralNo));
+
+
+            Contract = new ContractInfo
+            {
+                CollateralNo = collateralNo,
+                CollateralType = collateralType,
+                CollateralDate = CollateralDate,
+                ApprovalCode = approvalCode,
+                CollateralAmount = collateralAmount,
+                Address = address,
+                BirthDate = birthDate,
+                cbTrackingCode = cbTrackingCode,
+                ChequeSerial = chequeSerial,
+                CollateralIssuer = collateralIssuer,
+                GuarantorNC = guarantorNC,
+                NationalCode = nationalCode,
+                InstallmentCount = installmentCount,
+                LoanAmount = loanAmount,
+                MobileNumber = mobileNumber,
+                PhoneNumber = phoneNumber,
+                PostalCode = postalCode,
+
+            };
+
+            // تغییر وضعیت دامین
+            TransitionTo(LoanRequestState.ContractsPrepared, reasonCode, uiMessage);
+        }
+        public void MarkApproved(int? reasonCode, string? uiMessage, decimal contractNumber)
+        {
+            if (contractNumber > 0)
                 GrantRequest = GrantRequest with { ContractId = contractNumber };
 
             TransitionTo(LoanRequestState.Approved, reasonCode, uiMessage);
         }
-        public void MarkRemittanceRegistering(string? reasonCode, string? uiMessage)
+        public void MarkRemittanceRegistering(int? reasonCode, string? uiMessage)
             => TransitionTo(LoanRequestState.RemittancePending, reasonCode, uiMessage);
         public void SetTransactionNumber(decimal txNo)
         {
-           Transfer=Transfer with { TransactionNumber = txNo };
+            Transfer = new TransferInfo { TransactionNumber = txNo };
             Touch();
         }
 
@@ -125,39 +222,39 @@ namespace LoanService.Domain.Entities
             if (State is not LoanRequestState.FacilitySubmitted and not LoanRequestState.Approved)
                 throw new InvalidOperationException($"Cannot set approved pay info in state {State}.");
 
-           PayResponse=PayResponse with { BankContractNo = contractNo, ApprovedLoanAmount = loanAmount, ContractDate = contractDate };
+            PayResponse = new PayResponseInfo { BankContractNo = contractNo, ApprovedLoanAmount = loanAmount, ContractDate = contractDate };
 
             if (traceCode > 0)
-                PayResponse = PayResponse with { CentralBankTraceCode = traceCode };
+                PayResponse = new PayResponseInfo { CentralBankTraceCode = traceCode };
 
             if (!string.IsNullOrWhiteSpace(bankSignedContractBase64))
-                PayResponse = PayResponse with { BankSignedContractBase64 = bankSignedContractBase64 };
+                PayResponse = new PayResponseInfo { BankSignedContractBase64 = bankSignedContractBase64 };
 
-            PayResponse = PayResponse with { ReceivedAtUtc = DateTime.UtcNow };
+            PayResponse = new PayResponseInfo { ReceivedAtUtc = DateTime.UtcNow };
             ;
             Touch(); // به‌روزرسانی UpdatedAtUtc یا هر متد داخلی مشابه
         }
-        
 
-        public void MarkFacilitySubmitted(string? reasonCode, string? uiMessage)
+
+        public void MarkFacilitySubmitted(int? reasonCode, string? uiMessage)
             => TransitionTo(LoanRequestState.FacilitySubmitted, reasonCode, uiMessage);
 
         // --- Contract ---
-        public void AttachContract(decimal contractNumber, string reasonCode, string uiMessage, string? desc = null)
-        {
-            Contract = Contract with { ContractNumber = contractNumber, Desc = desc };
-            TransitionTo(LoanRequestState.ContractsPrepared, reasonCode, uiMessage);
-        }
+        //public void AttachContract(decimal contractNumber, int? reasonCode, string uiMessage, string? desc = null)
+        //{
+        //    Contract = new ContractInfo { ContractNumber = contractNumber, Desc = desc };
+        //    TransitionTo(LoanRequestState.ContractsPrepared, reasonCode, uiMessage);
+        //}
 
-        public void MarkUnderReview(string? reasonCode, string? uiMessage)
+        public void MarkUnderReview(int? reasonCode, string? uiMessage)
             => TransitionTo(LoanRequestState.UnderReview, reasonCode, uiMessage);
 
-        public void MarkRejected(string? reasonCode, string? uiMessage)
+        public void MarkRejected(int? reasonCode, string? uiMessage)
             => TransitionTo(LoanRequestState.Rejected, reasonCode, uiMessage);
 
-        public void SetApprovalCode(string? approvalCode)
+        public void SetApprovalCode(decimal approvalCode)
         {
-            Contract = Contract with { ApprovalCode = approvalCode };
+            Contract = new ContractInfo { ApprovalCode = approvalCode };
             Touch();
         }
         public void SetOtpRequirement(bool requiresOtp)
@@ -165,22 +262,22 @@ namespace LoanService.Domain.Entities
             RequiresOtp = requiresOtp;
             Touch();
         }
-        public void SaveSignedContract(string base64)
-        {
-            Contract = Contract with { SignedContractBase64 = base64 };
-            Touch();
-        }
+        //public void SaveSignedContract(string base64)
+        //{
+        //    Contract = new ContractInfo { SignedContractBase64 = base64 };
+        //    Touch();
+        //}
         public void SetPayRequestId(string payRequestId)
         {
-          PayRequest=PayRequest with { PayRequestId = payRequestId };
+            PayRequest = PayRequest with { PayRequestId = payRequestId };
             Touch();
         }
-        public void MarkFacilitySubmitted(string reasonCode, string uiMessage, string payRequestId)
+        public void MarkFacilitySubmitted(int reasonCode, string uiMessage, string payRequestId)
         {
             PayRequest = PayRequest with { PayRequestId = payRequestId };
             TransitionTo(LoanRequestState.FacilitySubmitted, reasonCode, uiMessage);
         }
-        public void MarkRemittanceFailed(string? reasonCode, string? uiMessage)
+        public void MarkRemittanceFailed(int? reasonCode, string? uiMessage)
             => TransitionTo(LoanRequestState.Failed, reasonCode, uiMessage);
         // --- Pay Response ---
         public void ApplyPayResponse(
@@ -190,17 +287,26 @@ namespace LoanService.Domain.Entities
             string? contractDate,
             decimal? centralBankTraceCode,
             string? bankSignedBase64,
-            string reasonCode,
+            int reasonCode,
             string? uiMessage)
         {
-            PayResponse = new PayResponseInfo(code, bankContractNo, approvedAmount, contractDate, centralBankTraceCode, bankSignedBase64, DateTime.UtcNow);
+            PayResponse = new PayResponseInfo
+            {
+                Code = code,
+                ContractDate = contractDate,
+                ApprovedLoanAmount = approvedAmount,
+                BankContractNo = bankContractNo,
+                BankSignedContractBase64 = bankSignedBase64,
+                CentralBankTraceCode = centralBankTraceCode,
+                ReceivedAtUtc = DateTime.UtcNow
+            };
 
             switch (code)
             {
                 case PayResponseCode.Success:
                     // به‌روزرسانی قرارداد بانک
-                    if (bankContractNo<=0)
-                        Contract = Contract with { ContractNumber = bankContractNo };
+                    if (bankContractNo <= 0)
+                        Contract = new ContractInfo { CollateralNo = bankContractNo };
                     TransitionTo(LoanRequestState.Approved, reasonCode, uiMessage);
                     break;
                 case PayResponseCode.Pending:
@@ -217,35 +323,35 @@ namespace LoanService.Domain.Entities
                     break;
             }
         }
-  
+
 
         // --- OTP ---
-        public void MarkOtpSent(string reasonCode, string uiMessage)
+        public void MarkOtpSent(int reasonCode, string uiMessage)
             => TransitionTo(LoanRequestState.OtpSent, reasonCode, uiMessage);
 
-        public void MarkOtpVerified(string reasonCode, string uiMessage)
+        public void MarkOtpVerified(int reasonCode, string uiMessage)
             => TransitionTo(LoanRequestState.OtpVerified, reasonCode, uiMessage);
 
         // --- Deposit / Remittance ---
-        public void RegisterDeposit(string reasonCode, string uiMessage, decimal transactionNumber)
+        public void RegisterDeposit(int reasonCode, string uiMessage, decimal transactionNumber)
         {
-            Transfer = Transfer with { TransactionNumber = transactionNumber };
+            Transfer = new TransferInfo { TransactionNumber = transactionNumber };
             TransitionTo(LoanRequestState.RemittancePending, reasonCode, uiMessage);
         }
 
         public void SetRegisterCode(string registerCode)
         {
-            Transfer = Transfer with { RegisterCode = registerCode };
+            Transfer = new TransferInfo { RegisterCode = registerCode };
             Touch();
         }
 
-        public void MarkRemittancePending(string reasonCode, string uiMessage)
+        public void MarkRemittancePending(int reasonCode, string uiMessage)
             => TransitionTo(LoanRequestState.RemittancePending, reasonCode, uiMessage);
 
-        public void MarkRemittanceReturned(string reasonCode, string uiMessage)
+        public void MarkRemittanceReturned(int reasonCode, string uiMessage)
             => TransitionTo(LoanRequestState.RemittanceReturned, reasonCode, uiMessage);
 
-        public void MarkDisbursed(string reasonCode, string uiMessage)
+        public void MarkDisbursed(int reasonCode, string uiMessage)
             => TransitionTo(LoanRequestState.Disbursed, reasonCode, uiMessage);
 
 
@@ -255,7 +361,7 @@ namespace LoanService.Domain.Entities
                 return false;
             return true;
         }
-     
+
 
         //    public void TransitionTo(LoanRequestState next, string? reasonCode, string? uiMessage)
         //    {
@@ -266,9 +372,10 @@ namespace LoanService.Domain.Entities
         //    }
 
         // --- Repayment ---
-        public void MarkRepaymentRegistered(string reasonCode, string uiMessage, string? trackNumber, string? accountNo, decimal? amount, DateTime? whenUtc)
+        public void MarkRepaymentRegistered(int reasonCode, string uiMessage, string? trackNumber, string? accountNo, decimal? amount, DateTime? whenUtc)
         {
-            LastRepayment = new RepaymentSnapshot(trackNumber, accountNo, amount, whenUtc ?? DateTime.UtcNow);
+
+            LastRepayment = new RepaymentSnapshot { TrackNumber = trackNumber, AccountNo = accountNo, Amount = amount, WhenUtc = whenUtc ?? DateTime.UtcNow };
             TransitionTo(LoanRequestState.RepaymentRegistered, reasonCode, uiMessage);
         }
         //public void SetLastRepaymentInfo(string? trackNumber,
@@ -283,20 +390,20 @@ namespace LoanService.Domain.Entities
         //    Touch();
         //}
         // --- Errors / decision ---
-        public void MarkIneligible(string? code, string? message)
+        public void MarkIneligible(int? code, string? message)
         {
-            LastDecision = LastDecision with { ErrorCode = code, ErrorMessage = message, ReasonCode = code, ReasonMessage = message };
-            TransitionTo(LoanRequestState.Ineligible, code ?? "INELIGIBLE", message);
+            LastDecision = LastDecision with { ErrorMessage = message, ReasonCode = code, ReasonMessage = message };
+            TransitionTo(LoanRequestState.Ineligible, code ?? 10005, message);
         }
 
-        public void MarkTemporaryFailure(string? code, string? message)
+        public void MarkTemporaryFailure(int? code, string? message)
         {
-            LastDecision = LastDecision with { ErrorCode = code, ErrorMessage = message, ReasonCode = code, ReasonMessage = message };
-            TransitionTo(LoanRequestState.Failed, code ?? "TEMP.FAIL", message);
+            LastDecision = LastDecision with { ErrorMessage = message, ReasonCode = code, ReasonMessage = message };
+            TransitionTo(LoanRequestState.Failed, code ?? -1, message);
         }
 
         // --- Generic transition (keeps last decision) ---
-        public void TransitionTo(LoanRequestState next, string? reasonCode, string? uiMessage)
+        public void TransitionTo(LoanRequestState next, int? reasonCode, string? uiMessage)
         {
             State = next;
             LastReasonCode = reasonCode;
@@ -308,23 +415,22 @@ namespace LoanService.Domain.Entities
         // ===================== Inquiry helpers =====================
         public void SetInquiryRequestId(string requestId)
         {
-            InqueryRequest =  InqueryRequest with{ RequestId = requestId };
+            InqueryRequest = InqueryRequest with { RequestId = requestId };
             Touch();
         }
-        public void SetInquiryDecision(bool? allowed, decimal? maxApproved, int? ics = null,
-                                       Grade? icsGrade = null, DateTime? expire = null)
+        public void SetInquiryDecision(bool allowed, decimal? maxApproved,  List<StatusItem> statuses, string expire = null)
         {
-            Inquiry = new InquiryInfo(allowed, maxApproved, ics, icsGrade, expire);
+            Inquiry = new InquiryInfo { Allowed = allowed, MaxApprovedAmount = maxApproved,  Statuses= statuses , ExpireAt = expire };
             Touch();
         }
         // --- Mutators (اختیاری) ---
-        public void UpdateCustomer(string? mobile = null, string? postalCode = null, DateTime? birthDate = null, int? gender = null)
+        public void UpdateCustomer(string? mobile = null, string? postalCode = null, string? birthDate = null, string? gender = null)
         {
-            Customer = new CustomerInfo(Customer.NationalCode, birthDate ?? Customer.BirthDate, mobile ?? Customer.Mobile, postalCode ?? Customer.PostalCode, gender ?? Customer.Gender);
+            Customer = new CustomerInfo(Customer.NationalCode, birthDate, mobile ?? Customer.Mobile, postalCode ?? Customer.PostalCode, gender ?? Customer.Gender);
             Touch();
         }
     }
-    public enum PayResponseCode
+    public enum PayResponseCode : int
     {
         Unknown = 0,
         Pending = 1,

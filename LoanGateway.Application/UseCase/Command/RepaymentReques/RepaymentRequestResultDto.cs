@@ -13,7 +13,7 @@ public sealed record RepaymentRequestResultDto : IBankResponse
     public decimal? RepaymentAmount { get; init; } 
     public string? CustomerName { get; init; }
 
-    public string? MessageCode { get; init; }
+    public int? MessageCode { get; init; }
 
     public string? Message { get; init; }
     public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }

@@ -6,6 +6,19 @@ using System.Threading.Tasks;
 
 namespace LoanService.Domain.ValueObjects
 {
-    public sealed record GrantRequest(decimal ContractId, string? Status, string? PayRequestId, string? RequestedAmount, string? SignedContractBase64);
+    /// <summary>
+    /// اطلاعات درخواستی تسهیلات مثل ContractId و غیره
+    /// </summary>
+    /// <param name="ContractId"></param>
+    /// <param name="Status"></param>
+    /// <param name="PayRequestId"></param>
+    /// <param name="RequestedAmount"></param>
+    /// <param name="SignedContractBase64"></param>
+    public sealed record GrantRequest(
+        decimal? ContractId,
+        string? Status, 
+        string? PayRequestId,
+        string? RequestedAmount,
+        string? SignedContractBase64);
 
 }
