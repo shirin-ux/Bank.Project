@@ -405,7 +405,7 @@ namespace LoanService.Infrastructure.Repositories
                 // -------- Aggregate Roots --------
                 if (loan.Contract is not null)
                 {
-                    await conn.ExecuteAsync("ContractInfo_Upsert", new
+                    await conn.ExecuteAsync("sp_ContractInfo_Upsert", new
                     {
                         LoanRequestId = loan.Id,
                         loan.Contract.CollateralNo,
@@ -430,7 +430,7 @@ namespace LoanService.Infrastructure.Repositories
                 }
                 if (loan.Inquiry is not null)
                 {
-                    await conn.ExecuteAsync("InquiryInfo_Upsert", new
+                    await conn.ExecuteAsync("sp_InquiryInfo_Upsert", new
                     {
                         LoanRequestId = loan.Id,
                         loan.Inquiry.Allowed,
@@ -443,7 +443,7 @@ namespace LoanService.Infrastructure.Repositories
                 }
                 if (loan.PayResponse is not null)
                 {
-                    await conn.ExecuteAsync("PayResponseInfo_Upsert", new
+                    await conn.ExecuteAsync("sp_PayResponseInfo_Upsert", new
                     {
                         LoanRequestId = loan.Id,
                         Code = (int)loan.PayResponse.Code,
@@ -459,7 +459,7 @@ namespace LoanService.Infrastructure.Repositories
 
                 if (loan.Transfer is not null)
                 {
-                    await conn.ExecuteAsync("TransferInfo_Upsert", new
+                    await conn.ExecuteAsync("sp_TransferInfo_Upsert", new
                     {
                         LoanRequestId = loan.Id,
                         loan.Transfer.TransactionNumber,
@@ -469,7 +469,7 @@ namespace LoanService.Infrastructure.Repositories
                 }
                 if (loan.LastRepayment is not null)
                 {
-                    await conn.ExecuteAsync("RepaymentSnapshot_Upsert", new
+                    await conn.ExecuteAsync("sp_RepaymentSnapshot_Upsert", new
                     {
                         LoanRequestId = loan.Id,
                         loan.LastRepayment.TrackNumber,
@@ -481,7 +481,7 @@ namespace LoanService.Infrastructure.Repositories
                 }
                 if (loan.InstallmentStatus is not null)
                 {
-                    await conn.ExecuteAsync("InstallmentStatus_Upsert", new
+                    await conn.ExecuteAsync("sp_InstallmentStatus_Upsert", new
                     {
                         LoanRequestId = loan.Id,
                         loan.InstallmentStatus.Status,

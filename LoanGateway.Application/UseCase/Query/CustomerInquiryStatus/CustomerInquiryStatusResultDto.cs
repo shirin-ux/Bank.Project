@@ -25,6 +25,19 @@ namespace LoanService.Application.UseCase.Query.CustomerInquiryStatus
         public string ContractBase64 { get ; set; }
         public string RequestId { get; set; }
 
+        public IEnumerable<BankStatusItem> GetStatusItems()
+        {
+            foreach (var s in StatusList)
+            {
+                // s.ResponseCode و s.ResponseStatus توی اسکرین‌شاتت بود
+                yield return new BankStatusItem
+                {
+                    Code = int.TryParse(s.ResponseCode, out var c) ? c : 0,
+                    Message = s.ResponseStatus
+                };
+            }
+        }
+
         public sealed record StatusItemDto(string ResponseCode, string ResponseStatus);
     }
   

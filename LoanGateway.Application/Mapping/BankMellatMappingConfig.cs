@@ -22,22 +22,22 @@ public static class BankMellatMappingConfig
     public static void RegisterMappings()
     {
         // 🔹 Mapping برای فایل قرارداد با وثیقه
-        TypeAdapterConfig<MellatFileUploadRes, GetCollateralContractFileResultDto>
-            .NewConfig()
-              .Map(d => d.MessageCode, s => s.MessageCode)
-              .Map(d => d.Message, s => s.Message)
-              .Map(dest => dest.ContractFile,
-                 src => src.ContractFile != null
-                         ? Convert.ToBase64String(src.ContractFile)
-                         : string.Empty);
+        //TypeAdapterConfig<MellatFileUploadRes, GetCollateralContractFileResultDto>
+        //    .NewConfig()
+        //      .Map(d => d.MessageCode, s => s.messageCode)
+        //      .Map(d => d.Message, s => s.message)
+        //      .Map(dest => dest.ContractFile,
+        //         src => src.ContractFile != null
+        //                 ? Convert.ToBase64String(src.ContractFile)
+        //                 : string.Empty);
 
         // 🔹 مثال: برای فایل قرارداد بدون وثیقه
-        TypeAdapterConfig<MellatFileUploadRes, GetContractFileResultDto>
-            .NewConfig()
-            .Map(dest => dest.ContractFile,
-                 src => src.ContractFile != null
-                         ? Convert.ToBase64String(src.ContractFile)
-                         : string.Empty);
+        //TypeAdapterConfig<MellatFileUploadRes, GetContractFileResultDto>
+        //    .NewConfig()
+        //    .Map(dest => dest.ContractFile,
+        //         src => src.ContractFile != null
+        //                 ? Convert.ToBase64String(src.ContractFile)
+        //                 : string.Empty);
 
 
         TypeAdapterConfig<MellatPayResponseRes, GetPayResponseResultDto>

@@ -29,6 +29,11 @@ public sealed record GetInstallmentsResultDto:IBankResponse
     public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+    public IEnumerable<BankStatusItem> GetStatusItems()
+    {
+        throw new NotImplementedException();
+    }
+
     public sealed class InstallmentItemDto
     {
         public short InstallmentNo { get; init; }

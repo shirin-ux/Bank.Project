@@ -5,7 +5,7 @@ public interface IMellatBankService
 {
 
     Task<MellatInquiryRegisterRes> RegisterInquiryAsync(MellatInquiryRegisterReq req, CancellationToken ct);
-    Task<MellatInquiryResultRes> GetInquiryResultAsync(string ticketId, CancellationToken ct);
+    Task<(bool IsSuccess, MellatInquiryResultRes? Result, string? Error)> GetInquiryResultAsync(string ticketId, CancellationToken ct);
 
 
     Task<MellatFileUploadRes> UploadContractFileAsync(MellatFileUploadReq req, CancellationToken ct);

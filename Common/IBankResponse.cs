@@ -13,6 +13,13 @@ namespace Common
       //  string[] NextActions { get; set; }
        // string State { get; set; }
         string RequestId { get; set; }
+        IEnumerable<BankStatusItem> GetStatusItems();
 
     }
+    public sealed class BankStatusItem
+    {
+        public int Code { get; init; }
+        public string? Message { get; init; }
+    }
+
 }

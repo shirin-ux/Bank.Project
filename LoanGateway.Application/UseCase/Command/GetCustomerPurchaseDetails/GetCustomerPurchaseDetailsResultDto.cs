@@ -25,6 +25,11 @@ public sealed record GetCustomerPurchaseDetailsResultDto:IBankResponse
     public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+    public IEnumerable<BankStatusItem> GetStatusItems()
+    {
+        throw new NotImplementedException();
+    }
+
     public sealed record ContractDetailDto
     {
         public string TransactionDate { get; init; } = default!;

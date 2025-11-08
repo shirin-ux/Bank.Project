@@ -109,23 +109,16 @@ namespace Bank.Mellat.Infrastructure.Services
         public async Task<CustomerInquiryStatusResultDto> GetCustomerInquiryStatusAsync(string requestId, CancellationToken ct)
         {
             var response = await _client.GetInquiryResultAsync(requestId, ct);
-
-            DateTime? expire = null;
-            //if (!string.IsNullOrWhiteSpace(response.requestExpireDate.ToString()))
-            //{
-            //    DateTime.TryParse(response.requestExpireDate.ToString(), out var dt);
-            //    if (dt != default) expire = dt;
-            //}
             //var result = _mapper.Map<CustomerInquiryStatusResultDto>(response);
             var result = new CustomerInquiryStatusResultDto
             {
                 RequestId = requestId,
-                Allowed = response.allowed,
-                Gender = response.Gender,
-                MaxApprovedAmount = response.maxApprovedAmount,
-                RequestExpireDate = response.requestExpireDate,
-                PostalCodeStatus = response.postalCode,
-                StatusList = response.statusList?
+                Allowed = response.Result.allowed,
+                Gender = response.Result.Gender,
+                MaxApprovedAmount = response.Result.maxApprovedAmount,
+                RequestExpireDate = response.Result.requestExpireDate,
+                PostalCodeStatus = response.Result.postalCode,//از سمت بانک بر نمیگرده 
+                StatusList = response.Result.statusList?
                              .Select(s => new CustomerInquiryStatusResultDto.StatusItemDto(
                                  s.responseCode,
                                  s.responseStatus

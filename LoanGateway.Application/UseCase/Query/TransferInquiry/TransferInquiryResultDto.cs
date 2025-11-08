@@ -17,8 +17,13 @@ public sealed record TransferInquiryResultDto:IBankResponse
     public IReadOnlyList<InquiryDetailDto> InquiryDetails { get; init; } = Array.Empty<InquiryDetailDto>();
     public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+    int? IBankResponse.MessageCode => throw new NotImplementedException();
+
+    string? IBankResponse.Message => throw new NotImplementedException();
+
+    string IBankResponse.RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
     public sealed record InquiryDetailDto
     {
@@ -49,5 +54,10 @@ public sealed record TransferInquiryResultDto:IBankResponse
         Unsendable = 4,   // عدم امکان ارسال
         CanceledNoDebit = 5, // لغو بدون برداشت
         CanceledAndReturned = 6 // لغو و برگشت
+    }
+
+    IEnumerable<BankStatusItem> IBankResponse.GetStatusItems()
+    {
+        throw new NotImplementedException();
     }
 }

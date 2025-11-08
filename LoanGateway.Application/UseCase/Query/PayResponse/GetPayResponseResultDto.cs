@@ -15,6 +15,11 @@ public sealed record GetPayResponseResultDto:IBankResponse
     public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+    public IEnumerable<BankStatusItem> GetStatusItems()
+    {
+        throw new NotImplementedException();
+    }
+
     public sealed record PayRequestStatusDto
     {
         public PayResponseCode ResponseCode { get; init; }

@@ -48,4 +48,9 @@ public sealed record ReturnTransferReportResultDto:IBankResponse
         CanceledNoDebit = 5,
         CanceledAndReturned = 6
     }
+
+    public IEnumerable<BankStatusItem> GetStatusItems()
+    {
+        throw new NotImplementedException();
+    }
 }

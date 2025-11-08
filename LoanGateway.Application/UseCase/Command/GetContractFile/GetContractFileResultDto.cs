@@ -17,5 +17,10 @@ namespace LoanService.Application.UseCase.Command.GetContractFile
         public string[] NextActions { get; set; }
         public string State { get; set; }
         public string RequestId { get; set; }
+
+        public IEnumerable<BankStatusItem> GetStatusItems()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

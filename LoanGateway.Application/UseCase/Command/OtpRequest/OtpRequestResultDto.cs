@@ -1,6 +1,5 @@
 ﻿using Common;
 
-
 namespace LoanService.Application.UseCase.Command.OtpRequest
 {
     public sealed record OtpRequestResultDto: IBankResponse
@@ -15,5 +14,10 @@ namespace LoanService.Application.UseCase.Command.OtpRequest
 
         public string? Message { get; set; }
         public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public IEnumerable<BankStatusItem> GetStatusItems()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

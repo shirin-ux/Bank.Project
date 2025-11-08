@@ -12,5 +12,10 @@ namespace LoanService.Application.UseCase.Command.GetCollateralContractFile
         public string State { get; set; }
         public string ContractPath { get; set; }
         public string RequestId { get; set; }
+
+        public IEnumerable<BankStatusItem> GetStatusItems()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

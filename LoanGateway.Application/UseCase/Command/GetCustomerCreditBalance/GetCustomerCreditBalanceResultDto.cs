@@ -13,10 +13,15 @@ public sealed record GetCustomerCreditBalanceResultDto:IBankResponse
     public IReadOnlyList<ContractCreditItemDto> ContractCreditList { get; init; } = Array.Empty<ContractCreditItemDto>();
     public int? MessageCode { get; init; }
     public string? Message { get; init; }
-    public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string[] NextActions { get; init; }
     public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
     public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+    public IEnumerable<BankStatusItem> GetStatusItems()
+    {
+        throw new NotImplementedException();
+    }
 
     public sealed record ContractCreditItemDto
     {

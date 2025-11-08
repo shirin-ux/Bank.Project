@@ -1,18 +1,24 @@
-# Visual Studio
-.vs/
-*.user
-*.suo
-
-# Build results
+# Build Folders
 bin/
 obj/
-out/
-*.dll
-*.pdb
-*.exe
 
-# Other common folders
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
+# Visual Studio
+*.user
+*.suo
+*.vscode/
+.vs/
+
+# Rider
+.idea/
+
+# Packages
+packages/
+*.nupkg
+
+# Local settings
+appsettings.Local.json
+*.env
+
+# Logs and temp files
+*.log
+*.tmp

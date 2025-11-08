@@ -1389,6 +1389,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "Common": "1.0.0",
           "Microsoft.Extensions.Http": "9.0.10"
         },
         "compile": {
@@ -4291,8 +4292,8 @@
     },
     "Bank.Mellat.Provider/1.0.0": {
       "type": "project",
-      "path": "../../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj",
-      "msbuildProject": "../../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj"
+      "path": "../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj",
+      "msbuildProject": "../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj"
     },
     "Common/1.0.0": {
       "type": "project",
@@ -4349,14 +4350,14 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj": {
-              "projectPath": "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj"
-            },
             "D:\\ProjectBank\\src\\Common\\Common.csproj": {
               "projectPath": "D:\\ProjectBank\\src\\Common\\Common.csproj"
             },
             "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj": {
               "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj"
+            },
+            "D:\\ProjectBank\\src\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj": {
+              "projectPath": "D:\\ProjectBank\\src\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj"
             }
           }
         }

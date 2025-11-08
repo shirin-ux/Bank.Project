@@ -18,5 +18,10 @@ namespace LoanService.Application.UseCase.Command.SubmitPayRequest
         public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public IEnumerable<BankStatusItem> GetStatusItems()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

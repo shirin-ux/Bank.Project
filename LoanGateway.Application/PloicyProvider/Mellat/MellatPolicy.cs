@@ -1,7 +1,6 @@
 ﻿using Common;
 using LoanService.Application.Contracts;
 using LoanService.Domain.Entities;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -9,30 +8,33 @@ namespace LoanService.Application.PloicyProvider.Mellat;
 
 public class MellatPolicy<TResponse> : IBankPolicy<TResponse> where TResponse : IBankResponse
 {
-   // private readonly IReadOnlyDictionary<string, BankCodeRule> _rules;
+    private readonly Dictionary<string, BankCodeRule> _rulesForThisSection;
     private static Dictionary<string, Dictionary<string, BankCodeRule>>? _rules;
     public MellatPolicy(IOptions<MellatPolicyOptions> opts, string policyName)
     {
 
 
-        // لود تنبل
         if (_rules is null)
         {
-            var path = opts.Value.RulesPath;
-            if (string.IsNullOrWhiteSpace(path))
-                throw new InvalidOperationException("MellatPolicy: RulesPath is not configured.");
-
-            // فایل رو بخون
+            var path = Path.Combine(AppContext.BaseDirectory, "Common", "MellatPolicyRulesData.json");
             var json = File.ReadAllText(path);
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
 
-            // دیسریالایز: ساختار ما این بود:
-            // { "MellatPolicyRules": { "CommonRules": { ... }, "CustomerInquiry": { ... } } }
-            var root = JsonSerializer.Deserialize<MellatPolicyRoot>(json)
-                       ?? throw new InvalidOperationException("Cannot deserialize Mellat policy json.");
-
+            //var json = File.ReadAllText(opts.Value.RulesPath);
+            var root = JsonSerializer.Deserialize<MellatPolicyRoot>(json,options)
+                       ?? throw new System.Exception("cannot read mellat rules");
             _rules = root.MellatPolicyRules;
         }
+
+        if (!_rules.TryGetValue(policyName, out var section))
+            section = new Dictionary<string, BankCodeRule>();
+
+        _rulesForThisSection = section;
     }
+
     private static readonly HashSet<int> SuccessCodes = new()
 {
     12106,  // فایل قرارداد با موفقیت ایجاد شد. (CommonRules)
@@ -104,45 +106,37 @@ public class MellatPolicy<TResponse> : IBankPolicy<TResponse> where TResponse : 
         var bankMsg = response.Message ?? "بدون پیام از بانک.";
         var codeKey = code.ToString();
 
-        if (code == 0 && !_rules.ContainsKey(codeKey))
-        {
-            var ok = new ProviderDecisionResult(
-                IsSuccess: true,
-                NextState: null,
-                UiMessage: bankMsg,
-                 ReasonCode: code,
-                 Retryable: false
 
-                );
-            return Result<ProviderDecisionResult>.Success(ok);
+        if (code == 0 )
+        {
+            var items = response.GetStatusItems();
+            var item = items.FirstOrDefault(x => x.Code != 0) ?? items.FirstOrDefault();
+            if (item is not null)
+            {
+                code = item.Code;
+                bankMsg = item.Message ?? bankMsg;
+            }
+            else
+            {
+                return Result<ProviderDecisionResult>.Success(new ProviderDecisionResult(
+                    IsSuccess: true,
+                    NextState: null,
+                    UiMessage: bankMsg,
+                    ReasonCode: code,
+                    Retryable: false
+                ));
+            }
         }
-        if (_rules.TryGetValue(codeKey, out var rule))
+      
+        if (_rulesForThisSection.TryGetValue(codeKey, out var rule))
         {
             var nextState = ParseStateOrNull(rule.NextState);
-            bool retryable;
-            if (rule.Retryable is not null)
-            {
-                retryable = rule.Retryable.Value;
-            }
-            else if (string.Equals(rule.Severity, "Retryable", StringComparison.OrdinalIgnoreCase))
-            {
-                retryable = true;
-            }
-            else
-            {
-                retryable = RetryableCodes.Contains(code);
-            }
-            bool isSuccess;
-            if (rule.IsSuccess==true)
-            {
-                isSuccess = rule.IsSuccess;
-            }
-            else
-            {
-                isSuccess =
-                    SuccessCodes.Contains(code) ||
-                    (nextState is not null && nextState != LoanRequestState.Failed);
-            }
+
+            bool retryable = rule.Retryable ?? string.Equals(rule.Severity, "Retryable", StringComparison.OrdinalIgnoreCase)
+                             || RetryableCodes.Contains(code);
+
+            bool isSuccess = rule.IsSuccess ? rule.IsSuccess : (SuccessCodes.Contains(code) || (nextState is not null && nextState != LoanRequestState.Failed));
+
 
             var decision = new ProviderDecisionResult(
                 IsSuccess: isSuccess,
@@ -155,39 +149,38 @@ public class MellatPolicy<TResponse> : IBankPolicy<TResponse> where TResponse : 
             return Result<ProviderDecisionResult>.Success(decision);
         }
 
+
         if (SuccessCodes.Contains(code))
         {
-            var decision = new ProviderDecisionResult(
+            return Result<ProviderDecisionResult>.Success(new ProviderDecisionResult(
                 IsSuccess: true,
                 NextState: null,
                 UiMessage: bankMsg,
                 ReasonCode: code,
                 Retryable: false
-            );
-            return Result<ProviderDecisionResult>.Success(decision);
+            ));
         }
+
+ 
         if (RetryableCodes.Contains(code))
         {
-            var decision = new ProviderDecisionResult(
+            return Result<ProviderDecisionResult>.Success(new ProviderDecisionResult(
                 IsSuccess: false,
                 NextState: LoanRequestState.InProgress,
                 UiMessage: "اختلال موقت در سرویس بانک. لطفاً دوباره تلاش کنید.",
                 ReasonCode: code,
                 Retryable: true
-            );
-            return Result<ProviderDecisionResult>.Success(decision);
+            ));
         }
-        else
-        {
-            var decision = new ProviderDecisionResult(
-                IsSuccess: false,
-                NextState: LoanRequestState.Failed,
-                UiMessage: "اختلال در سرویس بانک. لطفاً دوباره تلاش کنید.",
-                ReasonCode: code,
-                Retryable: false
-            );
-            return Result<ProviderDecisionResult>.Success(decision);
-        }
+
+    
+        return Result<ProviderDecisionResult>.Success(new ProviderDecisionResult(
+            IsSuccess: true, 
+            NextState: null,
+            UiMessage: bankMsg,
+            ReasonCode: code,
+            Retryable: false
+        ));
     }
 
     private static LoanRequestState? ParseStateOrNull(string? stateName)

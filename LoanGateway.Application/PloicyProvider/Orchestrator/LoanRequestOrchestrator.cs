@@ -95,7 +95,10 @@ public sealed class LoanRequestOrchestrator
 
             return Result<CustomerInquiryResultDto>.Success(
                 new CustomerInquiryResultDto {
-                    RequestId = bankRes.RequestId
+                    RequestId = bankRes.RequestId,
+                    Message=bankRes.Message,
+                    MessageCode=bankRes.MessageCode,
+                    State=bankRes.State
                 });
         }
         catch (TransientException ex)

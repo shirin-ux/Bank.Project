@@ -108,21 +108,18 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
-    public async Task<MellatInquiryResultRes> GetInquiryResultAsync(string requestId, CancellationToken ct)
+    public async Task<(bool IsSuccess, MellatInquiryResultRes? Result, string? Error)> GetInquiryResultAsync(string requestId, CancellationToken ct)
     {
         var client = await CreateApiClientAsync(ct);
 
         using var msg = new HttpRequestMessage(HttpMethod.Get, _options.Value.BaseUrlApi + $"/api/fs-contract-management/hub/customer-inquiry/{requestId}");
 
         using var res = await client.SendAsync(msg, ct);
-
+        string? errorBody = null;
         if (!res.IsSuccessStatusCode)
         {
-            var errorBody = await res.Content.ReadAsStringAsync(ct);
-            throw new HttpRequestException(
-                $"Bank API responded with {(int)res.StatusCode} ({res.ReasonPhrase}). " +
-                $"Response Body: {errorBody}"
-            );
+             errorBody = await res.Content.ReadAsStringAsync(ct);
+            return (IsSuccess: false, Result: null, Error: $"Bank API responded with {(int)res.StatusCode} ({res.ReasonPhrase}). Response Body: {errorBody}");
         }
         var content = await res.Content.ReadAsStringAsync(ct);
         if (string.IsNullOrWhiteSpace(content))
@@ -131,7 +128,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         {
             var result = JsonSerializer.Deserialize<MellatInquiryResultRes>(content, _json);
 
-            return result ?? throw new InvalidOperationException("Response body could not be parsed into MellatInquiryResultRes.");
+            return result != null? (true, result, null) : (false, null, $"Bank API returned null response. Response Body: {content}");
         }
         catch (JsonException ex)
         {

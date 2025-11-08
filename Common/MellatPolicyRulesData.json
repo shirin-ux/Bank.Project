@@ -10,183 +10,183 @@
       "15000": {
         "NextState": "Failed",
         "UiMessage": " خطادر فرمت داده های ورودی .",
-        "Retryable": "false"
+        "Retryable": false
       },
       "15001": {
         "NextState": "Failed",
         "UiMessage": " مجوز دسترسی به سرویس وجود ندارد .",
-        "Retryable": "false"
+        "Retryable": false
       },
       "15003": {
         "NextState": "InProgress",
         "UiMessage": " اجرای سرویس با خطا مواجه شده است. .",
-        "Retryable": "true"
+        "Retryable": true
       },
       "15005": {
         "NextState": "Failed",
         "UiMessage": " شماره قرارداد معتبر نمی باشد.",
-        "Retryable": "false"
+        "Retryable": false
       },
       "15020": {
         "NextState": "Failed",
         "UiMessage": " عملیات با موفقیت اجرا شد.",
-        "Retryable": "false"
+        "Retryable": false
       },
       "10004": {
         "NextState": "Failed",
         "UiMessage": "اشکال در بازیابی اطالعات مصوبه.",
-        "Retryable": "false"
+        "Retryable": false
 
       },
       "10005": {
         "NextState": "InProgress",
         "UiMessage": "جهت ثبت درخواست اعطای تسهیالت/تخصیص اعتبار، ثبت استعلام ها با خطا مواجه شد لطفا محدد تلاش کنید.",
-        "Retryable": "true"
+        "Retryable": true
 
       },
       "10101": {
         "NextState": "InProgress",
         "UiMessage": "سرویس ها در دسترس نیست لطفا با پشتیبانی تماس بگیرید و پس از رفع مشکل مجدداتلاش کنید.",
-        "Retryable": "true"
+        "Retryable": true
 
       },
       "10111": {
         "NextState": "InProgress",
         "UiMessage": "استعلام سمات : سرویس استعلام در دسترس نیست لطفا با پشتیبانی تماس بگیرید .",
-        "Retryable": "true"
+        "Retryable": true
 
       },
       "10181": {
         "NextState": "InProgress",
         "UiMessage": " استعلام ثبت احوال : اجرای سرویس با خطا مواجه شده است.",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "10189": {
         "NextState": "Failed",
         "UiMessage": "درصورتی که ثبت احوال استعلام ثبت احوال : اطالعات هو یتی کاربر مورد تایید نیست. ",
-        "Retryable": "false"
+        "Retryable": false
       },
       "10192": {
         "NextState": "InProgress",
         "UiMessage": "استعلام کدپستی :اجرای سرویس با خطا مواجه شده است..",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "10191": {
         "NextState": "InProgress",
         "UiMessage": "استعلام کدپستی: کد پستی تایید نشد. در صورت ی که از صحت کدپستی اطمینان دار ید مجددا تلاش کنید.",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "10193": {
         "NextState": "Failed",
         "UiMessage": "استعلام کدپستی : کدپست ی وارد شده معتبر نیست ..",
-        "Retryable": "false"
+        "Retryable": false
 
       },
       "10168": {
         "NextState": "Failed",
         "UiMessage": "مشتری پیش از این از مصوبه جاری استفاده نموده است..",
-        "Retryable": "false"
+        "Retryable": false
 
       },
       "10400": {
         "NextState": "Failed",
         "UiMessage": "استعلام کد رهگیری بانک مرکزی تسهیلالت تکیفی ازدواج مثبت است.",
-        "Retryable": "false"
+        "Retryable": false
 
       },
       "10401": {
         "NextState": "Failed",
         "UiMessage": " استعلام کد رهگیری بانک مرکزی تسهیلالت تکیفی ازدواج منفی است. .",
-        "Retryable": "false"
+        "Retryable": false
 
       },
       "10402": {
         "NextState": "InProgress",
         "UiMessage": "جهت استعلام کدرهگیری تسهیالت تکلیفی مجددا تالش کنید..",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "10171": {
         "NextState": "InProgress",
         "UiMessage": "استعلام شاهکار:اجرای سرویس با خطا مواجه شده است.",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "10172": {
         "NextState": "Failed",
         "UiMessage": " استعلام شاهکار:عدم تطابق شماره همراه با کد ملی.",
-        "Retryable": "false"
+        "Retryable": false
 
       },
       "10183": {
         "NextState": "InProgress",
         "UiMessage": "استعلام ثبت احوال : اجرای سروی س با خطا مواجه شده است.",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "10194": {
         "NextState": "Failed",
         "UiMessage": " با توجه به تنظیمات مصوبه، آدرس پستی مقداردهی نشده است.",
-        "Retryable": "false"
+        "Retryable": false
 
       },
       "12110": {
         "NextState": "InProgress",
         "UiMessage": "با توحه به زمان درخواست قبلی برای مشتری در حال حاظر امکان درخواست جدید برای ایشان وحود ندارد لطفا دقایقی بعد تلاش نمایید.",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "12106": {
         "NextState": "",
         "UiMessage": "فایل قرارداد با موفقیت ایجاد شد.",
-        "Retryable": "true"
+        "Retryable":true
 
       },
       "12103": {
         "NextState": "Failed",
         "UiMessage": " پارامتر ورودی نامعتبر است. پس از بررسی مجددا تلاش کنید.",
-        "Retryable": "false"
+        "Retryable": false
       },
 
       "10302": {
         "NextState": "Failed",
         "UiMessage": "مبلغ درخواستی بیش از مانده مصوب قابل پرداخت است.",
-        "Retryable": "false"
+        "Retryable": false
       },
       "11002": {
         "NextState": "InProgress",
         "UiMessage": "استعلامات معتبر وجود ندارد. لطفا مجددا درخواست اعطا را ثبت کنید.",
-        "Retryable": "true"
+        "Retryable":true
       },
       "11004": {
         "NextState": "InProgress",
         "UiMessage": "امضای قرارداد با مشکل مواجه شده است.",
-        "Retryable": "true"
+        "Retryable":true
       },
       "11008": {
         "NextState": "Ineligible",
         "UiMessage": "برای این قرارداد قبلاً اعطا انجام شده و تکرار امکان‌پذیر نیست.",
-        "Retryable": "false"
+        "Retryable": false
       },
 
       "12008": {
         "NextState": "Failed",
         "UiMessage": "فایل ارسال شده با فایل قرارداد در هاب اعتباری همخوانی ندارد.",
-        "Retryable": "false"
+        "Retryable": false
       },
 
       "17003": {
         "NextState": "Ineligible",
         "UiMessage": "مبلغ درخواستی نسبت به سقف ماهیانه معتبر نیست.",
-        "Retryable": "false"
+        "Retryable": false
       },
       "11005": {
         "NextState": "InProgress",
         "UiMessage": "ذخیره یا بازیابی فایل قرارداد با مشکل مواجه شده است.",
-        "Retryable": "true"
+        "Retryable":true
       }
 
 
