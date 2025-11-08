@@ -7,7 +7,7 @@ namespace LoanService.Application.UseCase.Query.ReturnTransferReport;
 
 public sealed record ReturnTransferReportResultDto:IBankResponse
 {
-    public IReadOnlyList<ReturnedTransferDto> ReturnedTransfers { get; init; } = Array.Empty<ReturnedTransferDto>();
+    public List<ReturnedTransferDto> ReturnedTransfers { get; init; } 
     public decimal FromId { get; init; }      
     public int? MessageCode { get; init; }
     public string Message { get; init; }

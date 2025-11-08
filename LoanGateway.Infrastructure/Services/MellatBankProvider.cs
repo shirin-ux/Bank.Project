@@ -18,6 +18,7 @@ using LoanService.Application.UseCase.Query.GetInstallments;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.ReturnTransferReport;
 using LoanService.Application.UseCase.Query.TransferInquiry;
+using LoanService.Domain.Entities;
 using LoanService.Domain.Enum;
 using LoanService.Infrastructure.Extention;
 using MapsterMapper;
@@ -128,24 +129,7 @@ namespace Bank.Mellat.Infrastructure.Services
             return result;
         }
 
-        public async Task<GetCustomerPurchaseDetailsResultDto> GetCustomerPurchaseDetailsAsync(GetCustomerPurchaseDetailsCommand cmd, CancellationToken ct)
-        {
-            var mellatReq = _mapper.Map<MellatCustomerPurchaseDetailsReq>(cmd);
-
-            var response = await client.CustomerPurchaseDetailsAsync(mellatReq, ct);
-
-            var result = _mapper.Map<GetCustomerPurchaseDetailsResultDto>(response);
-
-            return result;
-        }
-
-        public async Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, decimal contractNumber, CancellationToken ct)
-        {
-            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { ContractNumber = contractNumber, NationalCode = nationalCode }, ct);
-            var result = _mapper.Map<GetInstallmentsResultDto>(response);
-            return result;
-        }
-
+     
         public async Task<GetCollateralContractFileResultDto> GetCollateralContractFileAsync(GetCollateralContractFileCommand cmd, CancellationToken ct)
         {
             //var mellatReq = _mapper.Map<MellatContractWithCollateralReq>(cmd);
@@ -176,8 +160,8 @@ namespace Bank.Mellat.Infrastructure.Services
             }
             var result = new GetCollateralContractFileResultDto
             {
-                ContractFile = response.contractFile,
-                ContractNumber = response.contractNumber,
+                ContractFile = response.fileTemplate,
+                ContractNumber =Convert.ToDecimal( response.contractNumber),
                 Message = response.message,
                 MessageCode = messageCode
             };
@@ -209,8 +193,8 @@ namespace Bank.Mellat.Infrastructure.Services
             }
             var result = new GetContractFileResultDto
             {
-                ContractFile = response.contractFile,
-                ContractNumber = response.contractNumber,
+                ContractFile = response.fileTemplate,
+                ContractNumber =Convert.ToDecimal( response.contractNumber),
                 Message = response.message,
                 MessageCode = messageCode
             };
@@ -222,20 +206,89 @@ namespace Bank.Mellat.Infrastructure.Services
         public async Task<GetPayResponseResultDto> GetPayResponseAsync(string payRequestId, CancellationToken ct)
         {
             var response = await _client.GetPayResponseAsync(new MellatPayReq { PayRequestId = payRequestId }, ct);
-            var result = _mapper.Map<GetPayResponseResultDto>(response);
+            var result = new GetPayResponseResultDto
+            {
+                PayContractInfo=new GetPayResponseResultDto.PayContractInfoDto
+                {
+                    CbTrackingCode=response.payContractInfo.cbTrackingCode,
+                    ContractDate=response.payContractInfo.contractDate,
+                    ContractFile=response.payContractInfo.contractFile,
+                    ContractNo=response.payContractInfo.contractNo,
+                    InstallmentCount=response.payContractInfo.installmentCount,
+                    LoanAmount=response.payContractInfo.loanAmount,
+                    NationalCode=response.payContractInfo.nationalCode,
+                    SumCost=response.payContractInfo.sumCost,
+                    TraceCode=response.payContractInfo.traceCode
+                },
+                PayRequestStatus = new GetPayResponseResultDto.PayRequestStatusDto
+                {
+                    ResponseCode= (PayResponseCode)response.payRequestStatus.responseCode
+                    
+                    
+                }
+            };
             return result;
         }
 
         public async Task<ReturnTransferReportResultDto> GetReturnTransferReportAsync(ReturnTransferReportCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatReturnTransferReportReq>(cmd);
+            var mellatReq = new MellatReturnTransferReportReq
+            {
+                fromId=cmd.FromId,
+                returnDate=cmd.ReturnDate
+            };
 
             var response = await client.GetReturnTransferReportAsync(mellatReq, ct);
 
-            var result = _mapper.Map<ReturnTransferReportResultDto>(response);
+            var result = new ReturnTransferReportResultDto
+            {
+                FromId = response.fromId,
+                Message = response.message,
+                ReturnedTransfers = response.returnedTransfers.Select(x => new ReturnTransferReportResultDto.ReturnedTransferDto
+                {
+                    ApprovalId = x.approvalId,
+                    DestBankCode = x.destBankCode,
+                    DestIban=x.sourceIban,
+                    DestName=x.destName,
+                    NoSendDate=x.noSendDate,
+                    PayAmount=x.payAmount,
+                    ReasonCode=x.reasonCode,
+                    RegisterCode=x.registerCode,
+                    ReturnDate=x.returnDate,
+                    ReturnReasonCode=x.returnReasonCode,
+                    ReturnReasonDesc=x.returnReasonDesc,
+                    ReturnTime=x.returnTime,
+                    RowId=x.rowId,
+                    SendDate=x.sendDate,
+                    SendTime=x.sendTime,
+                    SourceIban=x.sourceIban,
+                    TrackingNo=x.trackingNO,
+                    TransferDate=x.transferDate,
+                    TransferStatus= (ReturnTransferReportResultDto.TransferStatus)x.transferStatus
+
+                }).ToList(),
+            };
 
             return result;
         }
+        public async Task<GetCustomerPurchaseDetailsResultDto> GetCustomerPurchaseDetailsAsync(GetCustomerPurchaseDetailsCommand cmd, CancellationToken ct)
+        {
+            var mellatReq = _mapper.Map<MellatCustomerPurchaseDetailsReq>(cmd);
+
+            var response = await client.CustomerPurchaseDetailsAsync(mellatReq, ct);
+
+            var result = _mapper.Map<GetCustomerPurchaseDetailsResultDto>(response);
+
+            return result;
+        }
+
+        public async Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, decimal contractNumber, CancellationToken ct)
+        {
+            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { ContractNumber = contractNumber, NationalCode = nationalCode }, ct);
+            var result = _mapper.Map<GetInstallmentsResultDto>(response);
+            return result;
+        }
+
 
         public async Task<TransferRegisterResultDto> RegisterTransferAsync(TransferRegisterCommand cmd, CancellationToken ct)
         {

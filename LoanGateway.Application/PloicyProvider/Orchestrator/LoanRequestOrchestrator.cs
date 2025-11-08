@@ -24,6 +24,7 @@ using LoanService.Domain.IRepository;
 using Mapster;
 using MapsterMapper;
 using MediatR;
+using System.Globalization;
 using static LoanService.Application.UseCase.Command.OtpRequest.OtpRequestCommand;
 using PayResponseCode = LoanService.Domain.Entities.PayResponseCode;
 
@@ -234,7 +235,7 @@ public sealed class LoanRequestOrchestrator
         if (decisionResult.IsSuccess)
         {
           
-            var birthDate = DateOnly.ParseExact(cmd.BirthDate, "yyyy/MM/dd");
+            var birthDate = PersianCalendarHelper.ParseShamsiToGregorian(cmd.BirthDate);
             loan.AttachContract(
                 loan.Provider.ApprovalCode,
                 cmd.Address,
@@ -319,7 +320,8 @@ public sealed class LoanRequestOrchestrator
 
         var d = decision.Value!;
 
-        var birthDate = DateOnly.ParseExact(cmd.BirthDate, "yyyy/MM/dd");
+        var birthDate = PersianCalendarHelper.ParseShamsiToGregorian(cmd.BirthDate);
+
         loan.AttachCollateralContract(
             cmd.CollateralNo,
             cmd.CollateralType,

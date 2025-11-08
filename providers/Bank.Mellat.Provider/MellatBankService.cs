@@ -163,8 +163,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         });
 
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
+      
+        var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/mellat-contract-file", content, ct);
 
-        using var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/mellat-contract-file", content, ct);
         var responseText = await response.Content.ReadAsStringAsync(ct);
 
 
@@ -187,6 +188,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         MellatFileUploadRes? responseBank;
         try
         {
+         
             responseBank = JsonSerializer.Deserialize<MellatFileUploadRes>(responseText);
         }
         catch (Exception ex)

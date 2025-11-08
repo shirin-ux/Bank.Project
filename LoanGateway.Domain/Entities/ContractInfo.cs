@@ -20,7 +20,7 @@ public sealed class ContractInfo
     public string? NationalCode { get; set; }
 
 
-    public DateOnly? BirthDate { get; set; }
+    public DateTime? BirthDate { get; set; }
 
 
     public string? MobileNumber { get; set; } = null!;

@@ -117,7 +117,7 @@ namespace LoanService.Domain.Entities
         public void AttachContract(
             decimal? approvalCode,
             string address,
-            DateOnly birthDate,
+            DateTime birthDate,
             string nationalCode,
             short installmentCount,
             decimal? loanAmount,
@@ -128,8 +128,8 @@ namespace LoanService.Domain.Entities
              int reasonCode = -1, string? uiMessage = null
             )
         {
-            if (Provider?.ApprovalCode == null || Provider.ApprovalCode <= 0)
-                throw new InvalidOperationException("ApprovalCode must be assigned before attaching a contract.");
+            //if (Provider?.ApprovalCode == null || Provider.ApprovalCode <= 0)
+            //    throw new InvalidOperationException("ApprovalCode must be assigned before attaching a contract.");
 
 
             Contract = new ContractInfo
@@ -156,7 +156,7 @@ namespace LoanService.Domain.Entities
             decimal? approvalCode,
             decimal collateralAmount,
             string address,
-            DateOnly birthDate,
+            DateTime birthDate,
             string? chequeSerial,
             string? collateralIssuer,
             string guarantorNC,

@@ -8,7 +8,7 @@ namespace Bank.Mellat.Provider.Dtos;
 
 public sealed class MellatReturnTransferReportRes
 {
-    public ReturnedTransfer[]? returnedTransfers { get; set; }
+    public List<ReturnedTransfer>? returnedTransfers { get; set; }
     public decimal fromId { get; set; }       
     public int? messageCode { get; set; }
     public string? message { get; set; }
@@ -17,7 +17,7 @@ public sealed class MellatReturnTransferReportRes
     {
         public string registerCode { get; set; } = default!;
         public decimal approvalId { get; set; }
-        public short transferStatus { get; set; }  
+        public TransferStatus transferStatus { get; set; }  
         public int? returnReasonCode { get; set; }
         public string? returnReasonDesc { get; set; }
         public string destIban { get; set; } = default!;
@@ -34,5 +34,18 @@ public sealed class MellatReturnTransferReportRes
         public string sourceIban { get; set; } = default!;
         public string? trackingNO { get; set; }
         public int rowId { get; set; }
+ 
     }
+    public enum TransferStatus : short
+    {
+        Registered = 0,
+        Deleted = 1,
+        Returned = 2,
+        Sent = 3,
+        Unsendable = 4,
+        CanceledNoDebit = 5,
+        CanceledAndReturned = 6
+    }
+
 }
+

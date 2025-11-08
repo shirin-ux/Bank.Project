@@ -5,8 +5,8 @@ namespace LoanService.Application.UseCase.Query.PayResponse;
 
 public sealed record GetPayResponseResultDto:IBankResponse
 {
-    public PayRequestStatusDto PayRequestStatus { get; init; } = new();
-    public PayContractInfoDto PayContractInfo { get; init; }
+    public PayRequestStatusDto PayRequestStatus { get; set; } = new();
+    public PayContractInfoDto PayContractInfo { get; set; }
 
     public string Message { get; init; }
     public int? MessageCode { get; init; }
@@ -22,7 +22,7 @@ public sealed record GetPayResponseResultDto:IBankResponse
 
     public sealed record PayRequestStatusDto
     {
-        public PayResponseCode ResponseCode { get; init; }
+        public PayResponseCode ResponseCode { get; set; }
    
     }
 
@@ -30,7 +30,7 @@ public sealed record GetPayResponseResultDto:IBankResponse
     {
         public string? NationalCode { get; init; }
         public decimal? TraceCode { get; init; }
-        public decimal ContractNo { get; init; }
+        public decimal? ContractNo { get; init; }
         public string? ContractDate { get; init; }
         public decimal? LoanAmount { get; init; }
         public decimal? SumCost { get; init; }
