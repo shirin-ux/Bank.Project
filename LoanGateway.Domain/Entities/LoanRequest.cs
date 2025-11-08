@@ -13,7 +13,7 @@ namespace LoanService.Domain.Entities
         public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
 
         // -------- Core --------
-        public LoanRequestState State { get; private set; } = LoanRequestState.Requested;
+        public LoanRequestState State { get;  set; } 
         public ProviderInfo Provider { get; set; } = default!;
         public CustomerInfo? Customer { get; set; } = default!;
         public bool RequiresOtp { get; private set; }

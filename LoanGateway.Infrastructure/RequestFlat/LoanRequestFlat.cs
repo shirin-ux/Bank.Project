@@ -1,4 +1,5 @@
-﻿using System;
+﻿using LoanService.Domain.Entities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,7 +11,7 @@ public class LoanRequestFlat
 {
     public Guid Id { get; set; }
     public DateTime UpdatedAtUtc { get; set; }
-    public int State { get; set; }
+    public LoanRequestState State { get; set; }
     public bool RequiresOtp { get; set; }
 
     // CustomerInfo (ValueObject)

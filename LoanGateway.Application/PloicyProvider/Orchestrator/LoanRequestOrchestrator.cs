@@ -215,7 +215,7 @@ public sealed class LoanRequestOrchestrator
         if (loan.State != LoanRequestState.Eligible)
             return Result<GetContractFileResultDto>.Failure(new Error(-1, "هنوز مشتری واجد شرایط نشده است."));
 
-        if (loan.Provider.ApprovalCode==0)
+        if (cmd.ApprovalCode==0)
             return Result<GetContractFileResultDto>.Failure(new Error(-1, "کد مصوبه بانک ملت مشخص نیست."));
 
         var bankRes = await _mediator.Send(cmd, ct);
@@ -363,6 +363,9 @@ public sealed class LoanRequestOrchestrator
     {
         var loan = await RequireAsync(loanId, ct);
 
+        var path = loan.Contract.ContractPath;
+
+        var fileBytes = await _contractFileStorage.ReadAsync(path, ct);
 
         if (loan.State != LoanRequestState.ContractsPrepared)
             return Result<SubmitPayRequestResultDto>.Failure(
@@ -373,7 +376,16 @@ public sealed class LoanRequestOrchestrator
             return Result<SubmitPayRequestResultDto>.Failure(
                 new Error(loan.LastErrorCode, "شماره قرارداد مشخص نیست."));
 
-        var res = await _mediator.Send(cmd, ct);
+        var req = new SubmitPayRequestCommand
+        {
+            ContractFile = fileBytes,
+            ContractNumber = cmd.ContractNumber,
+            LoanRequestId = loanId,
+            RequestAmount = cmd.RequestAmount,
+            ProviderType = cmd.ProviderType
+        };
+
+        var res = await _mediator.Send(req, ct);
 
         var providerType = loan.Provider.ProviderType;
 

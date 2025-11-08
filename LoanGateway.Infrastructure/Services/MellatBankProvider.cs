@@ -188,11 +188,33 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<GetContractFileResultDto> GetContractFileAsync(GetContractFileCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatFileUploadReq>(cmd);
-
+            //var mellatReq = _mapper.Map<MellatFileUploadReq>(cmd);
+            var mellatReq = new MellatFileUploadReq
+            {
+                address = cmd.Address,
+                approvalCode = cmd.ApprovalCode,
+                birthDate = cmd.BirthDate,
+                nationalCode = cmd.NationalCode,
+                installmentCount = cmd.InstallmentCount,
+                loanAmount = cmd.LoanAmount,
+                mobileNumber = cmd.MobileNumber,
+                phoneNumber = cmd.PhoneNumber,
+                postalCode = cmd.PostalCode
+            };
+            int? messageCode = null;
             var response = await client.UploadContractFileAsync(mellatReq, ct);
-
-            var result = _mapper.Map<GetContractFileResultDto>(response);
+            if (!string.IsNullOrWhiteSpace(response.messageCode) && int.TryParse(response.messageCode, out var parsed))
+            {
+                messageCode = parsed;
+            }
+            var result = new GetContractFileResultDto
+            {
+                ContractFile = response.contractFile,
+                ContractNumber = response.contractNumber,
+                Message = response.message,
+                MessageCode = messageCode
+            };
+            //var result = _mapper.Map<GetContractFileResultDto>(response);
 
             return result;
         }

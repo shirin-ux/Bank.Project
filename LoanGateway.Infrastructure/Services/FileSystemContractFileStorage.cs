@@ -13,6 +13,11 @@ public sealed class FileSystemContractFileStorage : IContractFileStorage
             ?? throw new InvalidOperationException("Storage:ContractsRoot is not configured.");
     }
 
+    public async Task<byte[]> ReadAsync(string path, CancellationToken ct = default)
+    {
+        return await File.ReadAllBytesAsync(path, ct);
+    }
+
     public async Task<string> SaveAsync(Guid loanId, byte[] fileBytes, string fileName, CancellationToken ct)
     {
         var loanFolder = Path.Combine(_root, loanId.ToString("N"));

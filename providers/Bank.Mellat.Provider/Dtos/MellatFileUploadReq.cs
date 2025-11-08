@@ -11,8 +11,8 @@ namespace Bank.Mellat.Provider.Dtos
         public string nationalCode { get; set; }
         public string birthDate { get; set; }
         public string mobileNumber { get; set; }
-        public int approvalCode { get; set; }
-        public decimal postalCode { get; set; }
+        public decimal approvalCode { get; set; }
+        public string postalCode { get; set; }
         public string phoneNumber { get; set; }
         public decimal? loanAmount { get; set; }
         public short installmentCount { get; set; }

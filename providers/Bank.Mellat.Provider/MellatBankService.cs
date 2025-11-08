@@ -153,7 +153,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             loanAmount = req.loanAmount,
             installmentCount = req.installmentCount,
             address = req.address,
-            cbTrackingCode = req.cbTrackingCode
+           // cbTrackingCode = req.cbTrackingCode
         };
 
         var json = JsonSerializer.Serialize(body, new JsonSerializerOptions

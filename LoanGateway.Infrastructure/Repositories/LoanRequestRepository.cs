@@ -121,7 +121,7 @@ namespace LoanService.Infrastructure.Repositories
         public async Task<LoanRequest?> GetByIdAsync(Guid id, CancellationToken ct)
         {
             var sql = @"
-        SELECT * FROM LoanRequest WHERE Id = @Id;
+        SELECT State, * FROM LoanRequest WHERE Id = @Id;
         SELECT * FROM ContractInfo WHERE LoanRequestId = @Id;
         SELECT * FROM InquiryInfo WHERE LoanRequestId = @Id;
         SELECT * FROM PayResponseInfo WHERE LoanRequestId = @Id;
@@ -136,13 +136,14 @@ namespace LoanService.Infrastructure.Repositories
 
             // داده‌ی اصلی LoanRequest رو فلت بخون
             var flat = await multi.ReadSingleOrDefaultAsync<LoanRequestFlat>();
+
             if (flat is null)
-                return null;
+                   return null;
 
             // حالا Domain Model رو بساز و ValueObjectها رو تزریق کن
             var loan = new LoanRequest()
             {
-          
+                  State=flat.State,
                  Id=id,
                 Customer = new CustomerInfo(
                     flat.Customer_NationalCode,
@@ -162,7 +163,7 @@ namespace LoanService.Infrastructure.Repositories
                 PayRequest = flat.PayRequest_Id != null ? new PayRequestInfo(flat.PayRequest_Id, flat.PayRequest_RequestedAmount) : null,
                 LastDecision = new DecisionStamp(flat.Decision_ErrorCode, flat.Decision_ErrorMessage, flat.Decision_ReasonCode, flat.Decision_ReasonMessage),
                 GrantRequest = new GrantRequest(flat.Grant_ContractId??0, flat.Grant_Status, flat.PayRequest_Id, flat.Grant_RequestedAmount, flat.Grant_SignedContractBase64),
-           
+       
             };
 
            
