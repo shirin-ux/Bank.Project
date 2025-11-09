@@ -8,7 +8,7 @@ public sealed record SubmitPayRequestCommand : IRequest<SubmitPayRequestResultDt
 {
     public decimal ContractNumber { get; init; }          // DECIMAL(20) - required
     public decimal? RequestAmount { get; init; }          // DECIMAL(20) - optional
-    public byte[]? ContractFile { get; init; }  // 64BASE - required
-    public Guid LoanRequestId { get; init; }
+    public string? ContractPath { get; init; }  // 64BASE - required
+   // public Guid LoanRequestId { get; init; }
     public BankProviderType ProviderType { get; set; }
 }

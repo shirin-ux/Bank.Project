@@ -21,7 +21,7 @@ namespace LoanService.Domain.Entities
         public Guid Id { get; set; }
         public Guid LoanRequestId { get; set; }
         public PayResponseCode Code { get; set; }
-       public decimal BankContractNo { get; set; }
+       public decimal? BankContractNo { get; set; }
         public decimal? ApprovedLoanAmount { get; set; }
         public string? ContractDate { get; set; }
         public decimal? CentralBankTraceCode { get; set; }

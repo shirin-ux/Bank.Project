@@ -1,7 +1,9 @@
-﻿using Hangfire;
+﻿using Common;
+using Hangfire;
 using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
+using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities;
 using LoanService.Domain.Enum;
 using LoanService.Domain.IRepository;
@@ -28,12 +30,13 @@ public sealed class LoanOrchestratorJobs : ILoanOrchestratorJobRunner
         throw new NotImplementedException();
     }
 
-    public Task EnqueuePayResponseInquiryAsync(Guid loanId, string payRequestId, TimeSpan delay, CancellationToken ct)
+    public Task EnqueuePayResponseInquiryAsync(Guid loanId, string payRequestId,TimeSpan delay, CancellationToken ct)
     {
-        _bg.Schedule<LoanJobRunner>(
-            r => r.RunPayResponseInquiryAsync(loanId, payRequestId, CancellationToken.None),
+      
+            _bg.Schedule<LoanJobRunner>(
+            r => r.RunPayResponseInquiryAsync(loanId, payRequestId, 1, CancellationToken.None),
             delay);
-
+      
         return Task.CompletedTask;
     }
 

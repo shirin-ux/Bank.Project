@@ -40,15 +40,15 @@ public static class BankMellatMappingConfig
         //                 : string.Empty);
 
 
-        TypeAdapterConfig<MellatPayResponseRes, GetPayResponseResultDto>
-           .NewConfig()
-           .Map(dest => dest.PayRequestStatus, src => src.payRequestStatus)
-           .Map(dest => dest.PayContractInfo, src => src.payContractInfo);
+        //TypeAdapterConfig<MellatPayResponseRes, GetPayResponseResultDto>
+        //   .NewConfig()
+        //   .Map(dest => dest.PayRequestStatus, src => src.payRequestStatus)
+        //   .Map(dest => dest.PayContractInfo, src => src.payContractInfo);
 
 
-        TypeAdapterConfig<MellatPayResponseRes.PayRequestStatus, GetPayResponseResultDto.PayRequestStatusDto>
-            .NewConfig();
-           // .Map(dest => dest.ResponseCode, src => ToResponseCode(src.responseCode));
+        //TypeAdapterConfig<MellatPayResponseRes.PayRequestStatus, GetPayResponseResultDto.PayRequestStatusDto>
+        //    .NewConfig();
+        //   // .Map(dest => dest.ResponseCode, src => ToResponseCode(src.responseCode));
 
 
         TypeAdapterConfig<MellatPayResponseRes.PayContractInfo, GetPayResponseResultDto.PayContractInfoDto>

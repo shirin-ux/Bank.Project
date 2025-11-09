@@ -1,4 +1,6 @@
 ﻿
+using LoanService.Domain.Entities;
+
 namespace Bank.Mellat.Provider.Dtos;
 
 public sealed class MellatPayResponseRes
@@ -8,7 +10,7 @@ public sealed class MellatPayResponseRes
 
     public sealed class PayRequestStatus
     {
-        public int? responseCode { get; set; }       
+        public PayResponseCode? responseCode { get; set; }       
         public string? responseMessage { get; set; } 
         public string? responseMessageCode { get; set; } 
     }

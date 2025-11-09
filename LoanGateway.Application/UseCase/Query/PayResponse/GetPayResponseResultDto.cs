@@ -5,26 +5,29 @@ namespace LoanService.Application.UseCase.Query.PayResponse;
 
 public sealed record GetPayResponseResultDto:IBankResponse
 {
-    public PayRequestStatusDto PayRequestStatus { get; set; } = new();
+    //public PayRequestStatusDto PayRequestStatus { get; set; } = new();
     public PayContractInfoDto PayContractInfo { get; set; }
 
     public string Message { get; init; }
     public int? MessageCode { get; init; }
-    public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string[] NextActions { get; set; }
+    public string State { get; set; }
+  
+    public string RequestId { get; set; }
 
     public IEnumerable<BankStatusItem> GetStatusItems()
     {
         throw new NotImplementedException();
     }
 
-    public sealed record PayRequestStatusDto
-    {
-        public PayResponseCode ResponseCode { get; set; }
-   
-    }
+    //public sealed record PayRequestStatusDto
+    //{
+
+    //    public int? responseCode { get; set; }
+    //    public string? responseMessage { get; set; }
+    //    public string? responseMessageCode { get; set; }
+
+    //}
 
     public sealed record PayContractInfoDto
     {
@@ -38,5 +41,12 @@ public sealed record GetPayResponseResultDto:IBankResponse
         public string? ContractFile { get; init; }
         public decimal? CbTrackingCode { get; init; }
     }
-
+    public enum PayResponseCode : int
+    {
+        Unknown = 0,
+        Pending = 1,
+        Success = 2,
+        Failed = 3,
+        NotAllowed = 4
+    }
 }

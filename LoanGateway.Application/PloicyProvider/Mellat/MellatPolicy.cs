@@ -55,6 +55,8 @@ public class MellatPolicy<TResponse> : IBankPolicy<TResponse> where TResponse : 
 {
     // CustomerInquiryResult و CommonRules و بقیه
     2,
+    3,
+    1,
     100,     // Otp و چند سرویس دیگه
     200,
     10002,

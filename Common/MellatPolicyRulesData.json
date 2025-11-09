@@ -437,6 +437,17 @@
         "UiMessage": "اعطای تسهیلات با موفقیت انجام شد.",
         "Severity": "Info"
       },
+      "11010 ": {
+        "Retryable": false,
+        "NextState": "Failed",
+        "UiMessage": "مبلغ درخواستی با مبلغ قرارداد تطابق ندارد و امکان ثبت درخواست با مبلغ متفاوت وجود  ندارد"
+      },
+
+      "17003 ": {
+        "Retryable": false,
+        "NextState": "Failed",
+        "UiMessage": "مبلغ درخواستی نسبت به سقف ماهیانه معتبر نمی باشد."
+      },
       "11006": {
         "NextState": "Ineligible",
         "UiMessage": "امکان اعطای تسهیلات برای مشتری وجود ندارد.",
@@ -504,6 +515,11 @@
         "NextState": "InstallmentChecked",
         "UiMessage": "سرویس با موفقیت اجرا شد.",
         "Severity": "Info"
+      },
+      "11016": {
+        "NextState": "Failed",
+        "UiMessage": "خطای در اجرای سرویس اعطا/تخصیص بانک ملت.",
+        "Retryable": false
       },
       "12201": {
         "NextState": "Failed",

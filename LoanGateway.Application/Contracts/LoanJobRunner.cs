@@ -1,5 +1,7 @@
-﻿using LoanService.Application.UseCase.Command.DepositRequest;
+﻿using Hangfire;
+using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
+using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities;
 using LoanService.Domain.Enum;
 using LoanService.Domain.IRepository;
@@ -13,26 +15,45 @@ public class LoanJobRunner(
                    IMediator mediator,
                    ILoanRequestRepository repo,
                    ILogger<LoanJobRunner> logger,
-                   IServiceProvider serviceProvider
+                   IServiceProvider serviceProvider,
+                   IBackgroundJobClient bg
                          )
 {
+    private readonly IBackgroundJobClient _bg= bg;
     private readonly IMediator _mediator = mediator;
     private readonly ILoanRequestRepository _repo = repo;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<LoanJobRunner> _logger = logger;
-    public async Task RunPayResponseInquiryAsync(Guid loanId, string payRequestId, CancellationToken ct = default)
+
+
+    public async Task RunPayResponseInquiryAsync(Guid loanId, string payRequestId, int attempt , CancellationToken ct = default)
     {
         using var scope = _serviceProvider.CreateScope();
-        var repo = scope.ServiceProvider.GetRequiredService<ILoanRequestRepository>();
         var service = scope.ServiceProvider.GetRequiredService<LoanRequestOrchestrator>();
 
-        var loan = await _repo.GetByIdAsync(loanId, ct);
-        if (loan is null) return;
-        _logger.LogInformation("Running scheduled GetInstallment for Loan {LoanId}", loanId);
+        _logger.LogInformation("Running scheduled PayResponse inquiry for Loan {LoanId}, attempt {Attempt}", loanId, attempt);
 
+        var result = await service.GetPayResponseAsync(loanId, ct);
+        if (!result.IsSuccess)
+        {
+            _logger.LogWarning("PayResponse inquiry for {LoanId} failed: {Error}", loanId, result.Error?.Message);
+            return;
+        }
+
+        var dto = result.Value;
+
+        if (ShouldRetry(dto) && attempt < 5)
+        {
+            _bg.Schedule<LoanJobRunner>(
+                r => r.RunPayResponseInquiryAsync(loanId, payRequestId, attempt + 1, CancellationToken.None),
+                TimeSpan.FromSeconds(30));
+        }
     }
-
-
+    private static bool ShouldRetry(GetPayResponseResultDto dto)
+    {
+        var code = dto?.MessageCode ?? 0;
+        return code is 1 or 3;
+    }
     public async Task RetryGetInstallments(Guid loanId, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();

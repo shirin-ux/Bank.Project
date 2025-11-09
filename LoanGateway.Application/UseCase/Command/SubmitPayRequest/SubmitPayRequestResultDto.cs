@@ -14,10 +14,10 @@ namespace LoanService.Application.UseCase.Command.SubmitPayRequest
         public int? MessageCode { get; set; }
 
         public string? Message { get; init; }
-        public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public string[] NextActions { get; set; }
+        public string State { get; set; }
+       // public string ContractBase64 { get; set; }
+        public string RequestId { get; set; }
 
         public IEnumerable<BankStatusItem> GetStatusItems()
         {

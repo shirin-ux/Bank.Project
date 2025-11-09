@@ -15,6 +15,7 @@ public sealed class ContractInfo
     public Guid Id { get; set; }
     public Guid LoanRequestId { get; set; }
     public decimal? ApprovalCode { get; set; }
+    public decimal? ContractNumber { get; set; }
 
 
     public string? NationalCode { get; set; }

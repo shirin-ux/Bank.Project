@@ -24,7 +24,7 @@ namespace LoanService.Domain.Entities
         public Guid CorrelationId { get; set; }
         // -------- Slices --------
 
-
+        public int RetryCount { get; private set; }
         public string? InquiryRequest_Id { get; set; }
         public InqueryRequest InqueryRequest { get; set; } = new(null);
         public GrantRequest? GrantRequest { get; set; } = default!;
@@ -70,6 +70,15 @@ namespace LoanService.Domain.Entities
                 PayRequest = new PayRequestInfo(null, null),
                 LastDecision = new DecisionStamp(null, null, null, null)
             }.TouchReturn();
+        }
+        public bool TryIncreasePayResponseRetry(int max)
+        {
+            if (RetryCount >= max)
+                return false;
+
+            RetryCount++;
+            Touch();
+            return true;
         }
         public void SetRequest(decimal? requestAmount, bool requiresCollateral, CollateralType collateralType)
         {
@@ -125,6 +134,7 @@ namespace LoanService.Domain.Entities
             string? phoneNumber,
             string postalCode,
             string contractPath,
+            decimal? contractNumber,
              int reasonCode = -1, string? uiMessage = null
             )
         {
@@ -143,8 +153,8 @@ namespace LoanService.Domain.Entities
                 MobileNumber = mobileNumber,
                 PhoneNumber = phoneNumber,
                 PostalCode = postalCode,
-                ContractPath= contractPath
-
+                ContractPath= contractPath,
+                ContractNumber= contractNumber,
             };
 
             // تغییر وضعیت دامین
@@ -167,6 +177,7 @@ namespace LoanService.Domain.Entities
             string? phoneNumber,
             string postalCode,
             string contractPath,
+            decimal? contractNumber,
              int reasonCode = -1, string? uiMessage = null
                                               )
         {
@@ -192,14 +203,14 @@ namespace LoanService.Domain.Entities
                 MobileNumber = mobileNumber,
                 PhoneNumber = phoneNumber,
                 PostalCode = postalCode,
-                ContractPath= contractPath
-
+                ContractPath= contractPath,
+               ContractNumber = contractNumber,
             };
 
             // تغییر وضعیت دامین
             TransitionTo(LoanRequestState.ContractsPrepared, reasonCode, uiMessage);
         }
-        public void MarkApproved(int? reasonCode, string? uiMessage, decimal contractNumber)
+        public void MarkApproved(int? reasonCode, string? uiMessage, decimal? contractNumber)
         {
             if (contractNumber > 0)
                 GrantRequest = GrantRequest with { ContractId = contractNumber };
@@ -215,7 +226,7 @@ namespace LoanService.Domain.Entities
         }
 
         public void SetPayResponseApprovedInfo(
-           decimal contractNo,
+           decimal? contractNo,
            decimal? loanAmount,
            string? contractDate,
            decimal? traceCode = null,
@@ -276,7 +287,20 @@ namespace LoanService.Domain.Entities
         //}
         public void SetPayRequestId(string payRequestId)
         {
-            PayRequest = PayRequest with { PayRequestId = payRequestId };
+            if (string.IsNullOrWhiteSpace(payRequestId))
+                throw new ArgumentNullException(nameof(payRequestId));
+
+
+            var current = PayRequest ?? new PayRequestInfo(
+                   PayRequestId: null,
+                   RequestedAmount: null
+               );
+
+     
+            PayRequest = current with { PayRequestId = payRequestId };
+
+            Touch();
+
             Touch();
         }
         public void MarkFacilitySubmitted(int reasonCode, string uiMessage, string payRequestId)
@@ -289,7 +313,7 @@ namespace LoanService.Domain.Entities
         // --- Pay Response ---
         public void ApplyPayResponse(
             PayResponseCode code,
-            decimal bankContractNo,
+            decimal? bankContractNo,
             decimal? approvedAmount,
             string? contractDate,
             decimal? centralBankTraceCode,

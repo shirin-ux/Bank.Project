@@ -143,7 +143,7 @@ namespace LoanService.Infrastructure.Repositories
             // حالا Domain Model رو بساز و ValueObjectها رو تزریق کن
             var loan = new LoanRequest()
             {
-                  State=flat.State,
+                State=flat.State,
                  Id=id,
                 Customer = new CustomerInfo(
                     flat.Customer_NationalCode,
@@ -186,14 +186,14 @@ namespace LoanService.Infrastructure.Repositories
             Provider_Type, Provider_ApprovalCode, Provider_RequiresOtp,
             Decision_ErrorCode, Decision_ErrorMessage, Decision_ReasonCode, Decision_ReasonMessage,
             Grant_ContractId, InquiryRequest_Id, PayRequest_Id,
-            LastReasonCode, LastReasonMessage, LastErrorCode, LastErrorMessage
+            LastReasonCode, LastReasonMessage, LastErrorCode, LastErrorMessage,RetryCount
         ) VALUES (
             @Id, @CreatedAtUtc, @UpdatedAtUtc, @State, @RequiresOtp, @CorrelationId,
             @Customer_NationalCode, @Customer_BirthDate, @Customer_Mobile, @Customer_PostalCode, @Customer_Gender,
             @Provider_Type, @Provider_ApprovalCode, @Provider_RequiresOtp,
             @Decision_ErrorCode, @Decision_ErrorMessage, @Decision_ReasonCode, @Decision_ReasonMessage,
             @Grant_ContractId, @InquiryRequest_Id, @PayRequest_Id,
-            @LastReasonCode, @LastReasonMessage, @LastErrorCode, @LastErrorMessage
+            @LastReasonCode, @LastReasonMessage, @LastErrorCode, @LastErrorMessage,@RetryCount
         )";
 
             using var conn = _transactionDBUtility.GetSqlConnection();
@@ -232,7 +232,7 @@ namespace LoanService.Infrastructure.Repositories
                     Grant_ContractId = loan.GrantRequest.ContractId,
                     InquiryRequest_Id = loan.InqueryRequest.RequestId,
                     PayRequest_Id = loan.PayRequest.PayRequestId,
-
+                    loan.RetryCount,
                     loan.LastReasonCode,
                     loan.LastReasonMessage,
                     loan.LastErrorCode,
@@ -368,7 +368,8 @@ namespace LoanService.Infrastructure.Repositories
                     LastReasonCode=@LastReasonCode,
                     LastReasonMessage=@LastReasonMessage,
                     LastErrorCode=@LastErrorCode,
-                    LastErrorMessage=@LastErrorMessage
+                    LastErrorMessage=@LastErrorMessage,
+                    RetryCount=@RetryCount
                 WHERE Id=@Id";
 
                 await conn.ExecuteAsync(loanSql, new
@@ -400,7 +401,8 @@ namespace LoanService.Infrastructure.Repositories
                     loan.LastReasonCode,
                     loan.LastReasonMessage,
                     loan.LastErrorCode,
-                    loan.LastErrorMessage
+                    loan.LastErrorMessage,
+                    loan.RetryCount
                 }, tran);
 
                 // -------- Aggregate Roots --------
@@ -426,7 +428,8 @@ namespace LoanService.Infrastructure.Repositories
                         loan.Contract.MobileNumber,
                         loan.Contract.PhoneNumber,
                         loan.Contract.PostalCode,
-                        loan.Contract.ContractPath
+                        loan.Contract.ContractPath,
+                        loan.Contract.ContractNumber
                     }, tran, commandType: CommandType.StoredProcedure);
                 }
                 if (loan.Inquiry is not null)
@@ -502,46 +505,6 @@ namespace LoanService.Infrastructure.Repositories
                 throw;
             }
         }
-
-
-        //private async Task UpsertAsync(SqlConnection conn, SqlTransaction tran, string tableName, Guid loanId, object parameters)
-        //{
-
-
-        //    var exists = await conn.ExecuteScalarAsync<int>(
-        //        $"SELECT COUNT(1) FROM {tableName} WHERE LoanRequestId=@LoanRequestId",
-        //        new { LoanRequestId = loanId }, tran);
-
-        //    var props = parameters.GetType().GetProperties();
-        //    var hasLoanRequestId = props.Any(p => p.Name.Equals("LoanRequestId", StringComparison.OrdinalIgnoreCase));
-
-        //    var dynamicParams = new DynamicParameters(parameters);
-        //    if (!hasLoanRequestId)
-        //        dynamicParams.Add("LoanRequestId", loanId);
-
-        //    var columns = props.Select(p => p.Name).ToList();
-        //    var values = props.Select(p => "@" + p.Name).ToList();
-
-        //    if (!hasLoanRequestId)
-        //    {
-        //        columns.Insert(0, "LoanRequestId");
-        //        values.Insert(0, "@LoanRequestId");
-        //    }
-
-        //    if (exists > 0)
-        //    {
-        //        var setClause = string.Join(", ", props
-        //            .Where(p => !p.Name.Equals("LoanRequestId", StringComparison.OrdinalIgnoreCase))
-        //            .Select(p => $"{p.Name}=@{p.Name}"));
-        //        var sql = $"UPDATE {tableName} SET {setClause} WHERE LoanRequestId=@LoanRequestId";
-        //        await conn.ExecuteAsync(sql, dynamicParams, tran);
-        //    }
-        //    else
-        //    {
-        //        var sql = $"INSERT INTO {tableName} ({string.Join(", ", columns)}) VALUES ({string.Join(", ", values)})";
-        //        await conn.ExecuteAsync(sql, dynamicParams, tran);
-        //    }
-        //}
     }
 }
 

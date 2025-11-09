@@ -23,16 +23,17 @@ using LoanService.Domain.Enum;
 using LoanService.Infrastructure.Extention;
 using MapsterMapper;
 using System.Security.Cryptography.Pkcs;
+using static Bank.Mellat.Provider.Dtos.MellatPayResponseRes;
 using static LoanService.Application.UseCase.Query.CustomerInquiryStatus.CustomerInquiryStatusResultDto;
 
 
 namespace Bank.Mellat.Infrastructure.Services
 {
-    public class MellatBankProvider(IMellatBankService client, IMapper mapper) : IBankProvider
+    public class MellatBankProvider(IMellatBankService client, IMapper mapper, IContractFileStorage contractFileStorage) : IBankProvider
     {
         private readonly IMellatBankService _client = client;
         private readonly IMapper _mapper = mapper;
-
+        private readonly IContractFileStorage _contractFileStorage= contractFileStorage;
         public BankProviderType ProviderType => BankProviderType.Mellat;
 
         public async Task<CustomerInquiryResultDto> CustomerInquiryAsync(CustomerInquiryCommand cmd, CancellationToken ct)
@@ -206,28 +207,30 @@ namespace Bank.Mellat.Infrastructure.Services
         public async Task<GetPayResponseResultDto> GetPayResponseAsync(string payRequestId, CancellationToken ct)
         {
             var response = await _client.GetPayResponseAsync(new MellatPayReq { PayRequestId = payRequestId }, ct);
-            var result = new GetPayResponseResultDto
+
+            var contract = response.payContractInfo ?? new PayContractInfo();
+
+            var status = response.payRequestStatus ?? new PayRequestStatus { responseCode = 0 };
+
+            return new GetPayResponseResultDto
             {
-                PayContractInfo=new GetPayResponseResultDto.PayContractInfoDto
+                PayContractInfo = new GetPayResponseResultDto.PayContractInfoDto
                 {
-                    CbTrackingCode=response.payContractInfo.cbTrackingCode,
-                    ContractDate=response.payContractInfo.contractDate,
-                    ContractFile=response.payContractInfo.contractFile,
-                    ContractNo=response.payContractInfo.contractNo,
-                    InstallmentCount=response.payContractInfo.installmentCount,
-                    LoanAmount=response.payContractInfo.loanAmount,
-                    NationalCode=response.payContractInfo.nationalCode,
-                    SumCost=response.payContractInfo.sumCost,
-                    TraceCode=response.payContractInfo.traceCode
+                    CbTrackingCode = contract.cbTrackingCode,
+                    ContractDate = contract.contractDate,
+                    ContractFile = contract.contractFile,
+                    ContractNo = contract.contractNo,
+                    InstallmentCount = contract.installmentCount,
+                    LoanAmount = contract.loanAmount,
+                    NationalCode = contract.nationalCode,
+                    SumCost = contract.sumCost,
+                    TraceCode = contract.traceCode
                 },
-                PayRequestStatus = new GetPayResponseResultDto.PayRequestStatusDto
-                {
-                    ResponseCode= (PayResponseCode)response.payRequestStatus.responseCode
-                    
-                    
-                }
+             
+                    MessageCode = Convert.ToInt32(status.responseCode),
+                    Message = status.responseMessage
+                
             };
-            return result;
         }
 
         public async Task<ReturnTransferReportResultDto> GetReturnTransferReportAsync(ReturnTransferReportCommand cmd, CancellationToken ct)
@@ -325,11 +328,27 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<SubmitPayRequestResultDto> SubmitPayRequestAsync(SubmitPayRequestCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatSubmitPayRequestReq>(cmd);
+            var path = cmd.ContractPath;
+
+            var fileBytes = await _contractFileStorage.ReadAsync(path, ct);
+            string base64Contract = Convert.ToBase64String(fileBytes);
+
+            var mellatReq =new MellatSubmitPayRequestReq
+            {
+                contractFile= base64Contract,
+                contractNumber=cmd.ContractNumber,
+                requestAmount=cmd.RequestAmount
+                
+            };
 
             var response = await client.SubmitPayRequestAsync(mellatReq, ct);
 
-            var result = _mapper.Map<SubmitPayRequestResultDto>(response);
+            var result = new SubmitPayRequestResultDto
+            {
+                PayRequestId = response.payRequestId,
+                Message = response.responseMessage,
+                MessageCode = Convert.ToInt32(response.responseCode)
+            };
 
             return result;
         }

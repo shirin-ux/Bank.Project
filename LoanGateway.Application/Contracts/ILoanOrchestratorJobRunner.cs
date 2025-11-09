@@ -5,7 +5,7 @@ namespace LoanService.Application.Contracts;
 
 public interface ILoanOrchestratorJobRunner
 {
-    Task EnqueuePayResponseInquiryAsync(Guid loanId, string payRequestId, TimeSpan delay, CancellationToken ct);
+    Task EnqueuePayResponseInquiryAsync(Guid loanId, string payRequestId,  TimeSpan delay, CancellationToken ct);
     Task EnqueueDecisionPollingAsync(Guid loanRequestId, CancellationToken ct);
     Task EnqueueRemittanceInquiryAsync(Guid loanRequestId, string remittanceId, CancellationToken ct);
     Task EnqueueRetryGetInstallment(Guid loanId, TimeSpan delay, CancellationToken ct);
