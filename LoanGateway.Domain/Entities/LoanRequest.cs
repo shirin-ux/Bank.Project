@@ -24,7 +24,7 @@ namespace LoanService.Domain.Entities
         public Guid CorrelationId { get; set; }
         // -------- Slices --------
 
-        public int RetryCount { get; private set; }
+        public int RetryCount { get; set; }
         public string? InquiryRequest_Id { get; set; }
         public InqueryRequest InqueryRequest { get; set; } = new(null);
         public GrantRequest? GrantRequest { get; set; } = default!;
@@ -134,7 +134,7 @@ namespace LoanService.Domain.Entities
             string? phoneNumber,
             string postalCode,
             string contractPath,
-            decimal? contractNumber,
+            decimal contractNumber,
              int reasonCode = -1, string? uiMessage = null
             )
         {
@@ -177,7 +177,7 @@ namespace LoanService.Domain.Entities
             string? phoneNumber,
             string postalCode,
             string contractPath,
-            decimal? contractNumber,
+            decimal contractNumber,
              int reasonCode = -1, string? uiMessage = null
                                               )
         {
@@ -257,13 +257,6 @@ namespace LoanService.Domain.Entities
         public void MarkFacilitySubmitted(int? reasonCode, string? uiMessage)
             => TransitionTo(LoanRequestState.FacilitySubmitted, reasonCode, uiMessage);
 
-        // --- Contract ---
-        //public void AttachContract(decimal contractNumber, int? reasonCode, string uiMessage, string? desc = null)
-        //{
-        //    Contract = new ContractInfo { ContractNumber = contractNumber, Desc = desc };
-        //    TransitionTo(LoanRequestState.ContractsPrepared, reasonCode, uiMessage);
-        //}
-
         public void MarkUnderReview(int? reasonCode, string? uiMessage)
             => TransitionTo(LoanRequestState.UnderReview, reasonCode, uiMessage);
 
@@ -280,11 +273,6 @@ namespace LoanService.Domain.Entities
             RequiresOtp = requiresOtp;
             Touch();
         }
-        //public void SaveSignedContract(string base64)
-        //{
-        //    Contract = new ContractInfo { SignedContractBase64 = base64 };
-        //    Touch();
-        //}
         public void SetPayRequestId(string payRequestId)
         {
             if (string.IsNullOrWhiteSpace(payRequestId))
@@ -335,7 +323,7 @@ namespace LoanService.Domain.Entities
             switch (code)
             {
                 case PayResponseCode.Success:
-                    // به‌روزرسانی قرارداد بانک
+              
                     if (bankContractNo <= 0)
                         Contract = new ContractInfo { CollateralNo = bankContractNo };
                     TransitionTo(LoanRequestState.Approved, reasonCode, uiMessage);
@@ -386,21 +374,12 @@ namespace LoanService.Domain.Entities
             => TransitionTo(LoanRequestState.Disbursed, reasonCode, uiMessage);
 
 
-        public bool CanPerformRepayment(string? otpCode)
+        public bool CanPerformRepayment(int? otpCode)
         {
-            if (RequiresOtp && string.IsNullOrWhiteSpace(otpCode))
+            if (RequiresOtp && otpCode == 0)
                 return false;
             return true;
         }
-
-
-        //    public void TransitionTo(LoanRequestState next, string? reasonCode, string? uiMessage)
-        //    {
-        //        State = next;
-        //        LastReasonCode = reasonCode;
-        //        LastReasonMessage = uiMessage;
-        //        Touch();
-        //    }
 
         // --- Repayment ---
         public void MarkRepaymentRegistered(int reasonCode, string uiMessage, string? trackNumber, string? accountNo, decimal? amount, DateTime? whenUtc)
@@ -409,17 +388,7 @@ namespace LoanService.Domain.Entities
             LastRepayment = new RepaymentSnapshot { TrackNumber = trackNumber, AccountNo = accountNo, Amount = amount, WhenUtc = whenUtc ?? DateTime.UtcNow };
             TransitionTo(LoanRequestState.RepaymentRegistered, reasonCode, uiMessage);
         }
-        //public void SetLastRepaymentInfo(string? trackNumber,
-        //    string? accountNo,
-        //    decimal? amount,
-        //    DateTime? whenUtc)
-        //{
-        //    LastRepayment.TrackNumber= trackNumber;
-        //    LastRepaymentAccountNo = accountNo;
-        //    LastRepaymentAmount = amount;
-        //    LastRepaymentAtUtc = whenUtc ?? DateTime.UtcNow;
-        //    Touch();
-        //}
+
         // --- Errors / decision ---
         public void MarkIneligible(int? code, string? message)
         {
@@ -569,10 +538,41 @@ namespace LoanService.Domain.Entities
         RemittanceReturned = 19,
 
         Unknown = 20,
-
+        /// <summary>
+        /// مانده حساب با موفقیت از بانک دریافت شد
+        /// </summary>
         CreditChecked = 21,
 
-        InProgress = 22
+        InProgress = 22,
+
+        /// <summary>
+        /// دریافت اقساط از بانک/درگاه در حال انجام است.
+        /// این حالت را وقتی بگذارید که سرویس اقساط را صدا زده‌اید
+        /// ولی هنوز پاسخ نهایی را ذخیره نکرده‌اید.
+        /// </summary>
+      
+        InstallmentsFetching = 23,   
+
+        /// <summary>
+        /// اقساط با موفقیت از بانک دریافت و در سیستم ذخیره شده‌اند.
+        /// بعد از این حالت می‌توانید به Active یا وضعیت‌های بازپرداخت بروید.
+        /// </summary>
+        
+        InstallmentsFetched = 24,   
+
+        /// <summary>
+        /// بانک پاسخ موقت/قابل‌تکرار داده است و سیستم باید بعداً دوباره
+        /// برای دریافت اقساط تلاش کند (retry scheduled).
+        /// این حالت را جایگزین Failed کنید وقتی واقعاً قابل‌ریتری است.
+        /// </summary>
+        InstallmentsRetryPending = 25,
+        /// <summary>
+        /// صورت حساب با موفقیت دریافت شد
+        /// </summary>
+        StatementFetching = 26,
+
+        StatementFetched = 27,
+NoChange=28
     }
     public enum DepositType : short
     {

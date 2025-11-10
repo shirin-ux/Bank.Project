@@ -17,14 +17,14 @@ public interface IMellatBankService
     Task<MellatOtpRes> RequestOtpAsync(MellatOtpReq req, CancellationToken ct);
     Task<MellatDepositRes> RequestDepositAsync(MellatDepositReq req, CancellationToken ct);
 
-    Task<MellatRepaymentRes> RequestRepaymentAsync(MellatRepaymentReq req, CancellationToken ct);
+    Task<MellatRepaymentRes> RepaymentRequestAsync(MellatRepaymentReq req, CancellationToken ct);
 
     Task<MellatCustomerBillingRes> GetCustomerBillingAsync(MellatCustomerBillingReq req, CancellationToken ct);
 
     Task<MellatCustomerPurchaseDetailsRes> CustomerPurchaseDetailsAsync(MellatCustomerPurchaseDetailsReq req, CancellationToken ct);
     Task<MellatTransferRegisterRes> RegisterTransferAsync(MellatTransferRegisterReq req, CancellationToken ct);
-    Task<MellatTransferInquiryRes> GetTransferInquiryAsync(MellatTransferInquiryReq req, CancellationToken ct );
+    Task<(bool IsSuccess, MellatTransferInquiryRes? Result, string? Error)> GetTransferInquiryAsync(MellatTransferInquiryReq req, CancellationToken ct );
     Task<MellatSubmitPayRequestRes> SubmitPayRequestAsync(MellatSubmitPayRequestReq req, CancellationToken ct);
-    Task<MellatReturnTransferReportRes> GetReturnTransferReportAsync(MellatReturnTransferReportReq req, CancellationToken ct);
+    Task<(bool IsSuccess, MellatReturnTransferReportRes? Result, string? Error)> GetReturnTransferReportAsync(MellatReturnTransferReportReq req, CancellationToken ct);
 
 }

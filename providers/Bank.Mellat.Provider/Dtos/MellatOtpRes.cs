@@ -11,12 +11,11 @@ namespace Bank.Mellat.Provider.Dtos
         /// <summary>
         /// کد خطای سامانه
         /// </summary>
-        public int MessageCode { get; set; }
+        public string messageCode { get; set; }
 
         /// <summary>
         /// پیام خطای سامانه
         /// </summary>
-        public string Message { get; set; } = string.Empty;
-        public int OtpCode { get; set; }
+        public string message { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Bank.Mellat.Provider;
+﻿using Azure;
+using Bank.Mellat.Provider;
 using Bank.Mellat.Provider.Dtos;
 using Common;
 using LoanService.Application.Contracts;
@@ -25,6 +26,7 @@ using MapsterMapper;
 using System.Security.Cryptography.Pkcs;
 using static Bank.Mellat.Provider.Dtos.MellatPayResponseRes;
 using static LoanService.Application.UseCase.Query.CustomerInquiryStatus.CustomerInquiryStatusResultDto;
+using static LoanService.Application.UseCase.Query.ReturnTransferReport.ReturnTransferReportResultDto;
 
 
 namespace Bank.Mellat.Infrastructure.Services
@@ -33,7 +35,7 @@ namespace Bank.Mellat.Infrastructure.Services
     {
         private readonly IMellatBankService _client = client;
         private readonly IMapper _mapper = mapper;
-        private readonly IContractFileStorage _contractFileStorage= contractFileStorage;
+        private readonly IContractFileStorage _contractFileStorage = contractFileStorage;
         public BankProviderType ProviderType => BankProviderType.Mellat;
 
         public async Task<CustomerInquiryResultDto> CustomerInquiryAsync(CustomerInquiryCommand cmd, CancellationToken ct)
@@ -77,11 +79,27 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<DepositRequestResultDto> DepositRequestAsync(DepositRequestCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatDepositReq>(cmd);
+            var mellatReq = new MellatDepositReq
+            {
+                transactionDesc = cmd.TransactionDesc,
+                buyerNationalCode = cmd.BuyerNationalCode,
+                contractNumber = cmd.ContractNumber,
+                depositType = (short)cmd.DepositType,
+                otpCode = cmd.OtpCode,
+                payAmount = cmd.PayAmount,
+                sellerAccountNo = cmd.SellerAccountNo,
+                sellerNationalCode = cmd.SellerNationalCode
+
+            };
 
             var response = await client.RequestDepositAsync(mellatReq, ct);
 
-            var result = _mapper.Map<DepositRequestResultDto>(response);
+            var result = new DepositRequestResultDto
+            {
+                TransactionNumber = response.transactionNumber,
+                Message = response.message,
+                MessageCode = response.messageCode
+            };
 
             return result;
         }
@@ -99,14 +117,39 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<GetCustomerCreditBalanceResultDto> GetCustomerCreditBalanceAsync(GetCustomerCreditBalanceCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatCustomerCreditBalanceReq>(cmd);
-
+            var mellatReq = new MellatCustomerCreditBalanceReq
+            {
+                contractNumber = cmd.ContractNumber,
+                nationalCode = cmd.NationalCode
+            };
             var response = await client.GetCustomerCreditBalanceAsync(mellatReq, ct);
+            if (response is null)
+            {
+                return new GetCustomerCreditBalanceResultDto
+                {
+                    NationalCode = cmd.NationalCode,
+                    contractCreditList = new List<GetCustomerCreditBalanceResultDto.ContractCreditList>()
+                };
+            }
+            var items = response.ContractCreditList ?? Array.Empty<MellatCustomerCreditBalanceRes.contractCreditList>();
 
-            var result = _mapper.Map<GetCustomerCreditBalanceResultDto>(response);
+
+            var result = new GetCustomerCreditBalanceResultDto
+            {
+                NationalCode = response.nationalCode ?? cmd.NationalCode,
+                contractCreditList = items.Select(x => new GetCustomerCreditBalanceResultDto.ContractCreditList
+                {
+                    ApprovalCode = x.approvalCode,
+                    ContractNumber = x.contractNumber,
+                    CreditBalance = x.creditBalance
+                }).ToList(),
+                Message = response.message,
+                MessageCode = response.messageCode
+            };
 
             return result;
         }
+
 
         public async Task<CustomerInquiryStatusResultDto> GetCustomerInquiryStatusAsync(string requestId, CancellationToken ct)
         {
@@ -130,7 +173,7 @@ namespace Bank.Mellat.Infrastructure.Services
             return result;
         }
 
-     
+
         public async Task<GetCollateralContractFileResultDto> GetCollateralContractFileAsync(GetCollateralContractFileCommand cmd, CancellationToken ct)
         {
             //var mellatReq = _mapper.Map<MellatContractWithCollateralReq>(cmd);
@@ -162,7 +205,7 @@ namespace Bank.Mellat.Infrastructure.Services
             var result = new GetCollateralContractFileResultDto
             {
                 ContractFile = response.fileTemplate,
-                ContractNumber =Convert.ToDecimal( response.contractNumber),
+                ContractNumber = Convert.ToDecimal(response.contractNumber),
                 Message = response.message,
                 MessageCode = messageCode
             };
@@ -195,7 +238,7 @@ namespace Bank.Mellat.Infrastructure.Services
             var result = new GetContractFileResultDto
             {
                 ContractFile = response.fileTemplate,
-                ContractNumber =Convert.ToDecimal( response.contractNumber),
+                ContractNumber = Convert.ToDecimal(response.contractNumber),
                 Message = response.message,
                 MessageCode = messageCode
             };
@@ -226,10 +269,10 @@ namespace Bank.Mellat.Infrastructure.Services
                     SumCost = contract.sumCost,
                     TraceCode = contract.traceCode
                 },
-             
-                    MessageCode = Convert.ToInt32(status.responseCode),
-                    Message = status.responseMessage
-                
+
+                MessageCode = Convert.ToInt32(status.responseCode),
+                Message = status.responseMessage
+
             };
         }
 
@@ -237,37 +280,36 @@ namespace Bank.Mellat.Infrastructure.Services
         {
             var mellatReq = new MellatReturnTransferReportReq
             {
-                fromId=cmd.FromId,
-                returnDate=cmd.ReturnDate
+                fromId = cmd.FromId,
+                returnDate = cmd.ReturnDate
             };
 
             var response = await client.GetReturnTransferReportAsync(mellatReq, ct);
 
             var result = new ReturnTransferReportResultDto
             {
-                FromId = response.fromId,
-                Message = response.message,
-                ReturnedTransfers = response.returnedTransfers.Select(x => new ReturnTransferReportResultDto.ReturnedTransferDto
+
+                ReturnedTransfers = response.Result.returnedTransfers.Select(x => new ReturnTransferReportResultDto.ReturnedTransferDto
                 {
                     ApprovalId = x.approvalId,
                     DestBankCode = x.destBankCode,
-                    DestIban=x.sourceIban,
-                    DestName=x.destName,
-                    NoSendDate=x.noSendDate,
-                    PayAmount=x.payAmount,
-                    ReasonCode=x.reasonCode,
-                    RegisterCode=x.registerCode,
-                    ReturnDate=x.returnDate,
-                    ReturnReasonCode=x.returnReasonCode,
-                    ReturnReasonDesc=x.returnReasonDesc,
-                    ReturnTime=x.returnTime,
-                    RowId=x.rowId,
-                    SendDate=x.sendDate,
-                    SendTime=x.sendTime,
-                    SourceIban=x.sourceIban,
-                    TrackingNo=x.trackingNO,
-                    TransferDate=x.transferDate,
-                    TransferStatus= (ReturnTransferReportResultDto.TransferStatus)x.transferStatus
+                    DestIban = x.sourceIban,
+                    DestName = x.destName,
+                    NoSendDate = x.noSendDate,
+                    PayAmount = x.payAmount,
+                    ReasonCode = x.reasonCode,
+                    RegisterCode = x.registerCode,
+                    ReturnDate = x.returnDate,
+                    ReturnReasonCode = x.returnReasonCode,
+                    ReturnReasonDesc = x.returnReasonDesc,
+                    ReturnTime = x.returnTime,
+                    RowId = x.rowId,
+                    SendDate = x.sendDate,
+                    SendTime = x.sendTime,
+                    SourceIban = x.sourceIban,
+                    TrackingNo = x.trackingNO,
+                    TransferDate = x.transferDate,
+                    TransferStatus = (ReturnTransferReportResultDto.TransferStatus)x.transferStatus
 
                 }).ToList(),
             };
@@ -276,52 +318,150 @@ namespace Bank.Mellat.Infrastructure.Services
         }
         public async Task<GetCustomerPurchaseDetailsResultDto> GetCustomerPurchaseDetailsAsync(GetCustomerPurchaseDetailsCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatCustomerPurchaseDetailsReq>(cmd);
+            var mellatReq = new MellatCustomerPurchaseDetailsReq
+            {
+                contractNumber=cmd.ContractNumber,
+                nationalCode=cmd.NationalCode,
+                toDate=Convert.ToInt32(cmd.ToDate),
+                fromDate= Convert.ToInt32(cmd.FromDate)
+            };
 
             var response = await client.CustomerPurchaseDetailsAsync(mellatReq, ct);
 
-            var result = _mapper.Map<GetCustomerPurchaseDetailsResultDto>(response);
+            var result = new GetCustomerPurchaseDetailsResultDto
+            {
+                NationalCode=response.nationalCode,
+                ContractAmount=response.contractAmount,
+                ContractDetails=response.ContractDetails.Select(x=>new GetCustomerPurchaseDetailsResultDto.ContractDetailDto
+                {
+                    PayAccNumber=x.payAccNumber,
+                    DocDate=x.docDate.ToString(),
+                    SellerName=x.sellerName,
+                    SellerNationalCode=x.sellerNationalCode,
+                    SellerPaiedAmount=x.sellerPaiedAmount,
+                    TransactionDate=x.transactionDate.ToString(),
+                    TransactionNumber=x.transactionNumber,
+                    UsedCreditAmount=x.usedCreditAmount
+                    
+                }).ToList(),
+                ContractNumber=response.contractNumber,
+                CustomerName=response.customerName,
+                LoanPaiedAmount=response.loanPaiedAmount,
+                LoanTypeCode=response.loanTypeCode,
+                LoanTypeDesc=response.loanTypeDesc,
+                Message=response.message,
+                MessageCode=response.messageCode,
+                
+            };
 
             return result;
         }
 
         public async Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, decimal contractNumber, CancellationToken ct)
         {
-            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { ContractNumber = contractNumber, NationalCode = nationalCode }, ct);
-            var result = _mapper.Map<GetInstallmentsResultDto>(response);
+            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { NationalCode = nationalCode, ContractNumber = contractNumber }, ct);
+            var result = new GetInstallmentsResultDto
+            {
+                ContractNumber = response.ContractNumber,
+                ContractDesc = response.ContractDesc,
+                DebtAmount = response.DebtAmount,
+                DiscountedDebtAmount = response.DiscountedDebtAmount,
+                EarlierInstallmentDate = response.EarlierInstallmentDate,
+                InstallmentAmount = response.InstallmentAmount,
+                Installments = response.Installment.Select(x => new GetInstallmentsResultDto.InstallmentItemDto
+                {
+                    InstallmentAmount = x.InstallmentAmount,
+                    CapitalAmount = x.CapitalAmount,
+                    DueDate = x.DueDate,
+                    DueState = x.DueState,
+                    InstallmentNo = x.InstallmentNo,
+                    InterestAmount = x.InterestAmount,
+                    PaymentState = x.PaymentState,
+                    PenaltyAmount = x.PenaltyAmount
+                }).ToList()
+            };
             return result;
         }
 
 
         public async Task<TransferRegisterResultDto> RegisterTransferAsync(TransferRegisterCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatTransferRegisterReq>(cmd);
+            var mellatReq = new MellatTransferRegisterReq
+            {
+                transType=cmd.TransType,
+                approvalCode=cmd.ApprovalCode,
+                description=cmd.Description,
+                 destIban=cmd.DestIban,
+                  destName=cmd.DestName,
+                   destNationalId=cmd.DestNationalId,
+                   details=cmd.Details.Select(x=>new MellatTransferRegisterReq.contractDetails
+                   {
+                       amount=x.Amount,
+                       referenceNo=x.ReferenceNo
+                   }).ToList()
+            };
 
             var response = await client.RegisterTransferAsync(mellatReq, ct);
 
-            var result = _mapper.Map<TransferRegisterResultDto>(response);
+            var result =new TransferRegisterResultDto
+            {
+
+                Message=response.message,
+                MessageCode=response.messageCode,
+                RegisterCode=response.registerCode,
+                TransactionsError=response.transactionsError,
+                TransType=response.transType
+            };
 
             return result;
         }
 
         public async Task<RepaymentRequestResultDto> RepaymentRequestAsync(RepaymentRequestCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatRepaymentReq>(cmd);
+            var mellatReq = new MellatRepaymentReq
+            {
+                accountNo = cmd.AccountNo,
+                contractNo = cmd.ContractNo,
+                nationalCode = cmd.NationalCode,
+                otpCode = cmd.OtpCode,
+                repaymentAmount = cmd.RepaymentAmount
+            };
 
-            var response = await client.RequestRepaymentAsync(mellatReq, ct);
+            var response = await client.RepaymentRequestAsync(mellatReq, ct);
 
-            var result = _mapper.Map<RepaymentRequestResultDto>(response);
+            var result = new RepaymentRequestResultDto
+            {
+                RepaymentAmount = response.repaymentAmount,
+                AccountNumber = response.accountNumber,
+                ContractNumber = response.contractNumber,
+                CustomerName = response.customerName,
+                Message = response.message,
+                MessageCode = response.messageCode,
+                RepaymentDate = response.repaymentDate,
+                TrackNumber = response.trackNumber
+            };
 
             return result;
         }
 
         public async Task<OtpRequestResultDto> RequestOtpAsync(OtpRequestCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatOtpReq>(cmd);
+            var mellatReq = new MellatOtpReq
+            {
+                accountNumber = cmd.AccountNumber,
+                serviceType = (short)cmd.ServiceType,
+                payAmount = cmd.PayAmount,
+                contractNumber = cmd.ContractNumber,
+                nationalCode = cmd.NationalCode
+            };
 
             var response = await client.RequestOtpAsync(mellatReq, ct);
 
-            var result = _mapper.Map<OtpRequestResultDto>(response);
+            var result = new OtpRequestResultDto
+            {
+                Message = response.message,
+                MessageCode = Convert.ToInt32(response.messageCode)
+            };
 
             return result;
         }
@@ -333,12 +473,12 @@ namespace Bank.Mellat.Infrastructure.Services
             var fileBytes = await _contractFileStorage.ReadAsync(path, ct);
             string base64Contract = Convert.ToBase64String(fileBytes);
 
-            var mellatReq =new MellatSubmitPayRequestReq
+            var mellatReq = new MellatSubmitPayRequestReq
             {
-                contractFile= base64Contract,
-                contractNumber=cmd.ContractNumber,
-                requestAmount=cmd.RequestAmount
-                
+                contractFile = base64Contract,
+                contractNumber = cmd.ContractNumber,
+                requestAmount = cmd.RequestAmount
+
             };
 
             var response = await client.SubmitPayRequestAsync(mellatReq, ct);
@@ -356,7 +496,29 @@ namespace Bank.Mellat.Infrastructure.Services
         public async Task<TransferInquiryResultDto> TransferInquiryAsync(TransferInquiryQuery q, CancellationToken ct)
         {
             var response = await _client.GetTransferInquiryAsync(new MellatTransferInquiryReq { RegisterCode = q.RegisterCode }, ct);
-            var result = _mapper.Map<TransferInquiryResultDto>(response);
+            var result = new TransferInquiryResultDto
+            {
+                ApprovalCode = response.Result.aprovalCode,
+                InquiryDetails = response.Result.inquiryDetails.Select(x => new TransferInquiryResultDto.InquiryDetailDto
+                {
+                    DeleteDate = x.deleteDate,
+                    DeleteTime = x.deleteDate,
+                    Description = x.description,
+                    DestIban = x.destIban,
+                    DestName = x.destName,
+                    DestNationalId = x.destNationalId,
+                    PayAmount = x.payAmount,
+                    ReturnDate=x.returnDate,
+                     ReturnReasonCode=x.returnReasonCode,
+                     ReturnTime=x.returnTime,
+                     SendDate=x.sendDate,
+                     SendTime=x.sendTime,
+                     TrackingNo=x.trackingNo,
+                  //  transferStatus = (TransferStatus)x.transferStatus,
+                    TransType =x.transType
+
+                }).ToList()
+            };
             return result;
         }
     }

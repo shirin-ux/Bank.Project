@@ -145,6 +145,7 @@ namespace LoanService.Infrastructure.Repositories
             {
                 State=flat.State,
                  Id=id,
+                RetryCount=flat.RetryCount,
                 Customer = new CustomerInfo(
                     flat.Customer_NationalCode,
                     flat.Customer_BirthDate,

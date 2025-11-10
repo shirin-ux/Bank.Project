@@ -12,9 +12,9 @@ namespace LoanService.Application.UseCase.Command.OtpRequest;
 public sealed record OtpRequestCommand : IRequest<OtpRequestResultDto>
 {
     public decimal ContractNumber { get; set; }      
-    public string AccountNumber { get; set; } = "";   
-    public string NationalCode { get; set; } = "";   
-    public string Mobile { get; set; } = "";
+    public string AccountNumber { get; set; } 
+    public string NationalCode { get; set; } 
+    public decimal PayAmount { get; set; } 
     public BankProviderType ProviderType { get; set; }
 
     public serviceType ServiceType { get; set; }

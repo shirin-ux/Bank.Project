@@ -66,40 +66,40 @@ public static class BankMellatMappingConfig
 
         TypeAdapterConfig<MellatCustomerCreditBalanceRes, GetCustomerCreditBalanceResultDto>
             .NewConfig()
-            .Map(d => d.NationalCode, s => s.NationalCode)
-            .Map(d => d.MessageCode, s => s.MessageCode)
-            .Map(d => d.Message, s => s.Message)
-            .Map(d => d.ContractCreditList, s => s.ContractCreditList);
+            .Map(d => d.NationalCode, s => s.nationalCode)
+            .Map(d => d.MessageCode, s => s.messageCode)
+            .Map(d => d.Message, s => s.message)
+            .Map(d => d.contractCreditList, s => s.ContractCreditList);
 
-        TypeAdapterConfig<MellatCustomerCreditBalanceRes.ContractCreditItem, GetCustomerCreditBalanceResultDto.ContractCreditItemDto>
+        TypeAdapterConfig<MellatCustomerCreditBalanceRes.contractCreditList, GetCustomerCreditBalanceResultDto.ContractCreditList>
             .NewConfig()
-            .Map(d => d.ApprovalCode, s => s.ApprovalCode)
-            .Map(d => d.ContractNumber, s => s.ContractNumber)
-            .Map(d => d.CreditBalance, s => s.CreditBalance);
+            .Map(d => d.ApprovalCode, s => s.approvalCode)
+            .Map(d => d.ContractNumber, s => s.contractNumber)
+            .Map(d => d.CreditBalance, s => s.creditBalance);
 
         TypeAdapterConfig<MellatOtpRes, OtpRequestResultDto>
          .NewConfig()
-         .Map(d => d.MessageCode, s => s.MessageCode)
-         .Map(d => d.Message, s => s.Message);
+         .Map(d => d.MessageCode, s => s.messageCode)
+         .Map(d => d.Message, s => s.message);
 
-        TypeAdapterConfig<MellatRepaymentRes, RepaymentRequestResultDto>
-           .NewConfig()
-           .Map(d => d.RepaymentDate, s => s.RepaymentDate)
-           .Map(d => d.AccountNumber, s => s.AccountNumber)
-           .Map(d => d.TrackNumber, s => s.TrackNumber)
-           .Map(d => d.ContractNumber, s => s.ContractNumber)
-           .Map(d => d.RepaymentAmount, s => s.RepaymentAmount)
-           .Map(d => d.CustomerName, s => s.CustomerName)
-           .Map(d => d.Message, s => s.Message)
-           .Map(d => d.MessageCode, s => s.MessageCode);
+        //TypeAdapterConfig<MellatRepaymentRes, RepaymentRequestResultDto>
+        //   .NewConfig()
+        //   .Map(d => d.RepaymentDate, s => s.RepaymentDate)
+        //   .Map(d => d.AccountNumber, s => s.AccountNumber)
+        //   .Map(d => d.TrackNumber, s => s.TrackNumber)
+        //   .Map(d => d.ContractNumber, s => s.ContractNumber)
+        //   .Map(d => d.RepaymentAmount, s => s.RepaymentAmount)
+        //   .Map(d => d.CustomerName, s => s.CustomerName)
+        //   .Map(d => d.Message, s => s.Message)
+        //   .Map(d => d.MessageCode, s => s.MessageCode);
 
-        TypeAdapterConfig<RepaymentRequestCommand, MellatRepaymentReq>
-            .NewConfig()
-            .Map(d => d.AccountNo, s => decimal.Parse(s.AccountNo))
-            .Map(d => d.ContractNo, s => s.ContractNo)
-            .Map(d => d.NationalCode, s => s.NationalCode)
-            .Map(d => d.RepaymentAmount, s => s.RepaymentAmount)
-            .Map(d => d.OtpCode, s => s.OtpCode);
+        //TypeAdapterConfig<RepaymentRequestCommand, MellatRepaymentReq>
+        //    .NewConfig()
+        //    .Map(d => d.AccountNo, s => decimal.Parse(s.AccountNo))
+        //    .Map(d => d.ContractNo, s => s.ContractNo)
+        //    .Map(d => d.NationalCode, s => s.NationalCode)
+        //    .Map(d => d.RepaymentAmount, s => s.RepaymentAmount)
+        //    .Map(d => d.OtpCode, s => s.OtpCode);
 
 
         TypeAdapterConfig<MellatCustomerBillingRes, GetCustomerBillingResultDto>
@@ -124,65 +124,65 @@ public static class BankMellatMappingConfig
 
 
 
-        TypeAdapterConfig<TransferRegisterCommand, MellatTransferRegisterReq>
-            .NewConfig()
-            .Map(d => d.ApprovalCode, s => s.ApprovalCode)
-            .Map(d => d.TransferDate, s => s.TransferDate)
-            .Map(d => d.PayAmount, s => s.PayAmount)
-            .Map(d => d.DestIban, s => s.DestIban)
-            .Map(d => d.DestNationalId, s => s.DestNationalId)
-            .Map(d => d.DestName, s => s.DestName)
-            .Map(d => d.Description, s => s.Description)
-            .Map(d => d.TransType, s => s.TransType)
-            .Map(d => d.Details, s => s.Details);
+        //TypeAdapterConfig<TransferRegisterCommand, MellatTransferRegisterReq>
+        //    .NewConfig()
+        //    .Map(d => d.ApprovalCode, s => s.ApprovalCode)
+        //    .Map(d => d.TransferDate, s => s.TransferDate)
+        //    .Map(d => d.PayAmount, s => s.PayAmount)
+        //    .Map(d => d.DestIban, s => s.DestIban)
+        //    .Map(d => d.DestNationalId, s => s.DestNationalId)
+        //    .Map(d => d.DestName, s => s.DestName)
+        //    .Map(d => d.Description, s => s.Description)
+        //    .Map(d => d.TransType, s => s.TransType)
+        //    .Map(d => d.Details, s => s.Details);
 
-        TypeAdapterConfig<MellatTransferRegisterReq.TransferDetailDto, TransferRegisterCommand.TransferDetailItem>
-            .NewConfig()
-            .TwoWays();
+        //TypeAdapterConfig<MellatTransferRegisterReq.TransferDetailDto, TransferRegisterCommand.TransferDetailItem>
+        //    .NewConfig()
+        //    .TwoWays();
 
-        TypeAdapterConfig<MellatTransferRegisterRes, TransferRegisterResultDto>
-            .NewConfig()
-            .Map(d => d.RegisterCode, s => s.RegisterCode)
-            .Map(d => d.TransType, s => s.TransType)
-            .Map(d => d.ContractsError, s => s.ContractsError)
-            .Map(d => d.TransactionsError, s => s.TransactionsError)
-            .Map(d => d.MessageCode, s => s.MessageCode)
-            .Map(d => d.Message, s => s.Message);
+        //TypeAdapterConfig<MellatTransferRegisterRes, TransferRegisterResultDto>
+        //    .NewConfig()
+        //    .Map(d => d.RegisterCode, s => s.RegisterCode)
+        //    .Map(d => d.TransType, s => s.TransType)
+        //    .Map(d => d.ContractsError, s => s.ContractsError)
+        //    .Map(d => d.TransactionsError, s => s.TransactionsError)
+        //    .Map(d => d.MessageCode, s => s.MessageCode)
+        //    .Map(d => d.Message, s => s.Message);
 
-        TypeAdapterConfig<MellatTransferInquiryRes, TransferInquiryResultDto>
-            .NewConfig()
-            .Map(d => d.RegisterCode, s => s.RegisterCode)
-            .Map(d => d.ApprovalCode, s => s.ApprovalCode)
-            .Map(d => d.MessageCode, s => s.MessageCode)
-            .Map(d => d.Message, s => s.Message)
-            .Map(d => d.InquiryDetails, s => s.InquiryDetails);
+        //TypeAdapterConfig<MellatTransferInquiryRes, TransferInquiryResultDto>
+        //    .NewConfig()
+        //    .Map(d => d.RegisterCode, s => s.RegisterCode)
+        //    .Map(d => d.ApprovalCode, s => s.ApprovalCode)
+        //    .Map(d => d.MessageCode, s => s.MessageCode)
+        //    .Map(d => d.Message, s => s.Message)
+        //    .Map(d => d.InquiryDetails, s => s.InquiryDetails);
 
-        TypeAdapterConfig<MellatTransferInquiryRes.TransferInquiryDetailDto, TransferInquiryResultDto.InquiryDetailDto>
-            .NewConfig()
-            //.Map(d => d.TransferStatus, s => s.TransferStatus switch
-            //{
-            //    1 => TransferStatus.Deleted,
-            //    2 => TransferStatus.Returned,
-            //    3 => TransferStatus.Sent,
-            //    4 => TransferStatus.Unsendable,
-            //    5 => TransferStatus.CanceledNoDebit,
-            //    6 => TransferStatus.CanceledAndReturned,
-            //    _ => TransferStatus.Registered
-            //})
-            .Map(d => d.PayAmount, s => s.PayAmount)
-            .Map(d => d.DestIban, s => s.DestIban)
-            .Map(d => d.DestName, s => s.DestName)
-            .Map(d => d.DestNationalId, s => s.DestNationalId)
-            .Map(d => d.TransType, s => s.TransType)
-            .Map(d => d.Description, s => s.Description)
-            .Map(d => d.SendDate, s => s.SendDate)
-            .Map(d => d.SendTime, s => s.SendTime)
-            .Map(d => d.ReturnDate, s => s.ReturnDate)
-            .Map(d => d.ReturnTime, s => s.ReturnTime)
-            .Map(d => d.DeleteDate, s => s.DeleteDate)
-            .Map(d => d.DeleteTime, s => s.DeleteTime)
-            .Map(d => d.TrackingNo, s => s.TrackingNo)
-            .Map(d => d.ReturnReasonCode, s => s.ReturnReasonCode);
+        //TypeAdapterConfig<MellatTransferInquiryRes.TransferInquiryDetailDto, TransferInquiryResultDto.InquiryDetailDto>
+        //    .NewConfig()
+        //    //.Map(d => d.TransferStatus, s => s.TransferStatus switch
+        //    //{
+        //    //    1 => TransferStatus.Deleted,
+        //    //    2 => TransferStatus.Returned,
+        //    //    3 => TransferStatus.Sent,
+        //    //    4 => TransferStatus.Unsendable,
+        //    //    5 => TransferStatus.CanceledNoDebit,
+        //    //    6 => TransferStatus.CanceledAndReturned,
+        //    //    _ => TransferStatus.Registered
+        //    //})
+        //    .Map(d => d.PayAmount, s => s.PayAmount)
+        //    .Map(d => d.DestIban, s => s.DestIban)
+        //    .Map(d => d.DestName, s => s.DestName)
+        //    .Map(d => d.DestNationalId, s => s.DestNationalId)
+        //    .Map(d => d.TransType, s => s.TransType)
+        //    .Map(d => d.Description, s => s.Description)
+        //    .Map(d => d.SendDate, s => s.SendDate)
+        //    .Map(d => d.SendTime, s => s.SendTime)
+        //    .Map(d => d.ReturnDate, s => s.ReturnDate)
+        //    .Map(d => d.ReturnTime, s => s.ReturnTime)
+        //    .Map(d => d.DeleteDate, s => s.DeleteDate)
+        //    .Map(d => d.DeleteTime, s => s.DeleteTime)
+        //    .Map(d => d.TrackingNo, s => s.TrackingNo)
+        //    .Map(d => d.ReturnReasonCode, s => s.ReturnReasonCode);
 
         TypeAdapterConfig<GetInstallmentsResultDto, InstallmentStatus>
             .NewConfig()
@@ -196,12 +196,12 @@ public static class BankMellatMappingConfig
               .Map(dest => dest.PaidAmount, src => src.PaymentState == 1 ? src.InstallmentAmount : 0) 
               .Map(dest => dest.Status, src => src.PaymentState == 1 ? "Paid" : "Pending");
 
-        TypeAdapterConfig< GetCustomerPurchaseDetailsCommand, MellatCustomerPurchaseDetailsReq>
-         .NewConfig()
-              .Map(dest => dest.FromDate, src => DateConversion.ToBankIntDate(src.FromDate))
-              .Map(dest => dest.ToDate, src => DateConversion.ToBankIntDate(src.ToDate))
-              .Map(dest => dest.ContractNumber, src => src.ContractNumber)
-              .Map(dest => dest.NationalCode, src => src.NationalCode);
+        //TypeAdapterConfig< GetCustomerPurchaseDetailsCommand, MellatCustomerPurchaseDetailsReq>
+        // .NewConfig()
+        //      .Map(dest => dest.FromDate, src => DateConversion.ToBankIntDate(src.FromDate))
+        //      .Map(dest => dest.ToDate, src => DateConversion.ToBankIntDate(src.ToDate))
+        //      .Map(dest => dest.ContractNumber, src => src.ContractNumber)
+        //      .Map(dest => dest.NationalCode, src => src.NationalCode);
     }
 }
 

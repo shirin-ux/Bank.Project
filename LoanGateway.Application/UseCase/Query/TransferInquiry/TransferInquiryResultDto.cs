@@ -27,7 +27,7 @@ public sealed record TransferInquiryResultDto:IBankResponse
 
     public sealed record InquiryDetailDto
     {
-        public TransferStatus transferStatus { get; init; } // 0..6
+        public TransferStatus transferStatus { get; set; } // 0..6
         public decimal PayAmount { get; init; }
         public string DestIban { get; init; } = default!;
         public string DestName { get; init; } = default!;

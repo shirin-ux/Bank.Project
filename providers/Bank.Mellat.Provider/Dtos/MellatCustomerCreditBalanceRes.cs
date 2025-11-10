@@ -8,21 +8,20 @@ namespace Bank.Mellat.Provider.Dtos
 {
     public record MellatCustomerCreditBalanceRes
     {
-        public string NationalCode { get; set; } = null!;
+        public string nationalCode { get; set; } = null!;
+        public contractCreditList[] ContractCreditList { get; set; } = Array.Empty<contractCreditList>();
 
-        public ContractCreditItem[]? ContractCreditList { get; set; }
+        public int? messageCode { get; set; }
+        public string? message { get; set; }
 
-        public int? MessageCode { get; set; }
-        public string? Message { get; set; }
-
-        public record ContractCreditItem
+        public record contractCreditList
         {
 
-            public decimal ApprovalCode { get; set; }
+            public decimal approvalCode { get; set; }
 
-            public decimal ContractNumber { get; set; }
+            public decimal contractNumber { get; set; }
 
-            public decimal CreditBalance { get; set; }
+            public decimal creditBalance { get; set; }
         }
     }
 

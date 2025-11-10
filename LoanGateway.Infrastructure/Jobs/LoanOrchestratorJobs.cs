@@ -2,6 +2,7 @@
 using Hangfire;
 using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Command.DepositRequest;
+using LoanService.Application.UseCase.Command.OtpRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities;
@@ -65,6 +66,15 @@ public sealed class LoanOrchestratorJobs : ILoanOrchestratorJobRunner
         _bg.Schedule<LoanJobRunner>(runner => runner.RunInquiryResultAsync(loanId, providerType,ct), delay);
 
         _logger.LogInformation("Scheduled inquiry-result retry for Loan {LoanId} after {Delay} seconds", loanId, delay.TotalSeconds);
+
+        return Task.CompletedTask;
+    }
+
+    public Task EnqueueOtpRequestRetryAsync(Guid loanId, OtpRequestCommand cmd, TimeSpan delay, CancellationToken ct)
+    {
+        _bg.Schedule<LoanJobRunner>( runner => runner.RunSendOtp(loanId, cmd),  delay);
+
+        _logger.LogInformation("Scheduled SendOtpAsync retry for Loan {LoanId} after {Delay} seconds", loanId, delay.TotalSeconds);
 
         return Task.CompletedTask;
     }

@@ -11,26 +11,26 @@ namespace Bank.Mellat.Provider.Dtos
         /// <summary>
         /// شماره قرارداد (اجباری)
         /// </summary>
-        public decimal ContractNumber { get; set; }
+        public decimal contractNumber { get; set; }
 
         /// <summary>
         /// کد ملی مشتری (اجباری)
         /// </summary>
-        public string NationalCode { get; set; } = string.Empty;
+        public string nationalCode { get; set; } = string.Empty;
 
         /// <summary>
         /// مبلغ درخواست یا وجه واریزی (اجباری)
         /// </summary>
-        public decimal PayAmount { get; set; }
+        public decimal payAmount { get; set; }
 
         /// <summary>
         /// نوع سرویس (1: واریز وجه، 2: بازپرداخت بدهی)
         /// </summary>
-        public short ServiceType { get; set; }
+        public short serviceType { get; set; }
 
         /// <summary>
         /// شماره حساب (اگر ServiceType = 2 باشد، اجباری است)
         /// </summary>
-        public string? AccountNumber { get; set; }
+        public string? accountNumber { get; set; }
     }
 }

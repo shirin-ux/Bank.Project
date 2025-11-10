@@ -13,7 +13,7 @@ namespace LoanService.Application.UseCase.Command.OtpRequest
         public int? MessageCode { get; set; }
 
         public string? Message { get; set; }
-        public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public string RequestId { get; set; }
 
         public IEnumerable<BankStatusItem> GetStatusItems()
         {

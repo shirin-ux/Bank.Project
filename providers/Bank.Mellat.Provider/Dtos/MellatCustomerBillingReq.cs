@@ -13,16 +13,16 @@ namespace Bank.Mellat.Provider.Dtos
         /// اگر 0 باشد، 30 صورتحساب آخر قرارداد بازگردانده می‌شود.
         /// اگر عددی غیر از 0 باشد، 30 صورتحساب کوچکتر از آن عدد برگردانده می‌شود.
         /// </summary>
-        public short BillingNumber { get; set; }
+        public short billingNumber { get; set; }
 
         /// <summary>
         /// شماره قرارداد (اجباری)
         /// </summary>
-        public decimal ContractNumber { get; set; }
+        public decimal contractNumber { get; set; }
 
         /// <summary>
         /// کد ملی مشتری (اجباری)
         /// </summary>
-        public string NationalCode { get; set; } = string.Empty;
+        public string nationalCode { get; set; } = string.Empty;
     }
 }

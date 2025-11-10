@@ -11,28 +11,28 @@ namespace Bank.Mellat.Provider.Dtos
         /// <summary>
         /// شماره حساب (اجباری)
         /// </summary>
-        public decimal AccountNo { get; set; }
+        public decimal accountNo { get; set; }
 
  
 
         /// <summary>
         /// شماره قرارداد (اجباری)
         /// </summary>
-        public decimal ContractNo { get; set; }
+        public decimal contractNo { get; set; }
 
         /// <summary>
         /// کد ملی مشتری (اجباری)
         /// </summary>
-        public string NationalCode { get; set; } = string.Empty;
+        public string nationalCode { get; set; } = string.Empty;
 
         /// <summary>
         /// مبلغ بازپرداخت (اجباری)
         /// </summary>
-        public decimal RepaymentAmount { get; set; }
+        public decimal repaymentAmount { get; set; }
 
         /// <summary>
         /// کد یکبار مصرف (اختیاری - ممکن است طبق تنظیمات مصوبه اجباری شود)
         /// </summary>
-        public int? OtpCode { get; set; }
+        public int? otpCode { get; set; }
     }
 }

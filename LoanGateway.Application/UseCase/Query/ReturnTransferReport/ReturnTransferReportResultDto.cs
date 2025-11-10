@@ -46,7 +46,8 @@ public sealed record ReturnTransferReportResultDto:IBankResponse
         Sent = 3,
         Unsendable = 4,
         CanceledNoDebit = 5,
-        CanceledAndReturned = 6
+        CanceledAndReturned = 6,
+        Unknown=7
     }
 
     public IEnumerable<BankStatusItem> GetStatusItems()

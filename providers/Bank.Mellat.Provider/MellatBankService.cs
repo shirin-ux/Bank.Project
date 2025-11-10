@@ -1,6 +1,7 @@
 ﻿using Bank.Mellat.Provider.Dtos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -11,6 +12,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
+using static Bank.Mellat.Provider.Dtos.MellatTransferRegisterReq;
 
 
 namespace Bank.Mellat.Provider;
@@ -56,7 +58,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
 
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync(_options.Value.BaseUrlApi+"/api/fs-contract-management/hub/customer-inquiry", content, ct);
+            var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-inquiry", content, ct);
 
             var responseText = await response.Content.ReadAsStringAsync(ct);
 
@@ -118,7 +120,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         string? errorBody = null;
         if (!res.IsSuccessStatusCode)
         {
-             errorBody = await res.Content.ReadAsStringAsync(ct);
+            errorBody = await res.Content.ReadAsStringAsync(ct);
             return (IsSuccess: false, Result: null, Error: $"Bank API responded with {(int)res.StatusCode} ({res.ReasonPhrase}). Response Body: {errorBody}");
         }
         var content = await res.Content.ReadAsStringAsync(ct);
@@ -128,7 +130,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         {
             var result = JsonSerializer.Deserialize<MellatInquiryResultRes>(content, _json);
 
-            return result != null? (true, result, null) : (false, null, $"Bank API returned null response. Response Body: {content}");
+            return result != null ? (true, result, null) : (false, null, $"Bank API returned null response. Response Body: {content}");
         }
         catch (JsonException ex)
         {
@@ -153,7 +155,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             loanAmount = req.loanAmount,
             installmentCount = req.installmentCount,
             address = req.address,
-           // cbTrackingCode = req.cbTrackingCode
+            // cbTrackingCode = req.cbTrackingCode
         };
 
         var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
@@ -163,7 +165,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         });
 
         using var content = new StringContent(json, Encoding.UTF8, "application/json");
-      
+
         var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/mellat-contract-file", content, ct);
 
         var responseText = await response.Content.ReadAsStringAsync(ct);
@@ -177,7 +179,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 $"Response Body: {errorBody}"
             );
         }
-     
+
 
         if (string.IsNullOrWhiteSpace(responseText))
         {
@@ -188,7 +190,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         MellatFileUploadRes? responseBank;
         try
         {
-         
+
             responseBank = JsonSerializer.Deserialize<MellatFileUploadRes>(responseText);
         }
         catch (Exception ex)
@@ -290,7 +292,7 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
 
         using var res = await client.SendAsync(msg, ct);
 
-        if(!res.IsSuccessStatusCode)
+        if (!res.IsSuccessStatusCode)
         {
             var errorBody = await res.Content.ReadAsStringAsync(ct);
             throw new HttpRequestException($"Bank API responded with {(int)res.StatusCode} ({res.ReasonPhrase}). " + $"Response Body: {errorBody}");
@@ -326,13 +328,13 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
 
         using var res = await client.SendAsync(msg, ct);
 
-        if(!res.IsSuccessStatusCode)
+        if (!res.IsSuccessStatusCode)
         {
             var errorBody = await res.Content.ReadAsStringAsync(ct);
             throw new HttpRequestException($"Bank API responded with {(int)res.StatusCode} ({res.ReasonPhrase}). " + $"Response Body: {errorBody}");
         }
 
-        var content =await res.Content.ReadAsStringAsync(ct);
+        var content = await res.Content.ReadAsStringAsync(ct);
 
         if (string.IsNullOrWhiteSpace(content))
             throw new InvalidOperationException("Bank API returned an empty response body.");
@@ -349,141 +351,345 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
     }
     public async Task<MellatCustomerCreditBalanceRes> GetCustomerCreditBalanceAsync(MellatCustomerCreditBalanceReq request, CancellationToken ct)
     {
-        var client = _http.CreateClient("MellatApi");
-        var token = await GetAccessTokenAsync(ct);
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = new
+        try
         {
-            nationalCode = request.nationalCode,
-            contractNumber = request.contractNumber
+            var client = _http.CreateClient("MellatApi");
+            var token = await GetAccessTokenAsync(ct);
 
-        };
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            var body = new
+            {
+                nationalCode = request.nationalCode,
+                contractNumber = request.contractNumber
+
+            };
+
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }); ;
+
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-credit-balance";
+            using var res = await client.PostAsync(url, content, ct);
+
+            var responseText = await res.Content.ReadAsStringAsync(ct);
+
+
+            var responseBank = JsonSerializer.Deserialize<MellatCustomerCreditBalanceRes>(responseText);
+
+            return responseBank;
+        }
+        catch (Exception ex)
         {
-            Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-        var url = _options.Value.BaseUrlApi + "/fs-contract-management/hub/customer-credit-balance";
+            _logger.LogError(ex, "Error in Mellat Inquiry Register");
+            throw;
+        }
 
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-
-        using var res = await client.PostAsync(url, content,ct);
-
-        res.EnsureSuccessStatusCode();
-
-        var response = await res.Content.ReadFromJsonAsync<MellatCustomerCreditBalanceRes>(_json, ct)
-                       ?? throw new InvalidOperationException("Empty response body");
-
-        return response;
     }
     public async Task<MellatOtpRes> RequestOtpAsync(MellatOtpReq req, CancellationToken ct)
     {
-        var client = await CreateApiClientAsync(ct);
-        using var msg = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlApi + "/hub/otp-request")
-        { Content = JsonContent.Create(req, options: _json) };
 
-        //msg.Headers.TryAddWithoutValidation("CorrelationId", req.CorrelationId);
+        try
+        {
+            var client = _http.CreateClient("MellatApi");
+            var token = await GetAccessTokenAsync(ct);
 
-        using var res = await client.SendAsync(msg, ct);
-        var json = await res.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<MellatOtpRes>(json);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        return (await res.Content.ReadFromJsonAsync<MellatOtpRes>(_json, ct))
-               ?? throw new InvalidOperationException("Empty body");
+            var body = new
+            {
+                contractNumber = req.contractNumber,
+                nationalCode = req.nationalCode,
+                payAmount = Math.Round(req.payAmount, 0),
+                serviceType = req.serviceType,
+                accountNumber = req.accountNumber
+            };
+
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }); ;
+
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/otp-request";
+            using var res = await client.PostAsync(url, content, ct);
+
+            var responseText = await res.Content.ReadAsStringAsync(ct);
+
+
+            var responseBank = JsonSerializer.Deserialize<MellatOtpRes>(responseText);
+
+            return responseBank;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Mellat Inquiry Register");
+            throw;
+        }
+
     }
     public async Task<MellatDepositRes> RequestDepositAsync(MellatDepositReq req, CancellationToken ct)
     {
-        var client = await CreateApiClientAsync(ct);
-        //msg.Headers.TryAddWithoutValidation("CorrelationId", req.CorrelationId);
-        var otpCodeResponse = await RequestOtpAsync(new MellatOtpReq
+
+        try
         {
-            AccountNumber = req.SellerAccountNo.ToString(),
-            NationalCode = req.SellerNationalCode,
-            ContractNumber = req.ContractNumber,
-            PayAmount = req.PayAmount
-        }, ct);
+            var client = _http.CreateClient("MellatApi");
+            var token = await GetAccessTokenAsync(ct);
 
-        req.OtpCode = otpCodeResponse.OtpCode;
-        using var msg = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlApi + "/hub/deposit-request") { Content = JsonContent.Create(req, options: _json) };
-        using var res = await client.SendAsync(msg, ct);
-        var json = await res.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<MellatDepositRes>(json);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        return (await res.Content.ReadFromJsonAsync<MellatDepositRes>(_json, ct))
-               ?? throw new InvalidOperationException("Empty body");
+            var body = new
+            {
+                contractNumber = req.contractNumber,
+                buyerNationalCode = req.buyerNationalCode,
+                sellerNationalCode = req.sellerNationalCode,
+                otpCode = req.otpCode,
+                depositType = req.depositType,
+                payAmount = req.payAmount,
+                sellerAccountNo = req.sellerAccountNo,
+                transactionDesc = req.transactionDesc
+            };
+
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }); ;
+
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/deposit-request";
+            using var res = await client.PostAsync(url, content, ct);
+
+            var responseText = await res.Content.ReadAsStringAsync(ct);
+
+
+            var responseBank = JsonSerializer.Deserialize<MellatDepositRes>(responseText);
+
+            return responseBank;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Mellat Inquiry Register");
+            throw;
+        }
+
     }
 
-    public async Task<MellatRepaymentRes> RequestRepaymentAsync(MellatRepaymentReq req, CancellationToken ct)
+    public async Task<MellatRepaymentRes> RepaymentRequestAsync(MellatRepaymentReq req, CancellationToken ct)
     {
-        var client = await CreateApiClientAsync(ct);
-        //msg.Headers.TryAddWithoutValidation("CorrelationId", req.CorrelationId);
-        var otpCodeResponse = await RequestOtpAsync(new MellatOtpReq
+
+        try
         {
-            AccountNumber = req.AccountNo.ToString(),
-            NationalCode = req.NationalCode,
-            ContractNumber = req.ContractNo,
-            PayAmount = req.RepaymentAmount
-        }, ct);
+            var client = _http.CreateClient("MellatApi");
+            var token = await GetAccessTokenAsync(ct);
 
-        req.OtpCode = otpCodeResponse.OtpCode;
-        using var msg = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlApi + "/hub/repayment-request") { Content = JsonContent.Create(req, options: _json) };
-        using var res = await client.SendAsync(msg, ct);
-        var json = await res.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<MellatRepaymentRes>(json);
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        return (await res.Content.ReadFromJsonAsync<MellatRepaymentRes>(_json, ct))
-               ?? throw new InvalidOperationException("Empty body");
+            var body = new
+            {
+                accountNo = req.accountNo,
+                contractNo = req.contractNo,
+                nationalCode = req.nationalCode,
+                otpCode = req.otpCode,
+                repaymentAmount = req.repaymentAmount
+            };
+
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }); ;
+
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/repayment-request";
+            using var res = await client.PostAsync(url, content, ct);
+
+            var responseText = await res.Content.ReadAsStringAsync(ct);
+
+
+            var responseBank = JsonSerializer.Deserialize<MellatRepaymentRes>(responseText);
+
+            return responseBank;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Mellat Inquiry Register");
+            throw;
+        }
+
     }
 
     public async Task<MellatCustomerBillingRes> GetCustomerBillingAsync(MellatCustomerBillingReq req, CancellationToken ct)
     {
-        var client = await CreateApiClientAsync(ct);
-        using var msg = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlApi + "/hub/customer-billing") { Content = JsonContent.Create(req, options: _json) };
-        using var res = await client.SendAsync(msg, ct);
-        var json = await res.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<MellatCustomerBillingRes>(json);
+        try
+        {
+            var client = _http.CreateClient("MellatApi");
+            var token = await GetAccessTokenAsync(ct);
 
-        return (await res.Content.ReadFromJsonAsync<MellatCustomerBillingRes>(_json, ct))
-               ?? throw new InvalidOperationException("Empty body");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var body = new
+            {
+                contractNumber = req.contractNumber,
+                billingNumber = req.billingNumber,
+                nationalCode = req.nationalCode
+            };
+
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }); ;
+
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-billing";
+            using var res = await client.PostAsync(url, content, ct);
+
+            var responseText = await res.Content.ReadAsStringAsync(ct);
+
+
+            var responseBank = JsonSerializer.Deserialize<MellatCustomerBillingRes>(responseText);
+
+            return responseBank;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Mellat Inquiry Register");
+            throw;
+        }
+
     }
 
     public async Task<MellatCustomerPurchaseDetailsRes> CustomerPurchaseDetailsAsync(MellatCustomerPurchaseDetailsReq req, CancellationToken ct)
     {
-        var client = await CreateApiClientAsync(ct);
-        using var msg = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlApi + "/hub/customer-purchase-details") { Content = JsonContent.Create(req, options: _json) };
-        using var res = await client.SendAsync(msg, ct);
-        var json = await res.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<MellatCustomerPurchaseDetailsRes>(json);
+        try
+        {
+            var client = _http.CreateClient("MellatApi");
+            var token = await GetAccessTokenAsync(ct);
 
-        return (await res.Content.ReadFromJsonAsync<MellatCustomerPurchaseDetailsRes>(_json, ct))
-               ?? throw new InvalidOperationException("Empty body");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var body = new
+            {
+                contractNumber = req.contractNumber,
+                toDate = req.toDate,
+                fromDate = req.fromDate,
+                nationalCode = req.nationalCode
+            };
+
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }); ;
+
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-purchase-details";
+            using var res = await client.PostAsync(url, content, ct);
+
+            var responseText = await res.Content.ReadAsStringAsync(ct);
+
+
+            var responseBank = JsonSerializer.Deserialize<MellatCustomerPurchaseDetailsRes>(responseText);
+
+            return responseBank;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Mellat Inquiry Register");
+            throw;
+        }
     }
 
     public async Task<MellatTransferRegisterRes> RegisterTransferAsync(MellatTransferRegisterReq req, CancellationToken ct)
     {
-        var client = await CreateApiClientAsync(ct);
-        using var msg = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlApi + "/transfer/transfer-register") { Content = JsonContent.Create(req, options: _json) };
-        using var res = await client.SendAsync(msg, ct);
-        var json = await res.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<MellatTransferRegisterRes>(json);
 
-        return (await res.Content.ReadFromJsonAsync<MellatTransferRegisterRes>(_json, ct))
-               ?? throw new InvalidOperationException("Empty body");
+        try
+        {
+            var client = _http.CreateClient("MellatApi");
+            var token = await GetAccessTokenAsync(ct);
+
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var body = new
+            {
+                approvalCode = req.approvalCode,
+                transferDate = req.transferDate,
+                payAmount = req.payAmount,
+                destIban = req.destIban,
+                destNationalId = req.destNationalId,
+                destName = req.destName,
+                description = req.description,
+                details = req.details.Select(x => new contractDetails
+                {
+                    amount = x.amount,
+                    referenceNo = x.referenceNo
+                }).ToList()
+            };
+
+            var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }); ;
+
+            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/transfer-register";
+            using var res = await client.PostAsync(url, content, ct);
+
+            var responseText = await res.Content.ReadAsStringAsync(ct);
+
+
+            var responseBank = JsonSerializer.Deserialize<MellatTransferRegisterRes>(responseText);
+
+            return responseBank;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in Mellat Inquiry Register");
+            throw;
+        }
     }
 
-    public async Task<MellatTransferInquiryRes> GetTransferInquiryAsync(MellatTransferInquiryReq req, CancellationToken ct)
+    public async Task<(bool IsSuccess, MellatTransferInquiryRes? Result, string? Error)> GetTransferInquiryAsync(MellatTransferInquiryReq req, CancellationToken ct)
     {
+
         var client = await CreateApiClientAsync(ct);
-        var url = _options.Value.BaseUrlApi + $"/transfer/transfer-inquiry?registerCode={req.RegisterCode}";
-        using var res = await client.GetAsync(url, ct);
-        res.EnsureSuccessStatusCode();
-        var response = await res.Content.ReadFromJsonAsync<MellatTransferInquiryRes>(_json, ct)
-                       ?? throw new InvalidOperationException("Empty response body");
-        return response;
+
+        using var msg = new HttpRequestMessage(HttpMethod.Get, _options.Value.BaseUrlApi + $"/api/fs-contract-management/hub/return-transfer-report");
+
+        using var res = await client.SendAsync(msg, ct);
+        string? errorBody = null;
+        if (!res.IsSuccessStatusCode)
+        {
+            errorBody = await res.Content.ReadAsStringAsync(ct);
+            return (IsSuccess: false, Result: null, Error: $"Bank API responded with {(int)res.StatusCode} ({res.ReasonPhrase}). Response Body: {errorBody}");
+        }
+        var content = await res.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(content))
+            throw new InvalidOperationException("Bank API returned an empty response body.");
+        try
+        {
+            var result = JsonSerializer.Deserialize<MellatTransferInquiryRes>(content, _json);
+
+            return result != null ? (true, result, null) : (false, null, $"Bank API returned null response. Response Body: {content}");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"Failed to parse JSON response: {ex.Message}\nResponse: {content}", ex);
+        }
     }
 
     public async Task<MellatSubmitPayRequestRes> SubmitPayRequestAsync(MellatSubmitPayRequestReq req, CancellationToken ct)
@@ -496,9 +702,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
 
         var body = new
         {
-           contractNumber=req.contractNumber,
-            requestAmount=req.requestAmount,
-            contractFile=req.contractFile
+            contractNumber = req.contractNumber,
+            requestAmount = req.requestAmount,
+            contractFile = req.contractFile
         };
 
         var json = JsonSerializer.Serialize(body, new JsonSerializerOptions
@@ -551,18 +757,36 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
 
     }
 
-    public async Task<MellatReturnTransferReportRes> GetReturnTransferReportAsync(MellatReturnTransferReportReq req, CancellationToken ct)
+    public async Task<(bool IsSuccess, MellatReturnTransferReportRes? Result, string? Error)>  GetReturnTransferReportAsync(MellatReturnTransferReportReq req, CancellationToken ct)
     {
 
-        var client = await CreateApiClientAsync(ct);
-        using var msg = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlApi + "/hub/return-transfer-report")
-        { Content = JsonContent.Create(req, options: _json) };
-        using var res = await client.SendAsync(msg, ct);
-        var json = await res.Content.ReadAsStringAsync();
-        var tokenResponse = JsonSerializer.Deserialize<MellatReturnTransferReportRes>(json);
 
-        return (await res.Content.ReadFromJsonAsync<MellatReturnTransferReportRes>(_json, ct))
-               ?? throw new InvalidOperationException("Empty body");
+
+        var client = await CreateApiClientAsync(ct);
+
+        using var msg = new HttpRequestMessage(HttpMethod.Get, _options.Value.BaseUrlApi + $"/api/fs-contract-management/hub/return-transfer-report");
+
+        using var res = await client.SendAsync(msg, ct);
+        string? errorBody = null;
+        if (!res.IsSuccessStatusCode)
+        {
+            errorBody = await res.Content.ReadAsStringAsync(ct);
+            return (IsSuccess: false, Result: null, Error: $"Bank API responded with {(int)res.StatusCode} ({res.ReasonPhrase}). Response Body: {errorBody}");
+        }
+        var content = await res.Content.ReadAsStringAsync(ct);
+        if (string.IsNullOrWhiteSpace(content))
+            throw new InvalidOperationException("Bank API returned an empty response body.");
+        try
+        {
+            var result = JsonSerializer.Deserialize<MellatReturnTransferReportRes>(content, _json);
+
+            return result != null ? (true, result, null) : (false, null, $"Bank API returned null response. Response Body: {content}");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException($"Failed to parse JSON response: {ex.Message}\nResponse: {content}", ex);
+        }
+
     }
 
 }

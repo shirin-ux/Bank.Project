@@ -3,7 +3,10 @@ using LoanService.Application.UseCase.Command.CustomerInquiry;
 using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.GetCollateralContractFile;
 using LoanService.Application.UseCase.Command.GetContractFile;
+using LoanService.Application.UseCase.Command.GetCustomerBilling;
+using LoanService.Application.UseCase.Command.GetCustomerPurchaseDetails;
 using LoanService.Application.UseCase.Command.OtpRequest;
+using LoanService.Application.UseCase.Command.RepaymentReques;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
 using LoanService.Application.UseCase.Command.SubmitPayRequest;
 using LoanService.Application.UseCase.Command.TransferRegister;
@@ -132,6 +135,27 @@ namespace LoanGateway.Api.Controllers
         }
 
 
+        [HttpPost("reyPayment")]
+        public async Task<IActionResult> RepaymentRequest(Guid loanId, RepaymentRequestCommand cmd, CancellationToken ct)
+        {
+            var result = await _orchestrator.RepaymentRequestAsync(loanId, cmd, ct);
+            return ToHttp(result);
+        }
+
+
+
+        [HttpPost("purchases")]
+        public async Task<IActionResult> GetPurchasesAsync(Guid loanId, GetCustomerPurchaseDetailsCommand cmd, CancellationToken ct)
+        {
+            var result = await _orchestrator.GetPurchasesAsync(loanId, cmd, ct);
+            return ToHttp(result);
+        }
+        [HttpPost("billing")]
+        public async Task<IActionResult> GetBillingAsync(Guid loanId, GetCustomerBillingCommand cmd, CancellationToken ct)
+        {
+            var result = await _orchestrator.GetBillingAsync(loanId, cmd, ct);
+            return ToHttp(result);
+        }
 
         // -------------------- Helper: Result → IActionResult --------------------
         private IActionResult ToHttp<T>(Result<T> result)

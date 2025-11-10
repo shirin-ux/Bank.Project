@@ -11,16 +11,16 @@ namespace Bank.Mellat.Provider.Dtos
         /// <summary>
         /// شماره تراکنش
         /// </summary>
-        public decimal TransactionNumber { get; set; }
+        public decimal transactionNumber { get; set; }
 
         /// <summary>
         /// کد خطای سامانه
         /// </summary>
-        public int MessageCode { get; set; }
+        public int messageCode { get; set; }
 
         /// <summary>
         /// پیام خطای سامانه
         /// </summary>
-        public string Message { get; set; } = string.Empty;
+        public string message { get; set; } = string.Empty;
     }
 }

@@ -3,152 +3,179 @@
     "CommonRules": {
       "10003": {
         "NextState": "Failed",
-        "UiMessage": "خطا در آماده‌سازی فایل قرارداد.",
+        "UiMessage": "متأسفیم، فایل قرارداد آماده نشد. لطفاً مجدداً تلاش کنید.",
         "Severity": "InProgress"
+
 
       },
       "15000": {
         "NextState": "Failed",
-        "UiMessage": " خطادر فرمت داده های ورودی .",
+        "UiMessage": "فرمت داده‌های وارد شده صحیح نیست. لطفاً داده‌ها را بررسی و دوباره ارسال کنید.",
         "Retryable": false
+
       },
       "15001": {
         "NextState": "Failed",
-        "UiMessage": " مجوز دسترسی به سرویس وجود ندارد .",
+        "UiMessage": "شما اجازه دسترسی به این سرویس را ندارید.",
         "Retryable": false
+
       },
       "15003": {
         "NextState": "InProgress",
-        "UiMessage": " اجرای سرویس با خطا مواجه شده است. .",
+        "UiMessage": "اجرای سرویس با مشکل مواجه شد. لطفاً دوباره تلاش کنید.",
         "Retryable": true
+
       },
       "15005": {
         "NextState": "Failed",
-        "UiMessage": " شماره قرارداد معتبر نمی باشد.",
+        "UiMessage": "شماره قرارداد وارد شده معتبر نیست. لطفاً بررسی و اصلاح کنید.",
         "Retryable": false
+
       },
       "15020": {
-        "NextState": "Failed",
-        "UiMessage": " عملیات با موفقیت اجرا شد.",
+        "NextState": "NoChange",
+        "UiMessage": "عملیات شما با موفقیت انجام شد.",
         "Retryable": false
+
+
       },
       "10004": {
         "NextState": "Failed",
-        "UiMessage": "اشکال در بازیابی اطالعات مصوبه.",
+        "UiMessage": "اطلاعات مصوبه قابل بازیابی نیست. لطفاً بعداً مجدداً تلاش کنید.",
         "Retryable": false
+
 
       },
       "10005": {
         "NextState": "InProgress",
-        "UiMessage": "جهت ثبت درخواست اعطای تسهیالت/تخصیص اعتبار، ثبت استعلام ها با خطا مواجه شد لطفا محدد تلاش کنید.",
+        "UiMessage": "ثبت استعلام‌ها با مشکل مواجه شد. لطفاً دوباره تلاش کنید.",
         "Retryable": true
+
 
       },
       "10101": {
         "NextState": "InProgress",
-        "UiMessage": "سرویس ها در دسترس نیست لطفا با پشتیبانی تماس بگیرید و پس از رفع مشکل مجدداتلاش کنید.",
+        "UiMessage": "سرویس در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید و پس از حل مشکل دوباره تلاش کنید.",
         "Retryable": true
+
 
       },
       "10111": {
         "NextState": "InProgress",
-        "UiMessage": "استعلام سمات : سرویس استعلام در دسترس نیست لطفا با پشتیبانی تماس بگیرید .",
+        "UiMessage": "سرویس استعلام سمات در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید.",
         "Retryable": true
+
 
       },
       "10181": {
         "NextState": "InProgress",
-        "UiMessage": " استعلام ثبت احوال : اجرای سرویس با خطا مواجه شده است.",
-        "Retryable":true
+        "UiMessage": "استعلام ثبت احوال با مشکل مواجه شد. لطفاً دوباره تلاش کنید.",
+        "Retryable": true
+
 
       },
       "10189": {
         "NextState": "Failed",
-        "UiMessage": "درصورتی که ثبت احوال استعلام ثبت احوال : اطالعات هو یتی کاربر مورد تایید نیست. ",
+        "UiMessage": "اطلاعات هویتی شما مورد تأیید ثبت احوال نیست.",
         "Retryable": false
+
       },
       "10192": {
         "NextState": "InProgress",
-        "UiMessage": "استعلام کدپستی :اجرای سرویس با خطا مواجه شده است..",
-        "Retryable":true
+        "UiMessage": "استعلام کدپستی با مشکل مواجه شد. لطفاً دوباره تلاش کنید.",
+        "Retryable": true
+
 
       },
       "10191": {
         "NextState": "InProgress",
-        "UiMessage": "استعلام کدپستی: کد پستی تایید نشد. در صورت ی که از صحت کدپستی اطمینان دار ید مجددا تلاش کنید.",
-        "Retryable":true
+        "UiMessage": "کدپستی وارد شده تأیید نشد. در صورت اطمینان از صحت، مجدداً تلاش کنید.",
+        "Retryable": true
+
 
       },
       "10193": {
         "NextState": "Failed",
-        "UiMessage": "استعلام کدپستی : کدپست ی وارد شده معتبر نیست ..",
+        "UiMessage": "کدپستی وارد شده معتبر نیست.",
         "Retryable": false
+
 
       },
       "10168": {
         "NextState": "Failed",
-        "UiMessage": "مشتری پیش از این از مصوبه جاری استفاده نموده است..",
+        "UiMessage": "شما قبلاً از این مصوبه استفاده کرده‌اید و امکان ثبت دوباره وجود ندارد.",
         "Retryable": false
+
 
       },
       "10400": {
         "NextState": "Failed",
-        "UiMessage": "استعلام کد رهگیری بانک مرکزی تسهیلالت تکیفی ازدواج مثبت است.",
+        "UiMessage": "استعلام کد رهگیری بانک مرکزی برای تسهیلات تکلیفی ازدواج مثبت است.",
         "Retryable": false
+
 
       },
       "10401": {
         "NextState": "Failed",
-        "UiMessage": " استعلام کد رهگیری بانک مرکزی تسهیلالت تکیفی ازدواج منفی است. .",
+        "UiMessage": "استعلام کد رهگیری بانک مرکزی برای تسهیلات تکلیفی ازدواج منفی است.",
         "Retryable": false
+
 
       },
       "10402": {
         "NextState": "InProgress",
-        "UiMessage": "جهت استعلام کدرهگیری تسهیالت تکلیفی مجددا تالش کنید..",
-        "Retryable":true
+        "UiMessage": "لطفاً مجدداً برای استعلام کد رهگیری تسهیلات تکلیفی تلاش کنید.",
+        "Retryable": true
+
 
       },
       "10171": {
         "NextState": "InProgress",
-        "UiMessage": "استعلام شاهکار:اجرای سرویس با خطا مواجه شده است.",
-        "Retryable":true
+        "UiMessage": "استعلام شاهکار با مشکل مواجه شد. لطفاً دوباره تلاش کنید.",
+        "Retryable": true
+
 
       },
       "10172": {
         "NextState": "Failed",
-        "UiMessage": " استعلام شاهکار:عدم تطابق شماره همراه با کد ملی.",
+        "UiMessage": "شماره همراه با کد ملی مطابقت ندارد.",
         "Retryable": false
+
 
       },
       "10183": {
         "NextState": "InProgress",
-        "UiMessage": "استعلام ثبت احوال : اجرای سروی س با خطا مواجه شده است.",
-        "Retryable":true
+        "UiMessage": "آدرس پستی ثبت نشده است. لطفاً اطلاعات خود را کامل کنید.",
+        "Retryable": true
+
 
       },
       "10194": {
         "NextState": "Failed",
-        "UiMessage": " با توجه به تنظیمات مصوبه، آدرس پستی مقداردهی نشده است.",
+        "UiMessage": "آدرس پستی ثبت نشده است. لطفاً اطلاعات خود را کامل کنید.",
         "Retryable": false
+
 
       },
       "12110": {
         "NextState": "InProgress",
-        "UiMessage": "با توحه به زمان درخواست قبلی برای مشتری در حال حاظر امکان درخواست جدید برای ایشان وحود ندارد لطفا دقایقی بعد تلاش نمایید.",
-        "Retryable":true
+        "UiMessage": "در حال حاضر امکان ثبت درخواست جدید وجود ندارد. لطفاً دقایقی بعد دوباره تلاش کنید.",
+        "Retryable": true
+
 
       },
       "12106": {
-        "NextState": "",
+        "NextState": "NoChange",
         "UiMessage": "فایل قرارداد با موفقیت ایجاد شد.",
-        "Retryable":true
+        "Retryable": true
+
 
       },
       "12103": {
         "NextState": "Failed",
-        "UiMessage": " پارامتر ورودی نامعتبر است. پس از بررسی مجددا تلاش کنید.",
+        "UiMessage": " پارامتر ورودی نامعتبر است. پس از بررسی مجددا وارد کنید.",
         "Retryable": false
+
       },
 
       "10302": {
@@ -159,12 +186,12 @@
       "11002": {
         "NextState": "InProgress",
         "UiMessage": "استعلامات معتبر وجود ندارد. لطفا مجددا درخواست اعطا را ثبت کنید.",
-        "Retryable":true
+        "Retryable": true
       },
       "11004": {
         "NextState": "InProgress",
         "UiMessage": "امضای قرارداد با مشکل مواجه شده است.",
-        "Retryable":true
+        "Retryable": true
       },
       "11008": {
         "NextState": "Ineligible",
@@ -186,149 +213,169 @@
       "11005": {
         "NextState": "InProgress",
         "UiMessage": "ذخیره یا بازیابی فایل قرارداد با مشکل مواجه شده است.",
-        "Retryable":true
+        "Retryable": true
       }
 
 
     },
+
     "CustomerInquiry": {
       "10000": {
         "NextState": "KYCChecked",
-        "UiMessage": "درخواست استعلام ثبت شد.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "درخواست استعلام با موفقیت ثبت شد."
       },
       "10189": {
         "NextState": "Ineligible",
-        "UiMessage": "اطلاعات هویتی کاربر مورد تایید ثبت احوال نیست.",
+        "UiMessage": "اطلاعات هویتی شما توسط ثبت احوال تایید نشده است.",
         "Retryable": false
+
       },
       "10168": {
         "NextState": "Ineligible",
-        "UiMessage": " مشتری پیش از این از مصوبه جاری استفاده نموده است.",
+        "UiMessage": "شما پیش از این از مصوبه جاری استفاده کرده‌اید.",
         "Retryable": false
+
       }
     },
     "CustomerInquiryResult": {
       "0": {
         "NextState": "Eligible",
-        "UiMessage": "مشتری واجد شرایط اخذ تسهیلات است.",
+        "UiMessage": "شما واجد شرایط دریافت تسهیلات هستید.",
         "Retryable": false
+
       },
       "1": {
         "NextState": "Ineligible",
-        "UiMessage": "مشتری واجد شرایط دریافت تسهیلات نیست.",
+        "UiMessage": "شما واجد شرایط دریافت تسهیلات نیستید.",
         "Retryable": false
+
       },
       "2": {
         "NextState": "Failed",
-        "UiMessage": "اختلال در استعلام وضعیت مشتری.",
+        "UiMessage": "در استعلام وضعیت مشتری مشکلی پیش آمده است. لطفاً دوباره تلاش کنید.",
         "Retryable": true
+
       },
       "10002": {
         "NextState": "InProgress",
-        "UiMessage": "اجرای سرویس با خطا مواجه شده است .",
+        "UiMessage": "سرویس به مشکل برخورد کرده است، در حال تلاش مجدد.",
         "Retryable": true
+
       },
       "10011": {
         "NextState": "Failed",
-        "UiMessage": "شماره پیگیری درخواست معتبر نیست . ",
+        "UiMessage": "شماره پیگیری وارد شده معتبر نیست.",
         "Retryable": false
+
       },
       "10100": {
-        "UiMessage": "درخواست استعلام منقضی شده است. لطفا مجددا درخواست استعلام ثبت کنید.",
+        "UiMessage": "درخواست شما منقضی شده است. لطفاً دوباره ثبت کنید.",
         "Retryable": false,
         "NextState": "Failed"
-      },
 
+      },
       "10102": {
-        "UiMessage": "استعلام‌ها درحال بررسی است. دقایقی دیگر دوباره امتحان کنید.",
+        "UiMessage": "استعلام‌ها در حال بررسی هستند. لطفاً چند دقیقه بعد دوباره امتحان کنید.",
         "Retryable": true,
         "NextState": "KYCChecked"
+
       },
       "10109": {
-        "UiMessage": "استعلام حساب ملی و وضعیت نظام وظیفه مشتری مثبت است.",
+        "UiMessage": "اطلاعات حساب ملی و وضعیت نظام وظیفه شما تأیید شده است.",
         "Severity": "Info",
         "NextState": "Eligible"
-      },
 
+      },
       "10112": {
-        "UiMessage": "استعلام سمات در حال بررسی است. دقایقی دیگر دوباره امتحان کنید.",
+        "UiMessage": "استعلام سمات در حال بررسی است. لطفاً چند دقیقه بعد دوباره بررسی کنید.",
         "Retryable": true,
         "NextState": "KYCChecked"
+
       },
       "10118": {
-        "UiMessage": "نتیجه استعلام دارای چک برگشتی یا تسهیلات غیرجاری است.",
+        "UiMessage": "نتیجه استعلام نشان‌دهنده چک برگشتی یا تسهیلات غیرجاری است.",
         "Retryable": false,
         "NextState": "Ineligible"
+
       },
       "10119": {
-        "UiMessage": "استعلام سمات مثبت است و مانعی وجود ندارد.",
+        "UiMessage": "استعلام سمات موفق بود و مانعی برای دریافت تسهیلات وجود ندارد.",
         "Severity": "Info",
         "NextState": "Eligible"
+
       },
       "10121": {
-        "UiMessage": "استعلام کد شهاب: سرویس در دسترس نیست. لطفا با پشتیبانی تماس بگیرید.",
+        "UiMessage": "سرویس کد شهاب در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید.",
         "Retryable": true,
         "NextState": "Failed"
+
       },
       "10122": {
-        "UiMessage": "استعلام کد شهاب: کد شهاب کاربر موجود نیست.",
+        "UiMessage": "کد شهاب شما در سیستم موجود نیست.",
         "Retryable": false,
         "NextState": "Failed"
-      },
 
+      },
       "10188": {
-        "UiMessage": "استعلام ثبت احوال: نتیجه استعلام مثبت است.",
+        "UiMessage": "نتیجه استعلام ثبت احوال مثبت است.",
         "Severity": "Info",
         "NextState": "Eligible"
-      },
 
+      },
       "10301": {
-        "UiMessage": "استعلام سقف تسهیلات: سرویس در دسترس نیست. لطفا با پشتیبانی تماس بگیرید.",
+        "UiMessage": "سرویس استعلام سقف تسهیلات در دسترس نیست. با پشتیبانی تماس بگیرید.",
         "Retryable": true,
         "NextState": "Failed"
+
       },
       "10128": {
-        "UiMessage": "استعلام کد شهاب: کد شهاب کاربر دریافت نشده است.",
+        "UiMessage": "کد شهاب کاربر دریافت نشده است.",
         "Retryable": false,
         "NextState": "Failed"
-      },
 
+      },
       "10178": {
-        "UiMessage": "استعلام شاهکار: کد ملی با شماره همراه مطابقت دارد.",
-        "Severity": "Info",
+        "UiMessage": "کد ملی و شماره همراه شما مطابقت دارند.",
+        "Retryable": false,
         "NextState": "Eligible"
+
       },
       "10201": {
-        "UiMessage": "استعلام ICS: سرویس در دسترس نیست. لطفا با پشتیبانی تماس بگیرید.",
+        "UiMessage": "سرویس ICS در دسترس نیست. با پشتیبانی تماس بگیرید.",
         "Retryable": false,
         "NextState": "Failed"
+
       },
       "10203": {
-        "UiMessage": "استعلام ICS: پاسخ استعلام دریافت نشده است.",
+        "UiMessage": "پاسخ استعلام ICS دریافت نشده است. لطفاً دوباره تلاش کنید.",
         "NextState": "Failed",
         "Retryable": true
+
       },
       "10303": {
-        "UiMessage": "استعلام سقف تسهیلات: پاسخ سمات دریافت نشده است.",
+        "UiMessage": "پاسخ استعلام سمات برای سقف تسهیلات دریافت نشده است.",
         "Retryable": true,
         "NextState": "Failed"
+
       },
       "10304": {
-        "UiMessage": "استعلام سقف تسهیلات: مبلغ درخواستی مشخص نشده است. لطفا ثبت درخواست انجام دهید.",
+        "UiMessage": "مبلغ درخواستی مشخص نیست. لطفاً درخواست خود را ثبت کنید.",
         "Retryable": false,
         "NextState": "Failed"
-      },
 
+      },
       "10195": {
-        "UiMessage": "استعلام کدپستی: کد پستی معتبر است.",
+        "UiMessage": "کد پستی شما معتبر است.",
         "Severity": "Info",
         "NextState": "Eligible"
+
       },
       "10162": {
-        "UiMessage": "استعلام مصوبه: اجرای سرویس با خطا مواجه شده است.",
+        "UiMessage": "در اجرای استعلام مصوبه خطایی رخ داده است. دوباره تلاش کنید.",
         "Retryable": true,
         "NextState": "Failed"
+
       }
     },
     "ContractFileNoCollateral": {
@@ -336,435 +383,442 @@
         "NextState": "ContractsPrepared",
         "UiMessage": "فایل قرارداد بدون وثیقه با موفقیت دریافت شد.",
         "Severity": "Info"
+
       },
-
       "10190": {
-
-        "UiMessage": "استعلام کدپستی: کد پستی تایید نشد. در صورت اطمینان از صحت، مجدداً تلاش کنید.",
+        "UiMessage": "کد پستی تایید نشد. لطفاً دوباره تلاش کنید.",
         "Retryable": true,
         "NextState": "InProgress"
+
       },
       "12100": {
-
-        "UiMessage": "سرویس دچار خطا شده است، لطفا مجددا تلاش کنید.",
+        "UiMessage": "خطایی در سرویس رخ داده است، لطفاً دوباره تلاش کنید.",
         "Retryable": true,
         "NextState": "InProgress"
+
       },
       "12101": {
-
-        "UiMessage": "اخذ فایل در این بازه زمانی برای هر کدملی تنها یکبار امکان‌پذیر است. لحظاتی بعد دوباره تلاش کنید.",
+        "UiMessage": "این عملیات برای هر کد ملی تنها یکبار امکان‌پذیر است. چند لحظه بعد دوباره امتحان کنید.",
         "Retryable": true,
         "NextState": "InProgress"
+
       },
       "12102": {
-
-        "UiMessage": "مبلغ یا مدت درخواست بیش از میزان مجاز است.",
+        "UiMessage": "مبلغ یا مدت درخواست شما بیش از حد مجاز است.",
         "Retryable": false,
         "NextState": "Failed"
-      },
 
+      },
       "12104": {
-        "UiMessage": "با توجه به مصوبه، اجازه استفاده از سرویس را ندارید.",
+        "UiMessage": "شما اجازه استفاده از این سرویس را ندارید.",
         "Retryable": false,
         "NextState": "Ineligible"
+
       }
     },
     "OtpRequest": {
-      "0": {
+      "16011": {
         "NextState": "OtpSent",
         "UiMessage": "رمز یکبار مصرف با موفقیت ارسال شد.",
         "Severity": "Info"
+
       },
-      "100": {
+      "16001": {
         "NextState": "Failed",
-        "UiMessage": "ارسال OTP با خطا مواجه شد.",
+        "UiMessage": "ارسال رمز یکبار مصرف با مشکل مواجه شد، دوباره تلاش کنید.",
         "Retryable": true
+
       },
-      "200": {
+      "16008": {
         "NextState": "Failed",
-        "UiMessage": "کد ملی یا شماره قرارداد معتبر نیست.",
+        "UiMessage": "سرویس یک بار رمز همراه/پیامک ی خر یدار ی نشده است.",
         "Retryable": true
+
       }
     },
+
 
     "ContractFileWithCollateral": {
       "0": {
         "NextState": "ContractsPrepared",
-        "UiMessage": "فایل قرارداد با وثیقه با موفقیت دریافت شد.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "فایل قرارداد با موفقیت دریافت شد."
       },
       "12100": {
-        "UiMessage": "سرویس دچار خطا شده است، لطفا مجددا تالش کنید.",
         "Retryable": false,
-        "NextState": "Failed"
+        "NextState": "Failed",
+        "UiMessage": "خطایی در دریافت فایل رخ داده است، لطفاً دوباره تلاش کنید."
       },
       "12101": {
-        "UiMessage": "اخذ فایل در این بازه زمانی تنها یکبار امکان‌پذیر است. چند ثانیه بعد مجدداً تلاش کنید.",
+        "UiMessage": "این عملیات تنها یکبار امکان‌پذیر است. چند لحظه بعد دوباره امتحان کنید.",
         "Retryable": true,
         "NextState": "Failed"
       },
       "12102": {
-        "UiMessage": "مبلغ یا مدت درخواست بیش از مقدار مجاز است.",
-        "Retryable": false,
-        "NextState": "Failed"
-      },
 
-      "12104": {
-        "UiMessage": "با توجه به مصوبه، اجازه استفاده از این سرویس را ندارید.",
         "Retryable": false,
-        "NextState": "Failed"
+        "NextState": "Failed",
+        "UiMessage": "مبلغ یا مدت درخواست شما بیش از حد مجاز است."
+      },
+      "12104": {
+
+        "Retryable": false,
+        "NextState": "Failed",
+        "UiMessage": "شما اجازه استفاده از این سرویس را ندارید."
       },
       "12105": {
-        "UiMessage": "نوع وثیقه مورد استفاده معتبر نیست.",
-        "Retryable": true,
-        "NextState": "InProgress"
-      },
 
+        "Retryable": true,
+        "NextState": "InProgress",
+        "UiMessage": "نوع وثیقه معتبر نیست، لطفاً بررسی کنید."
+      },
       "10221": {
-        "UiMessage": "با توجه به تنظیمات مصوبه، کد رهگیری بانک مرکزی مقداردهی نشده است.",
+
         "Retryable": false,
-        "NextState": "Failed"
+        "NextState": "Failed",
+        "UiMessage": "کد رهگیری بانک مرکزی مقداردهی نشده است."
       }
     },
     "PayRequest": {
       "0": {
         "NextState": "FacilitySubmitted",
-        "UiMessage": "درخواست اعطای تسهیلات با موفقیت ثبت شد.",
-        "Severity": "Info"
+        "Retryable": false,
+        "UiMessage": "درخواست شما با موفقیت ثبت شد."
       },
       "11000": {
         "NextState": "Approved",
-        "UiMessage": "اعطای تسهیلات با موفقیت انجام شد.",
-        "Severity": "Info"
+        "Retryable": false,
+        "UiMessage": "تسهیلات مورد نظر با موفقیت اعطا شد."
       },
-      "11010 ": {
+      "11010": {
         "Retryable": false,
         "NextState": "Failed",
-        "UiMessage": "مبلغ درخواستی با مبلغ قرارداد تطابق ندارد و امکان ثبت درخواست با مبلغ متفاوت وجود  ندارد"
+        "UiMessage": "مبلغ درخواست شده با مبلغ قرارداد مطابقت ندارد."
       },
-
-      "17003 ": {
+      "17003": {
         "Retryable": false,
         "NextState": "Failed",
-        "UiMessage": "مبلغ درخواستی نسبت به سقف ماهیانه معتبر نمی باشد."
+        "UiMessage": "مبلغ درخواستی از سقف ماهیانه مجاز بیشتر است."
       },
       "11006": {
         "NextState": "Ineligible",
-        "UiMessage": "امکان اعطای تسهیلات برای مشتری وجود ندارد.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "این مشتری امکان دریافت تسهیلات را ندارد."
       },
       "11012": {
         "NextState": "InProgress",
-        "UiMessage": "سرویس استعلام با خطا مواجه شده است.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "خطایی در سرویس استعلام رخ داده است، لطفاً صبر کنید."
       },
       "11013": {
         "NextState": "InProgress",
-        "UiMessage": "پاسخ استعلام‌ها دریافت نشده است.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "پاسخ استعلام‌ها هنوز دریافت نشده است."
       },
       "11014": {
         "NextState": "Ineligible",
-        "UiMessage": "با توجه به نتیجه استعلامات امکان اعطای تسهیلات وجود ندارد.",
-        "Retryable": false
+
+        "Retryable": false,
+        "UiMessage": "با توجه به استعلام‌ها امکان اعطای تسهیلات وجود ندارد."
       },
       "11015": {
         "NextState": "InProgress",
-        "UiMessage": "دریافت کد پیگیری سمات با خطا مواجه شده است. لطفا مجددا تلاش کنید.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "خطایی در دریافت کد پیگیری رخ داده، لطفاً دوباره تلاش کنید."
       },
       "2024": {
         "NextState": "Failed",
-        "UiMessage": "موجودی حساب کافی نیست.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "موجودی حساب کافی نیست."
       },
       "319360": {
         "NextState": "Ineligible",
-        "UiMessage": "شماره تلفن همراه معتبر در سامانه سپرده‌ها وجود ندارد.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "شماره همراه وارد شده در سامانه موجود نیست."
       },
       "3172101": {
         "NextState": "Ineligible",
-        "UiMessage": "تاریخ اعتبار خط منقضی شده است.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "تاریخ اعتبار خط شما منقضی شده است."
       },
       "319661": {
         "NextState": "Ineligible",
-        "UiMessage": "مجوز غیر فعال شده است.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "مجوز مورد نظر غیر فعال شده است."
       },
       "317439": {
         "NextState": "Ineligible",
-        "UiMessage": "تسهیلات قبلاً اعطا شده است. جهت بررسی وضعیت پشتیبانی تماس بگیرید.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "این تسهیلات قبلاً اعطا شده است. برای بررسی بیشتر با پشتیبانی تماس بگیرید."
       },
       "317917": {
         "NextState": "Ineligible",
-        "UiMessage": "امکان اعطای تکراری این تسهیلات وجود ندارد.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "این تسهیلات را نمی‌توان دوباره اعطا کرد."
       },
-
       "3184680": {
         "NextState": "Ineligible",
-        "UiMessage": "این نوع تسهیلات در پیشنهاد غیر فعال است.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "این نوع تسهیلات در پیشنهاد غیر فعال است."
       }
     },
     "PayResponse": {
       "12200": {
         "NextState": "InstallmentChecked",
-        "UiMessage": "سرویس با موفقیت اجرا شد.",
-        "Severity": "Info"
+        "Severity": "Info",
+        "UiMessage": "سرویس با موفقیت اجرا شد."
       },
       "11016": {
         "NextState": "Failed",
-        "UiMessage": "خطای در اجرای سرویس اعطا/تخصیص بانک ملت.",
-        "Retryable": false
+
+        "Retryable": false,
+        "UiMessage": "خطایی در اجرای سرویس بانک رخ داده است."
       },
       "12201": {
         "NextState": "Failed",
-        "UiMessage": "پارامتر ورودی نامعتبر است. پس از بررسی مجددا تلاش کنید.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "پارامتر ورودی نامعتبر است. لطفاً دوباره بررسی و تلاش کنید."
       },
       "12202": {
         "NextState": "Ineligible",
-        "UiMessage": "مجوز دسترسی به اطلاعات قرارداد را ندارید.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "شما اجازه دسترسی به اطلاعات قرارداد را ندارید."
       },
       "12203": {
         "NextState": "InProgress",
-        "UiMessage": "اجرای سرویس با خطا مواجه شده است. لطفا مجددا تلاش کنید.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "خطایی در اجرای سرویس رخ داده است، لطفاً دوباره تلاش کنید."
       },
       "12204": {
         "NextState": "Ineligible",
-        "UiMessage": "قرارداد درخواست شده یافت نشد.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "قرارداد مورد نظر یافت نشد."
       },
       "12205": {
         "NextState": "InProgress",
-        "UiMessage": "امکان بازپرداخت وجود ندارد. لطفا پس از چند دقیقه مجددا تلاش نمایید.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "امکان بازپرداخت فعلاً وجود ندارد، چند دقیقه دیگر تلاش کنید."
       },
       "12206": {
         "NextState": "Eligible",
-        "UiMessage": "قرارداد تسویه شده است.",
-        "Retryable": false
+        "Retryable": false,
+        "UiMessage": "قرارداد شما تسویه شده است."
       }
     },
     "Installments": {
       "12200": {
         "NextState": "InstallmentChecked",
-        "UiMessage": "اقساط با موفقیت دریافت شد.",
-        "Severity": "Info"
+        "Severity": "Info",
+        "UiMessage": "اقساط با موفقیت دریافت شد."
       },
       "12201": {
         "NextState": "InProgress",
-        "UiMessage": "پارامتر ورودی نامعتبر است. پس از بررس ی مجددا تلاش کنید.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "پارامتر ورودی نامعتبر است. لطفاً دوباره تلاش کنید."
       },
       "12203": {
         "NextState": "InProgress",
-        "UiMessage": "اجرای سرویس با خطا مواجه شده است. لطفا مجددا تلاش کنید.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "خطایی در سرویس رخ داده، لطفاً دوباره تلاش کنید."
       },
       "12202": {
         "NextState": "Ineligible",
-        "UiMessage": "مجوز دسترس ی به اطالعات قرارداد درخواست شده را ندارید.",
-        "Retryable": true
+        "Retryable": true,
+        "UiMessage": "شما اجازه دسترسی به اطلاعات قرارداد را ندارید."
       }
     },
+
     "DepositRequest": {
       "13110": {
         "NextState": "Approved",
-        "UiMessage": "عملیات واریز وجه با موفقیت اجرا شد.",
+        "UiMessage": "واریز وجه با موفقیت انجام شد.",
         "Severity": "Info"
       },
       "15003": {
         "NextState": "InProgress",
-        "UiMessage": "اجرای سروی س با خطا مواجه شده است.",
+        "UiMessage": "در حال پردازش واریز وجه هستیم، لطفاً کمی صبر کنید.",
         "Retryable": true
       },
       "15001": {
         "NextState": "Failed",
-        "UiMessage": "مجوز دسترسی وجود ندارد.",
+        "UiMessage": "شما اجازه انجام این عملیات را ندارید.",
         "Retryable": false
       },
       "15005": {
         "NextState": "Failed",
-        "UiMessage": "قرارداد معتبر نیست.",
+        "UiMessage": "قرارداد وارد شده معتبر نیست.",
         "Retryable": false
       },
       "15006": {
         "NextState": "Failed",
-        "UiMessage": "شماره مشتری یافت نشد.",
+        "UiMessage": "شماره مشتری یافت نشد. لطفاً بررسی کنید.",
         "Retryable": false
       },
       "13103": {
         "NextState": "Failed",
-        "UiMessage": "زمان درخواست قبلی نگذشته.",
+        "UiMessage": "زمان کافی از درخواست قبلی نگذشته است. لطفاً بعداً تلاش کنید.",
         "Retryable": false
       },
       "13105": {
         "NextState": "Failed",
-        "UiMessage": "اعتبار قرارداد به پایان رسیده.",
+        "UiMessage": "اعتبار قرارداد شما به پایان رسیده است.",
         "Retryable": false
       },
       "13107": {
         "NextState": "Failed",
-        "UiMessage": "اطلاعات یافت نشد.",
+        "UiMessage": "اطلاعات مورد نظر یافت نشد.",
         "Retryable": false
       },
       "13111": {
         "NextState": "Failed",
-        "UiMessage": "نوع واریز وجه مشخص نشده.",
+        "UiMessage": "لطفاً نوع واریز وجه را مشخص کنید.",
         "Retryable": false
       },
       "13112": {
         "NextState": "Failed",
-        "UiMessage": "نوع واریز وجه معتبر نیست.",
+        "UiMessage": "نوع واریز وجه وارد شده معتبر نیست.",
         "Retryable": false
       },
       "15024": {
         "NextState": "Failed",
-        "UiMessage": "شماره حساب معتبر نیست.",
+        "UiMessage": "شماره حساب وارد شده معتبر نیست.",
         "Retryable": false
       },
       "13108": {
         "NextState": "InProgress",
-        "UiMessage": "حالت خاص کسب‌وکاری (با message دریافتی).",
+        "UiMessage": "پردازش عملیات در جریان است.",
         "Retryable": true
       },
       "16005": {
         "NextState": "InProgress",
-        "UiMessage": "اجرای سروی س با خطا مواجه شده است.",
+        "UiMessage": "خطایی در سرویس رخ داده، لطفاً صبر کنید.",
         "Retryable": true
       },
       "16006": {
         "NextState": "Failed",
-        "UiMessage": "OTP قبلاً استفاده شده.",
+        "UiMessage": "این کد قبلاً استفاده شده است.",
         "Retryable": false
       },
       "16007": {
         "NextState": "Failed",
-        "UiMessage": "صحت‌سنجی یکسان نیست.",
+        "UiMessage": "صحت‌ سنجی داده‌ها با هم مطابقت ندارد.",
         "Retryable": false
       },
       "16009": {
         "NextState": "Failed",
-        "UiMessage": "OTP ارسال نشده.",
+        "UiMessage": "کد ارسال نشده است.",
         "Retryable": false
       },
       "16010": {
         "NextState": "Failed",
-        "UiMessage": "OTP باطل شده",
+        "UiMessage": "رمز دوم باطل شده است.",
         "Retryable": false
       }
     },
     "RepaymentRequest": {
       "0": {
         "NextState": "RepaymentCompleted",
-        "UiMessage": "بازپرداخت بدهی با موفقیت انجام شد.",
-        "Severity": "Info"
+        "UiMessage": "بازپرداخت بدهی شما با موفقیت انجام شد.",
+        "Retryable": false
       },
       "100": {
         "NextState": "InProgress",
-        "UiMessage": "خطا در بازپرداخت بدهی.",
+        "UiMessage": "خطایی در بازپرداخت رخ داده است، لطفاً کمی صبر کنید.",
         "Retryable": true
       }
     },
     "CustomerBilling": {
       "0": {
         "NextState": "BillingRetrieved",
-        "UiMessage": "صورتحساب مشتری با موفقیت دریافت شد.",
+        "UiMessage": "صورتحساب شما با موفقیت دریافت شد.",
         "Severity": "Info"
       },
       "100": {
         "NextState": "InProgress",
-        "UiMessage": "خطا در دریافت صورتحساب.",
+        "UiMessage": "خطایی در دریافت صورتحساب رخ داده است، لطفاً صبر کنید.",
         "Retryable": true
       }
     },
     "PurchaseDetails": {
       "0": {
         "NextState": "PurchasesRetrieved",
-        "UiMessage": "ریز خریدهای مشتری با موفقیت دریافت شد.",
+        "UiMessage": " خریدهای شما با موفقیت دریافت شد.",
         "Severity": "Info"
       },
       "100": {
         "NextState": "Failed",
-        "UiMessage": "خطا در دریافت ریز خریدها.",
+        "UiMessage": "خطا در دریافت خریدها.",
         "Retryable": false
       }
     },
     "TransferRegister": {
       "21000": {
         "NextState": "RemittanceChecked",
-        "UiMessage": " ثبت حواله با موفقیت انجام شد.",
-        "Severity": "Info"
+        "UiMessage": "حواله شما با موفقیت ثبت شد.",
+        "Retryable": false
       },
       "21002": {
-        "UiMessage": "امکان ثبت حواله به مقصد این شبا وجود ندارد.",
+        "UiMessage": "امکان ارسال حواله به این شماره شبا وجود ندارد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21003": {
-        "UiMessage": "شرح مقصد اجباری است.",
+        "UiMessage": "لطفاً شرح مقصد را وارد کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21004": {
-        "UiMessage": "شماره شبای مقصد حواله نامعتبر می‌باشد.",
+        "UiMessage": "شماره شبا مقصد وارد شده معتبر نیست. لطفاً بررسی کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21005": {
-        "UiMessage": "کد ملی ذینفع معتبر نمی‌باشد.",
+        "UiMessage": "کد ملی ذینفع معتبر نیست. لطفاً بررسی کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21006": {
-        "UiMessage": "کد شبای مقصد نباید با کد شبای مبدأ یکسان باشد.",
+        "UiMessage": "شماره شبا مقصد و مبدأ نباید یکسان باشند.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21007": {
-        "UiMessage": "تاریخ وارد شده نامعتبر می‌باشد.",
+        "UiMessage": "تاریخ وارد شده معتبر نیست. لطفاً اصلاح کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21008": {
-        "UiMessage": "مبلغ اعلام شده معتبر نیست.",
+        "UiMessage": "مبلغ وارد شده معتبر نیست. لطفاً بررسی و اصلاح کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21009": {
-        "UiMessage": "کد شبا مبدأ با شماره شباهای اعلامی مطابقت ندارد.",
+        "UiMessage": "شماره شبا مبدأ با شباهای اعلام شده همخوانی ندارد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21010": {
-        "UiMessage": "شماره شبا ریالی نمی‌باشد.",
+        "UiMessage": "این شماره شبا ریالی نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21011": {
-        "UiMessage": "بانک مقصد نامعتبر است.",
+        "UiMessage": "بانک مقصد وارد شده معتبر نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21012": {
-        "UiMessage": "تاریخ حواله نباید بیش از ۱۰ روز آینده باشد.",
+        "UiMessage": "تاریخ حواله بیش از ۱۰ روز آینده است و معتبر نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21013": {
-        "UiMessage": "موجودی حساب کافی نیست.",
+        "UiMessage": "موجودی حساب کافی نیست. لطفاً موجودی را بررسی کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21016": {
-        "UiMessage": "شماره قراردادهای مشخص شده معتبر نیستند.",
+        "UiMessage": "شماره قراردادهای وارد شده معتبر نیستند.",
         "Retryable": false,
         "NextState": "Failed"
       },
@@ -774,67 +828,67 @@
         "NextState": "Failed"
       },
       "21018": {
-        "UiMessage": "شماره شبای مقصد یافت نشد.",
+        "UiMessage": "شماره شبا مقصد پیدا نشد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21019": {
-        "UiMessage": "اطلاعات شماره شبای مقصد همخوانی ندارد.",
+        "UiMessage": "اطلاعات شماره شبا مقصد با داده‌های موجود همخوانی ندارد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21020": {
-        "UiMessage": "شماره شبای مبدأ معتبر نمی‌باشد.",
+        "UiMessage": "شماره شبا مبدأ معتبر نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21021": {
-        "UiMessage": "مجموع مبالغ صحیح نمی‌باشد.",
+        "UiMessage": "جمع مبالغ وارد شده صحیح نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "21022": {
-        "UiMessage": "نام ذینفع معتبر نمی‌باشد.",
+        "UiMessage": "نام ذینفع معتبر نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "18001": {
-        "UiMessage": "شماره شبای وارد شده معتبر نیست.",
+        "UiMessage": "شماره شبا وارد شده معتبر نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "18002": {
-        "UiMessage": "خطا در بانک مقصد. لطفا مجددا تلاش کنید.",
+        "UiMessage": "خطایی در بانک مقصد رخ داده است. لطفاً دوباره تلاش کنید.",
         "Retryable": true,
         "NextState": "InProgress"
       },
       "18003": {
-        "UiMessage": "شبا مقصد مسدود و بدون قابلیت واریز می‌باشد.",
+        "UiMessage": "شماره شبا مقصد مسدود است و امکان واریز ندارد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "18004": {
-        "UiMessage": "حساب شبا مقصد راکد می‌باشد.",
+        "UiMessage": "حساب شبا مقصد غیر فعال است.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "18005": {
-        "UiMessage": "شبا مقصد مسدود با قابلیت واریز است.",
+        "UiMessage": "شماره شبا مقصد مسدود است، اما قابلیت واریز دارد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "18006": {
-        "UiMessage": "وضعیت شبا مقصد نامشخص است.",
+        "UiMessage": "وضعیت شماره شبا مقصد نامشخص است.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "19001": {
-        "UiMessage": "عدم اعتبار مشتری.",
+        "UiMessage": "مشتری معتبر نیست.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "19002": {
-        "UiMessage": "عدم تطابق شبا و کد ملی.",
+        "UiMessage": "شماره شبا و کد ملی وارد شده با هم همخوانی ندارند.",
         "Retryable": false,
         "NextState": "Failed"
       }
@@ -843,41 +897,42 @@
     "ReturnedTransfers": {
       "0": {
         "NextState": "RemittanceReturned",
-        "UiMessage": "فهرست حواله‌های برگشتی دریافت شد.",
-        "Severity": "Info"
+        "UiMessage": "تمامی حواله‌های برگشتی با موفقیت دریافت شدند.",
+        "Retryable": false
+
       },
       "22001": {
-        "UiMessage": "اجرای سرویس استعلام ردیف حواله با خطا مواجه شده است.",
+        "UiMessage": "خطایی در دریافت وضعیت حواله رخ داده است. لطفاً دوباره تلاش کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "22002": {
-        "UiMessage": "حواله در وضعیت ثبت اطلاعات مقصد می‌باشد. امکان نمایش وضعیت ردیف‌های حواله وجود ندارد.",
+        "UiMessage": "حواله هنوز در مرحله ثبت اطلاعات مقصد است و امکان نمایش وضعیت ردیف‌ها وجود ندارد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "22003": {
-        "UiMessage": "حواله در وضعیت حذف می‌باشد. امکان نمایش وضعیت ردیف‌های حواله وجود ندارد.",
+        "UiMessage": "این حواله حذف شده است و نمی‌توان وضعیت ردیف‌های آن را مشاهده کرد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "22004": {
-        "UiMessage": "حواله در وضعیت ابطال می‌باشد. امکان نمایش وضعیت ردیف‌های حواله وجود ندارد.",
+        "UiMessage": "این حواله ابطال شده است و نمی‌توان وضعیت ردیف‌های آن را مشاهده کرد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "22005": {
-        "UiMessage": "با شماره مرجع وارد شده، حواله‌ای ثبت نشده است.",
+        "UiMessage": "هیچ حواله‌ای با شماره مرجع وارد شده پیدا نشد. لطفاً شماره را بررسی کنید.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "22006": {
-        "UiMessage": "همه ردیف‌های حواله در وضعیت ثبت شده می‌باشند. امکان نمایش وضعیت ردیف‌های حواله وجود ندارد.",
+        "UiMessage": "همه ردیف‌های این حواله ثبت شده‌اند و امکان نمایش وضعیت آنها وجود ندارد.",
         "Retryable": false,
         "NextState": "Failed"
       },
       "22007": {
-        "UiMessage": "شماره پیگیری ثبت حواله نامعتبر است.",
+        "UiMessage": "شماره پیگیری وارد شده معتبر نیست. لطفاً آن را بررسی و دوباره وارد کنید.",
         "Retryable": false,
         "NextState": "Failed"
       }

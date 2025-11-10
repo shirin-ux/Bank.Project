@@ -53,11 +53,11 @@ public class MellatPolicy<TResponse> : IBankPolicy<TResponse> where TResponse : 
 };
     private static readonly HashSet<int> RetryableCodes = new()
 {
-    // CustomerInquiryResult و CommonRules و بقیه
+
     2,
     3,
     1,
-    100,     // Otp و چند سرویس دیگه
+    100,    
     200,
     10002,
     10003,
@@ -71,7 +71,7 @@ public class MellatPolicy<TResponse> : IBankPolicy<TResponse> where TResponse : 
     10171,
     10181,
     10183,
-    10190,   // کدپستی تایید نشد، در صورت اطمینان مجدد تلاش کنید
+    10190, 
     10191,
     10192,
     10203,
@@ -169,7 +169,7 @@ public class MellatPolicy<TResponse> : IBankPolicy<TResponse> where TResponse : 
             return Result<ProviderDecisionResult>.Success(new ProviderDecisionResult(
                 IsSuccess: false,
                 NextState: LoanRequestState.InProgress,
-                UiMessage: "اختلال موقت در سرویس بانک. لطفاً دوباره تلاش کنید.",
+                UiMessage: "در اتصال به بانک مشکل موقتی رخ داده است. لطفاً کمی بعد دوباره تلاش کنید.",
                 ReasonCode: code,
                 Retryable: true
             ));

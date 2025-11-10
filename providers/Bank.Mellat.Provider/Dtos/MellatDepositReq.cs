@@ -11,32 +11,32 @@ namespace Bank.Mellat.Provider.Dtos
         /// <summary>
         /// شماره قرارداد (اجباری)
         /// </summary>
-        public decimal ContractNumber { get; set; }
+        public decimal contractNumber { get; set; }
 
         /// <summary>
         /// کد ملی مشتری (اجباری)
         /// </summary>
-        public string BuyerNationalCode { get; set; } = string.Empty;
+        public string buyerNationalCode { get; set; } = string.Empty;
 
         /// <summary>
         /// کد ملی فروشنده (اختیاری - اگر DepositType = 1 باشد اجباری است)
         /// </summary>
-        public string? SellerNationalCode { get; set; }
+        public string? sellerNationalCode { get; set; }
 
         /// <summary>
         /// شماره حساب فروشنده (اختیاری - اگر DepositType = 1 باشد اجباری است)
         /// </summary>
-        public decimal? SellerAccountNo { get; set; }
+        public decimal? sellerAccountNo { get; set; }
 
         /// <summary>
         /// مبلغ وجه واریزی (اجباری)
         /// </summary>
-        public decimal PayAmount { get; set; }
+        public decimal payAmount { get; set; }
 
         /// <summary>
         /// شرح تراکنش (اختیاری)
         /// </summary>
-        public string? TransactionDesc { get; set; }
+        public string? transactionDesc { get; set; }
 
         /// <summary>
         /// نوع واریز:
@@ -45,11 +45,11 @@ namespace Bank.Mellat.Provider.Dtos
         /// 3: واریز به حساب مشتری
         /// (در صورتی که در مصوبه بیش از یک روش پرداخت مشخص شده باشد، اجباری است)
         /// </summary>
-        public short? DepositType { get; set; }
+        public short? depositType { get; set; }
 
         /// <summary>
         /// کد یکبار مصرف (اختیاری - بسته به تنظیمات مصوبه ممکن است اجباری باشد)
         /// </summary>
-        public int? OtpCode { get; set; }
+        public int? otpCode { get; set; }
     }
 }

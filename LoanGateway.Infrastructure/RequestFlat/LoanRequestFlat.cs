@@ -49,5 +49,6 @@ public class LoanRequestFlat
     public string? LastReasonMessage { get; set; }
     public int? LastErrorCode { get; set; }
     public string? LastErrorMessage { get; set; }
+    public int RetryCount { get; set; }
 }
 

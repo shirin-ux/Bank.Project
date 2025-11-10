@@ -1,5 +1,6 @@
 ﻿using Hangfire;
 using LoanService.Application.UseCase.Command.DepositRequest;
+using LoanService.Application.UseCase.Command.OtpRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities;
@@ -115,6 +116,26 @@ public class LoanJobRunner(
         {
             _logger.LogWarning("Scheduled inquiry-result for Loan {LoanId} failed: {Msg}", loanId, result.Error?.Message);
         }
+    }
+
+    public void RunSendOtp(Guid loanId, OtpRequestCommand cmd)
+    {
+        _ = SendOtpAsyncInternal(loanId, cmd, CancellationToken.None);
+    }
+    public async Task SendOtpAsyncInternal(Guid loanId, OtpRequestCommand cmd, CancellationToken ct)
+    {
+         using var scope = _serviceProvider.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<LoanRequestOrchestrator>();
+
+        _logger.LogInformation("Running scheduled SendOtpAsync for Loan {LoanId}", loanId);
+
+        var result = await service.SendOtpAsync(loanId, cmd, ct);
+
+        if (!result.IsSuccess)
+        {
+            _logger.LogWarning("Scheduled SendOtpAsync for Loan {LoanId} failed: {Msg}", loanId, result.Error?.Message);
+        }
+
     }
 }
 
