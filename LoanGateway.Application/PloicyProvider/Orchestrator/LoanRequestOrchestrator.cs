@@ -54,7 +54,7 @@ public sealed class LoanRequestOrchestrator
 
     }
 
-    // ---------------- 1) ثبت درخواست استعلام مشتری ----------------
+
     public async Task<Result<CustomerInquiryResultDto>> StartInquiryAsync(CustomerInquiryCommand cmd, LoanRequest loan, CancellationToken ct)
     {
         try
@@ -115,7 +115,7 @@ public sealed class LoanRequestOrchestrator
         }
     }
 
-    // ---------------- 2) پاسخ استعلام مشتری (allowed/maxApprovedAmount/...) --------------
+
     public async Task<Result<CustomerInquiryStatusResultDto>> GetInquiryResultAsync(Guid loanId, BankProviderType ProviderType, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -202,7 +202,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    // ---------------- 3) دریافت فایل قرارداد بدون وثیقه ----------------
+  
     public async Task<Result<GetContractFileResultDto>> GetContractFileNoCollateralAsync(Guid loanId, GetContractFileCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -272,7 +272,7 @@ public sealed class LoanRequestOrchestrator
         }
     }
 
-    // ---------------- 4) دریافت فایل قرارداد با وثیقه ----------------
+ 
     public async Task<Result<GetCollateralContractFileResultDto>> GetContractFileWithCollateralAsync(Guid loanId, GetCollateralContractFileCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -359,7 +359,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    // ---------------- 5) ثبت درخواست اعطای تسهیلات (آپلود فایل امضا شده) --------------
+
     public async Task<Result<SubmitPayRequestResultDto>> SubmitPayRequestAsync(Guid loanId, SubmitPayRequestCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -423,7 +423,6 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    // ---------------- 6) پاسخ اعطا ----------------
     public async Task<Result<GetPayResponseResultDto>> GetPayResponseAsync(Guid loanId, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -510,7 +509,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    // ---------------- 7) ارسال OTP (برای Deposit/Repayment) --------------
+
     public async Task<Result<OtpRequestResultDto>> SendOtpAsync(Guid loanId, OtpRequestCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -584,13 +583,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    /// <summary>
-    /// ) درخواست واریز وجه (اعتبار در خرید
-    /// </summary>
-    /// <param name="loanId"></param>
-    /// <param name="cmd"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
+
     public async Task<Result<DepositRequestResultDto>> DepositRequestAsync(Guid loanId, DepositRequestCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -676,7 +669,6 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    // ---------------- 9) بازپرداخت از حساب ملت --------------
     public async Task<Result<RepaymentRequestResultDto>> RepaymentRequestAsync(Guid loanId, RepaymentRequestCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -730,12 +722,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    /// <summary>
-    /// مشاهده وضعیت و اقساط قرارداد 
-    /// </summary>
-    /// <param name="loanId"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
+
     public async Task<Result<GetInstallmentsResultDto>> GetInstallmentsAsync(Guid loanId, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -804,12 +791,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    /// <summary>
-    /// مانده اعتبار قرارداد
-    /// </summary>
-    /// <param name="loanId"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
+
     public async Task<Result<GetCustomerCreditBalanceResultDto>> GetCreditBalanceAsync(Guid loanId, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -873,7 +855,6 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    // ---------------- 12) صورتحساب و 13) ریزخریدها --------------
     public async Task<Result<GetCustomerBillingResultDto>> GetBillingAsync(Guid loanId, GetCustomerBillingCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -897,13 +878,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    /// <summary>
-    /// سرو ی س دریافت فهرست ریزخریدها )برای قراردادهای اعتبار در خرید(
-    /// </summary>
-    /// <param name="loanId"></param>
-    /// <param name="cmd"></param>
-    /// <param name="ct"></param>
-    /// <returns></returns>
+  
     public async Task<Result<GetCustomerPurchaseDetailsResultDto>> GetPurchasesAsync(Guid loanId, GetCustomerPurchaseDetailsCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -912,7 +887,7 @@ public sealed class LoanRequestOrchestrator
         var providerType = loan.Provider.ProviderType;
         var res = await _mediator.Send(cmd with
         {
-            //ContractNumber = loan.Contract.ContractNumber,
+            ContractNumber = loan.Contract.ContractNumber,
             NationalCode = loan.Customer.NationalCode!,
             ProviderType = providerType
         }, ct);
@@ -931,7 +906,7 @@ public sealed class LoanRequestOrchestrator
         });
     }
 
-    // ---------------- 14) ثبت حواله و 15) استعلام حواله --------------
+ 
     public async Task<Result<TransferRegisterResultDto>> TransferRegisterAsync(Guid loanId, TransferRegisterCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
@@ -996,6 +971,9 @@ public sealed class LoanRequestOrchestrator
             NextActions = GetNextActions(loan)
         });
     }
+
+
+
 
     // --------- Helpers ----------
     private async Task<LoanRequest> RequireAsync(Guid id, CancellationToken ct)

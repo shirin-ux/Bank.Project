@@ -31,7 +31,12 @@ namespace LoanGateway.Api.Controllers
             _repo = repo;
         }
 
-        // -------------------- 1) ثبت استعلام --------------------
+        /// <summary>
+        /// ثبت استعلام
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("start")]
         public async Task<IActionResult> StartInquiry([FromBody] CustomerInquiryCommand cmd, CancellationToken ct)
         {
@@ -42,15 +47,26 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-        // -------------------- 2) دریافت نتیجه استعلام --------------------
+        /// <summary>
+        ///  دریافت نتیجه استعلام
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="ProviderType"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpGet("{loanId:guid}/inquiry/result")]
         public async Task<IActionResult> InquiryResult(Guid loanId, BankProviderType ProviderType, CancellationToken ct)
         {
             var result = await _orchestrator.GetInquiryResultAsync(loanId, ProviderType, ct);
             return ToHttp(result);
         }
-
-        // -------------------- 3) فایل قرارداد بدون وثیقه --------------------
+        /// <summary>
+        /// فایل قرارداد بدون وثیقه
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("{loanId:guid}/contracts/no-collateral")]
         public async Task<IActionResult> ContractFileNoCollateral(Guid loanId, [FromBody] GetContractFileCommand cmd, CancellationToken ct)
         {
@@ -58,7 +74,12 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-        // -------------------- 10) فقط دریافت اقساط از بانک + ذخیره --------------------
+        /// <summary>
+        /// فقط دریافت اقساط از بانک + ذخیره
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
 
 
         [HttpPost("Installments")]
@@ -68,7 +89,13 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-        // -------------------- 4) فایل قرارداد با وثیقه --------------------
+        /// <summary>
+        /// فایل قرارداد با وثیقه
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("{loanId:guid}/contracts/collateral")]
         public async Task<IActionResult> ContractFileCollateral(Guid loanId, [FromBody] GetCollateralContractFileCommand cmd, CancellationToken ct)
         {
@@ -76,16 +103,25 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-
-        // -------------------- 5) ثبت درخواست اعطا --------------------
+        /// <summary>
+        /// ثبت درخواست اعطا 
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("{loanId:guid}/pay-request")]
         public async Task<IActionResult> PayRequest(Guid loanId, [FromBody] SubmitPayRequestCommand cmd, CancellationToken ct)
         {
             var result = await _orchestrator.SubmitPayRequestAsync(loanId, cmd, ct);
             return ToHttp(result);
         }
-
-        // -------------------- 6) پاسخ اعطا --------------------
+        /// <summary>
+        /// پاسخ اعطا
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpGet("{loanId:guid}/pay-response")]
         public async Task<IActionResult> PayResponse(Guid loanId, CancellationToken ct)
         {
@@ -93,7 +129,13 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-        // -------------------- 7) ارسال OTP --------------------
+        /// <summary>
+        ///  ارسال OTP
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("{loanId:guid}/otp-request")]
         public async Task<IActionResult> OtpRequest(Guid loanId, [FromBody] OtpRequestCommand cmd, CancellationToken ct)
         {
@@ -101,7 +143,13 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-        // -------------------- 8) ثبت حواله --------------------
+        /// <summary>
+        /// ثبت حواله
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("{loanId:guid}/transfer/register")]
         public async Task<IActionResult> TransferRegister(Guid loanId, [FromBody] TransferRegisterCommand cmd, CancellationToken ct)
         {
@@ -109,7 +157,12 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-        // -------------------- 9) استعلام حواله --------------------
+        /// <summary>
+        /// استعلام حواله
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpGet("{loanId:guid}/transfer/inquiry")]
         public async Task<IActionResult> TransferInquiry(Guid loanId, CancellationToken ct)
         {
@@ -117,16 +170,26 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-        // ---------------- 11) مانده اعتبار قرارداد --------------
+        /// <summary>
+        /// مانده اعتبار قرارداد
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
 
-        [HttpPost("creditBalanc")]
+        [HttpPost("creditBalance")]
         public async Task<IActionResult> CreditBalance(Guid loanId, CancellationToken ct)
         {
             var result = await _orchestrator.GetCreditBalanceAsync(loanId, ct);
             return ToHttp(result);
         }
-
-        // ---------------- 11)  --------------
+        /// <summary>
+        ///  درخواست واریز وجه
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("deposit")]
         public async Task<IActionResult> DepositRequest(Guid loanId, DepositRequestCommand cmd, CancellationToken ct)
         {
@@ -134,7 +197,13 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
-
+        /// <summary>
+        /// بازپرداخت بدهی
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("reyPayment")]
         public async Task<IActionResult> RepaymentRequest(Guid loanId, RepaymentRequestCommand cmd, CancellationToken ct)
         {
@@ -143,13 +212,27 @@ namespace LoanGateway.Api.Controllers
         }
 
 
-
+        /// <summary>
+        ///  دریافت فهرست ریزخریدها 
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("purchases")]
         public async Task<IActionResult> GetPurchasesAsync(Guid loanId, GetCustomerPurchaseDetailsCommand cmd, CancellationToken ct)
         {
             var result = await _orchestrator.GetPurchasesAsync(loanId, cmd, ct);
             return ToHttp(result);
         }
+
+        /// <summary>
+        ///  صورتحساب
+        /// </summary>
+        /// <param name="loanId"></param>
+        /// <param name="cmd"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         [HttpPost("billing")]
         public async Task<IActionResult> GetBillingAsync(Guid loanId, GetCustomerBillingCommand cmd, CancellationToken ct)
         {
