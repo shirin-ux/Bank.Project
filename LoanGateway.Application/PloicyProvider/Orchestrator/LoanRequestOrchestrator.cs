@@ -266,7 +266,7 @@ public sealed class LoanRequestOrchestrator
                     cmd.PhoneNumber,
                     cmd.PostalCode,
                     savedPath,
-                    bankRes.ContractNumber,
+                    bankRes.ContractNumber.ToString(),
                     reasonCode: decision.ReasonCode,
                     uiMessage: decision.UiMessage);
 
@@ -380,7 +380,7 @@ public sealed class LoanRequestOrchestrator
                 cmd.PhoneNumber,
                 cmd.PostalCode,
                 savedPath,
-                bankRes.ContractNumber,
+                bankRes.ContractNumber.ToString(),
                 reasonCode: d.ReasonCode,
                 uiMessage: d.UiMessage);
 
