@@ -1,8 +1,9 @@
 ﻿using Dapper;
 using Hangfire.Logging;
 using LoanGateway.Infrastructure.Utility;
-using LoanService.Domain.Entities;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Entities.Investment;
+using LoanService.Domain.Entities.Loan;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.IRepository;
 using LoanService.Domain.ValueObjects;
 using LoanService.Infrastructure.RequestFlat;

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LoanService.Domain.Enum
+namespace LoanService.Domain.Enum.Loan
 {
     public enum Grade
     {
@@ -16,6 +16,7 @@ namespace LoanService.Domain.Enum
         B3 = 5,
         C1 = 6,
         C2 = 7,
-        C3 = 8
+        C3 = 8,
+        Unknown=9,
     }
 }

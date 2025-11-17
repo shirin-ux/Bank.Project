@@ -1,6 +1,7 @@
 ﻿using Bank.Mellat.Provider.Dtos;
 using Common;
 using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,12 +19,14 @@ namespace LoanService.Application.UseCase.Query.CustomerInquiryStatus
         public short? PostalCodeStatus { get; init; }
         public short Gender { get; set; }
         public int? MessageCode { get; init; }
-
+        public int Ics { get; set; }
+        public Grade IcsGrade { get; set; }
         public string? Message { get; init; }
         public string[] NextActions { get ; set ; }
         public string State { get; set; }
         public string ContractBase64 { get ; set; }
         public string RequestId { get; set; }
+        public Dictionary<string, string[]>? Details { get; set; }
 
         public IEnumerable<BankStatusItem> GetStatusItems()
         {

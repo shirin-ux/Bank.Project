@@ -139,6 +139,10 @@
               "target": "Package",
               "version": "[12.0.0, )"
             },
+            "FluentValidation.DependencyInjectionExtensions": {
+              "target": "Package",
+              "version": "[12.0.0, )"
+            },
             "Hangfire.Core": {
               "target": "Package",
               "version": "[1.8.21, )"
@@ -150,6 +154,10 @@
             "MediatR": {
               "target": "Package",
               "version": "[13.1.0, )"
+            },
+            "MediatR.Extensions.Microsoft.DependencyInjection": {
+              "target": "Package",
+              "version": "[11.0.0, )"
             },
             "Microsoft.Extensions.Configuration.Binder": {
               "target": "Package",

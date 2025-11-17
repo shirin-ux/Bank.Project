@@ -1,36 +1,54 @@
 ﻿using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Command.DepositRequest;
 public sealed class DepositRequestValidator : AbstractValidator<DepositRequestCommand>
 {
     public DepositRequestValidator()
     {
-        RuleFor(x => x.ContractNumber).GreaterThan(0);
-        RuleFor(x => x.BuyerNationalCode).NotEmpty().Matches(@"^\d{10}$");
-        RuleFor(x => x.PayAmount).GreaterThan(0);
+        RuleFor(x => x.ProviderType)
+            .IsInEnum()
+            .WithMessage("نوع بانک نامعتبر است.");
 
-      
-        //When(x => x.DepositType.HasValue, () =>
-        //{
-        //    RuleFor(x => x.DepositType!.Value).Must(v => v is 1 or 2 or 3)
-        //        .WithMessage("depositType must be 1, 2, or 3.");
-        //});
+        RuleFor(x => x.ContractNumber)
+            .GreaterThan(0)
+            .NotNull()
+            .WithMessage("شماره قرارداد الزامی است.");
 
- 
-        //When(x => x.DepositType == 1, () =>
-        //{
-        //    RuleFor(x => x.SellerNationalCode).NotEmpty().Matches(@"^\d{10}$");
-        //    RuleFor(x => x.SellerAccountNo).NotNull().GreaterThan(0);
-        //});
+        RuleFor(x => x.BuyerNationalCode)
+            .NotEmpty().WithMessage("کد ملی خریدار اجباری است.")
+            .Length(10).WithMessage("کد ملی خریدار باید ۱۰ رقم باشد.")
+            .Matches(@"^\d{10}$").WithMessage("کد ملی خریدار باید فقط شامل ارقام باشد.");
 
-       
-        // RuleFor(x => x.OtpCode).NotNull();
+        RuleFor(x => x.PayAmount)
+            .GreaterThan(0)
+            .NotNull()
+            .WithMessage("مبلغ پرداخت باید بزرگ‌تر از صفر باشد.");
+
+        RuleFor(x => x.TransactionDesc)
+            .MaximumLength(500)
+            .When(x => !string.IsNullOrWhiteSpace(x.TransactionDesc))
+            .WithMessage("توضیحات تراکنش حداکثر می‌تواند ۵۰۰ کاراکتر باشد.");
+
+        RuleFor(x => x.DepositType)
+
+            .IsInEnum().When(x => x.DepositType.HasValue)
+            .WithMessage("نوع واریز (DepositType) نامعتبر است.");
+
+
+        When(x => x.DepositType == depositType.AnyAccount, () =>
+        {
+            RuleFor(x => x.SellerNationalCode)
+                .Length(10).WithMessage("کد ملی باید ۱۰ رقم باشد.")
+                .Matches(@"^\d{10}$").WithMessage("کد ملی باید فقط شامل ارقام باشد.");
+
+            RuleFor(x => x.SellerAccountNo)
+             .Matches(@"^\d{10,20}$")
+              .WithMessage("شماره حساب نامعتبر است .");
+
+            RuleFor(x => x.OtpCode)
+                 .NotNull().WithMessage("ارسال  رمز یکبار مصرف اجباری است.");
+        });
+
+
     }
 }
-
-

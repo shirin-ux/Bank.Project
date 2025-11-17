@@ -1,6 +1,6 @@
 ﻿using Dapper;
 using LoanGateway.Infrastructure.Utility;
-using LoanService.Domain.Entities;
+using LoanService.Domain.Entities.Investment;
 using LoanService.Domain.IRepository;
 using System;
 using System.Collections.Generic;

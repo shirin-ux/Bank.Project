@@ -20,9 +20,10 @@ using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.ReturnTransferReport;
 using LoanService.Application.UseCase.Query.TransferInquiry;
 using LoanService.Domain.Entities;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Infrastructure.Extention;
 using MapsterMapper;
+using System.Globalization;
 using System.Security.Cryptography.Pkcs;
 using static Bank.Mellat.Provider.Dtos.MellatPayResponseRes;
 using static LoanService.Application.UseCase.Query.CustomerInquiryStatus.CustomerInquiryStatusResultDto;
@@ -87,7 +88,7 @@ namespace Bank.Mellat.Infrastructure.Services
                 depositType = (short)cmd.DepositType,
                 otpCode = cmd.OtpCode,
                 payAmount = cmd.PayAmount,
-                sellerAccountNo = cmd.SellerAccountNo,
+                sellerAccountNo = decimal.Parse(cmd.SellerAccountNo, NumberStyles.None, CultureInfo.InvariantCulture),
                 sellerNationalCode = cmd.SellerNationalCode
 
             };
@@ -106,11 +107,34 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<GetCustomerBillingResultDto> GetCustomerBillingAsync(GetCustomerBillingCommand cmd, CancellationToken ct)
         {
-            var mellatReq = _mapper.Map<MellatCustomerBillingReq>(cmd);
+            var mellatReq = new MellatCustomerBillingReq
+            {
+                contractNumber = decimal.Parse(cmd.ContractNumber, NumberStyles.None, CultureInfo.InvariantCulture),
+                billingNumber = cmd.BillingNumber,
+                nationalCode = cmd.NationalCode
+            };
 
             var response = await client.GetCustomerBillingAsync(mellatReq, ct);
 
-            var result = _mapper.Map<GetCustomerBillingResultDto>(response);
+            var result = new GetCustomerBillingResultDto
+            {
+                Billings = response.billings.Select(x => new GetCustomerBillingResultDto.BillingItemDto
+                {
+                    BillingNumber = x.billingNumber,
+                    ContractNumber = x.contractNumber,
+                    CustomerName = x.customerName,
+                    DebtPayableInInstallments = x.debtPayableInInstallments,
+                    IssueDate = x.issueDate,
+                    PayableAmount = x.payableAmount,
+                    PayDeadline = x.payDeadLine,
+                    TotalPurchase = x.totalPurchase
+
+                }).ToList(),
+                Message = response.message,
+                MessageCode = response.messageCode
+
+            };
+
 
             return result;
         }
@@ -119,7 +143,7 @@ namespace Bank.Mellat.Infrastructure.Services
         {
             var mellatReq = new MellatCustomerCreditBalanceReq
             {
-                contractNumber = cmd.ContractNumber,
+                contractNumber =decimal.Parse( cmd.ContractNumber,NumberStyles.None,CultureInfo.InvariantCulture),
                 nationalCode = cmd.NationalCode
             };
             var response = await client.GetCustomerCreditBalanceAsync(mellatReq, ct);
@@ -154,15 +178,17 @@ namespace Bank.Mellat.Infrastructure.Services
         public async Task<CustomerInquiryStatusResultDto> GetCustomerInquiryStatusAsync(string requestId, CancellationToken ct)
         {
             var response = await _client.GetInquiryResultAsync(requestId, ct);
-            //var result = _mapper.Map<CustomerInquiryStatusResultDto>(response);
+
             var result = new CustomerInquiryStatusResultDto
             {
                 RequestId = requestId,
                 Allowed = response.Result.allowed,
+                Ics = response.Result.ics,
+                IcsGrade = ParseIcsGrade(response.Result.icsGrade),
                 Gender = response.Result.Gender,
                 MaxApprovedAmount = response.Result.maxApprovedAmount,
                 RequestExpireDate = response.Result.requestExpireDate,
-                PostalCodeStatus = response.Result.postalCode,//از سمت بانک بر نمیگرده 
+                PostalCodeStatus = response.Result.postalCode,
                 StatusList = response.Result.statusList?
                              .Select(s => new CustomerInquiryStatusResultDto.StatusItemDto(
                                  s.responseCode,
@@ -172,7 +198,15 @@ namespace Bank.Mellat.Infrastructure.Services
             };
             return result;
         }
+        private static Grade ParseIcsGrade(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return Grade.Unknown;
 
+            return Enum.TryParse<Grade>(value, ignoreCase: true, out var grade)
+                ? grade
+                : Grade.Unknown;
+        }
 
         public async Task<GetCollateralContractFileResultDto> GetCollateralContractFileAsync(GetCollateralContractFileCommand cmd, CancellationToken ct)
         {
@@ -320,46 +354,46 @@ namespace Bank.Mellat.Infrastructure.Services
         {
             var mellatReq = new MellatCustomerPurchaseDetailsReq
             {
-                contractNumber=cmd.ContractNumber,
-                nationalCode=cmd.NationalCode,
-                toDate=Convert.ToInt32(cmd.ToDate),
-                fromDate= Convert.ToInt32(cmd.FromDate)
+                contractNumber = decimal.Parse(cmd.ContractNumber, NumberStyles.None, CultureInfo.InvariantCulture),
+                nationalCode = cmd.NationalCode,
+                toDate = Convert.ToInt32(cmd.ToDate),
+                fromDate = Convert.ToInt32(cmd.FromDate)
             };
 
             var response = await client.CustomerPurchaseDetailsAsync(mellatReq, ct);
 
             var result = new GetCustomerPurchaseDetailsResultDto
             {
-                NationalCode=response.nationalCode,
-                ContractAmount=response.contractAmount,
-                ContractDetails=response.ContractDetails.Select(x=>new GetCustomerPurchaseDetailsResultDto.ContractDetailDto
+                NationalCode = response.nationalCode,
+                ContractAmount = response.contractAmount,
+                ContractDetails = response.ContractDetails.Select(x => new GetCustomerPurchaseDetailsResultDto.ContractDetailDto
                 {
-                    PayAccNumber=x.payAccNumber,
-                    DocDate=x.docDate.ToString(),
-                    SellerName=x.sellerName,
-                    SellerNationalCode=x.sellerNationalCode,
-                    SellerPaiedAmount=x.sellerPaiedAmount,
-                    TransactionDate=x.transactionDate.ToString(),
-                    TransactionNumber=x.transactionNumber,
-                    UsedCreditAmount=x.usedCreditAmount
-                    
+                    PayAccNumber = x.payAccNumber,
+                    DocDate = x.docDate.ToString(),
+                    SellerName = x.sellerName,
+                    SellerNationalCode = x.sellerNationalCode,
+                    SellerPaiedAmount = x.sellerPaiedAmount,
+                    TransactionDate = x.transactionDate.ToString(),
+                    TransactionNumber = x.transactionNumber,
+                    UsedCreditAmount = x.usedCreditAmount
+
                 }).ToList(),
-                ContractNumber=response.contractNumber,
-                CustomerName=response.customerName,
-                LoanPaiedAmount=response.loanPaiedAmount,
-                LoanTypeCode=response.loanTypeCode,
-                LoanTypeDesc=response.loanTypeDesc,
-                Message=response.message,
-                MessageCode=response.messageCode,
-                
+                ContractNumber = response.contractNumber,
+                CustomerName = response.customerName,
+                LoanPaiedAmount = response.loanPaiedAmount,
+                LoanTypeCode = response.loanTypeCode,
+                LoanTypeDesc = response.loanTypeDesc,
+                Message = response.message,
+                MessageCode = response.messageCode,
+
             };
 
             return result;
         }
 
-        public async Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, decimal contractNumber, CancellationToken ct)
+        public async Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, string contractNumber, CancellationToken ct)
         {
-            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { NationalCode = nationalCode, ContractNumber = contractNumber }, ct);
+            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { NationalCode = nationalCode, ContractNumber =decimal.Parse( contractNumber,NumberStyles.None,CultureInfo.InvariantCulture) }, ct);
             var result = new GetInstallmentsResultDto
             {
                 ContractNumber = response.ContractNumber,
@@ -388,29 +422,29 @@ namespace Bank.Mellat.Infrastructure.Services
         {
             var mellatReq = new MellatTransferRegisterReq
             {
-                transType=cmd.TransType,
-                approvalCode=cmd.ApprovalCode,
-                description=cmd.Description,
-                 destIban=cmd.DestIban,
-                  destName=cmd.DestName,
-                   destNationalId=cmd.DestNationalId,
-                   details=cmd.Details.Select(x=>new MellatTransferRegisterReq.contractDetails
-                   {
-                       amount=x.Amount,
-                       referenceNo=x.ReferenceNo
-                   }).ToList()
+                transType = cmd.TransType,
+                approvalCode = cmd.ApprovalCode,
+                description = cmd.Description,
+                destIban = cmd.DestIban,
+                destName = cmd.DestName,
+                destNationalId = cmd.DestNationalId,
+                details = cmd.Details.Select(x => new MellatTransferRegisterReq.contractDetails
+                {
+                    amount = x.Amount,
+                    referenceNo = x.ReferenceNo
+                }).ToList()
             };
 
             var response = await client.RegisterTransferAsync(mellatReq, ct);
 
-            var result =new TransferRegisterResultDto
+            var result = new TransferRegisterResultDto
             {
 
-                Message=response.message,
-                MessageCode=response.messageCode,
-                RegisterCode=response.registerCode,
-                TransactionsError=response.transactionsError,
-                TransType=response.transType
+                Message = response.message,
+                MessageCode = response.messageCode,
+                RegisterCode = response.registerCode,
+                TransactionsError = response.transactionsError,
+                TransType = response.transType
             };
 
             return result;
@@ -420,8 +454,8 @@ namespace Bank.Mellat.Infrastructure.Services
         {
             var mellatReq = new MellatRepaymentReq
             {
-                accountNo = cmd.AccountNo,
-                contractNo = cmd.ContractNo,
+                accountNo = decimal.Parse(cmd.AccountNo, NumberStyles.None, CultureInfo.InvariantCulture),
+                contractNo = decimal.Parse(cmd.ContractNo, NumberStyles.None, CultureInfo.InvariantCulture),
                 nationalCode = cmd.NationalCode,
                 otpCode = cmd.OtpCode,
                 repaymentAmount = cmd.RepaymentAmount
@@ -508,14 +542,14 @@ namespace Bank.Mellat.Infrastructure.Services
                     DestName = x.destName,
                     DestNationalId = x.destNationalId,
                     PayAmount = x.payAmount,
-                    ReturnDate=x.returnDate,
-                     ReturnReasonCode=x.returnReasonCode,
-                     ReturnTime=x.returnTime,
-                     SendDate=x.sendDate,
-                     SendTime=x.sendTime,
-                     TrackingNo=x.trackingNo,
-                  //  transferStatus = (TransferStatus)x.transferStatus,
-                    TransType =x.transType
+                    ReturnDate = x.returnDate,
+                    ReturnReasonCode = x.returnReasonCode,
+                    ReturnTime = x.returnTime,
+                    SendDate = x.sendDate,
+                    SendTime = x.sendTime,
+                    TrackingNo = x.trackingNo,
+                    //  transferStatus = (TransferStatus)x.transferStatus,
+                    TransType = x.transType
 
                 }).ToList()
             };

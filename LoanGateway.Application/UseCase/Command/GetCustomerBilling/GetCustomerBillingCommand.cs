@@ -1,5 +1,5 @@
 ﻿using Common;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 namespace LoanService.Application.UseCase.Command.GetCustomerBilling;
 
 public sealed record GetCustomerBillingCommand(
-    short BillingNumber,   // 0 => آخرین 30 صورتحساب؛ غیرصفر => 30 صورتحساب کوچکتر از مقدار ورودی
-    decimal ContractNumber,
+    short BillingNumber,  
+    string ContractNumber,
     string NationalCode,
    BankProviderType ProviderType 
 ) : IRequest<GetCustomerBillingResultDto>;

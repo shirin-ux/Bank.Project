@@ -1,6 +1,6 @@
 ﻿using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.OtpRequest;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 
 namespace LoanService.Application.Contracts;
 

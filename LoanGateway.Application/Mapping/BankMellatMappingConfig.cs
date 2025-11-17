@@ -11,7 +11,7 @@ using LoanService.Application.UseCase.Command.TransferRegister;
 using LoanService.Application.UseCase.Query.GetInstallments;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.TransferInquiry;
-using LoanService.Domain.Entities;
+using LoanService.Domain.Entities.Investment;
 using Mapster;
 
 

@@ -15,6 +15,7 @@ namespace LoanService.Application.UseCase.Command.CustomerInquiry
         public string[]? NextActions { get; set; }
         public string? State { get; set; }
         public string RequestId { get; set; }
+        public Dictionary<string, string[]>? Details { get; set; }
 
         public IEnumerable<BankStatusItem> GetStatusItems()
         {

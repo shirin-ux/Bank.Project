@@ -1,5 +1,5 @@
 ﻿using Common;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -12,6 +12,6 @@ namespace LoanService.Application.UseCase.Command.GetCustomerCreditBalance;
 public sealed record GetCustomerCreditBalanceCommand : IRequest<GetCustomerCreditBalanceResultDto>
 {
     public BankProviderType ProviderType { get; set; }
-    public decimal ContractNumber { get; set; }
+    public string ContractNumber { get; set; }
    public string NationalCode { get; set; }
 }

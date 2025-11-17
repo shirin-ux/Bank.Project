@@ -11,10 +11,11 @@ public sealed record ReturnTransferReportResultDto:IBankResponse
     public decimal FromId { get; init; }      
     public int? MessageCode { get; init; }
     public string Message { get; init; }
-    public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string ContractBase64 { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string[] NextActions { get; set; }
+    public string State { get; set; }
+    public string ContractBase64 { get; set; }
+    public string RequestId { get; set; }
+    public Dictionary<string, string[]>? Details { get; set; }
 
     public sealed record ReturnedTransferDto
     {

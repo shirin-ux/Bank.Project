@@ -6,7 +6,7 @@ using LoanService.Application.UseCase.Command.OtpRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.IRepository;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

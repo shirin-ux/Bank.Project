@@ -1,6 +1,6 @@
 ﻿using Common;
 using LoanService.Application.Contracts;
-using LoanService.Domain.Entities;
+using LoanService.Domain.Entities.Loan;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 

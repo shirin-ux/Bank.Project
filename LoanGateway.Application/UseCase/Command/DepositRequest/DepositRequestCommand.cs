@@ -1,5 +1,5 @@
 ﻿using Common;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ public sealed record DepositRequestCommand : IRequest<DepositRequestResultDto>
     public decimal ContractNumber { get; init; }
     public string BuyerNationalCode { get; init; } = default!;
     public string? SellerNationalCode { get; init; }
-    public decimal? SellerAccountNo { get; init; }
+    public string? SellerAccountNo { get; init; }
     public decimal PayAmount { get; init; }
     public string? TransactionDesc { get; init; }
 

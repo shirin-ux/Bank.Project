@@ -1,7 +1,7 @@
 ﻿
 using LoanService.Application.Contracts;
 using LoanService.Application.PloicyProvider.Mellat;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 

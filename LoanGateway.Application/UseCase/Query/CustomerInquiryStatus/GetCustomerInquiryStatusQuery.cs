@@ -1,5 +1,5 @@
 ﻿using Common;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 
 
@@ -9,5 +9,7 @@ public sealed class GetCustomerInquiryStatusQuery
     : IRequest<CustomerInquiryStatusResultDto>
 {
     public string RequestId { get; set; } = default!;
+    public Guid LoanId { get; set; } = default!;
     public BankProviderType ProviderType { get; set; }
+
 }

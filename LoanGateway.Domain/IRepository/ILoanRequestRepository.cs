@@ -1,6 +1,5 @@
-﻿
-
-using LoanService.Domain.Entities;
+﻿using LoanService.Domain.Entities.Investment;
+using LoanService.Domain.Entities.Loan;
 
 namespace LoanService.Domain.IRepository
 {

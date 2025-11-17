@@ -14,6 +14,7 @@ namespace LoanService.Application.UseCase.Command.OtpRequest
 
         public string? Message { get; set; }
         public string RequestId { get; set; }
+        public Dictionary<string, string[]>? Details { get; set; }
 
         public IEnumerable<BankStatusItem> GetStatusItems()
         {

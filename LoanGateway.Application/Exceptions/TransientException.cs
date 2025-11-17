@@ -1,4 +1,4 @@
-﻿namespace LoanService.Application.Exception;
+﻿namespace LoanService.Application.Exceptions;
 
 public class TransientException : System.Exception
 {

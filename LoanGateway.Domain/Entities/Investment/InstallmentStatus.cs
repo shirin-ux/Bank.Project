@@ -1,4 +1,4 @@
-﻿namespace LoanService.Domain.Entities
+﻿namespace LoanService.Domain.Entities.Investment
 {
     public sealed class InstallmentStatus
     {

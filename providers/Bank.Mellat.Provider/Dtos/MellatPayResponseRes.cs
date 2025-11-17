@@ -1,5 +1,4 @@
-﻿
-using LoanService.Domain.Entities;
+﻿using LoanService.Domain.Entities.Loan;
 
 namespace Bank.Mellat.Provider.Dtos;
 

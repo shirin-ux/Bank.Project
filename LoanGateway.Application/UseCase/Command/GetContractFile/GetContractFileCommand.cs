@@ -1,7 +1,7 @@
 ﻿
 
 using Common;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 
 

@@ -1,11 +1,11 @@
-﻿using LoanService.Domain.Enum;
+﻿using LoanService.Domain.Enum.Loan;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LoanService.Domain.Entities
+namespace LoanService.Domain.Entities.Loan
 {    /// <summary>
      /// اقساط و بازپرداخت‌ها
      /// </summary>

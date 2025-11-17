@@ -1,7 +1,7 @@
 ﻿
 
 using Bank.Mellat.Provider.Dtos;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 
 namespace LoanService.Infrastructure.Extention;
 

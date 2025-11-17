@@ -1,6 +1,6 @@
 ﻿using Bank.Mellat.Infrastructure.Services;
 using LoanService.Application.Contracts;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;

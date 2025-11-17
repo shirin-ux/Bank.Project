@@ -1,5 +1,5 @@
 ﻿using Common;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace LoanService.Application.UseCase.Command.GetCustomerPurchaseDetails;
 
 public sealed record GetCustomerPurchaseDetailsCommand(
-    decimal ContractNumber,
+    string ContractNumber,
     BankProviderType ProviderType ,
     string NationalCode,
     string FromDate, // DD/MM/YYYY

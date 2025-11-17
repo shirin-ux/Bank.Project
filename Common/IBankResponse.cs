@@ -10,6 +10,7 @@ namespace Common
     {
         int? MessageCode { get; }
         string? Message { get; }
+        Dictionary<string, string[]>? Details { get; set; }
       //  string[] NextActions { get; set; }
        // string State { get; set; }
         string RequestId { get; set; }

@@ -1,6 +1,6 @@
-﻿using LoanService.Domain.Enum;
+﻿using LoanService.Domain.Enum.Loan;
 
-namespace LoanService.Domain.Entities;
+namespace LoanService.Domain.Entities.Loan;
 
 public sealed class ContractInfo
 {
@@ -15,7 +15,7 @@ public sealed class ContractInfo
     public Guid Id { get; set; }
     public Guid LoanRequestId { get; set; }
     public decimal? ApprovalCode { get; set; }
-    public decimal ContractNumber { get; set; }
+    public string ContractNumber { get; set; }
 
 
     public string? NationalCode { get; set; }

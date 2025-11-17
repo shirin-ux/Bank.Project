@@ -14,6 +14,7 @@ public sealed record GetPayResponseResultDto:IBankResponse
     public string State { get; set; }
   
     public string RequestId { get; set; }
+    public Dictionary<string, string[]>? Details { get; set; }
 
     public IEnumerable<BankStatusItem> GetStatusItems()
     {

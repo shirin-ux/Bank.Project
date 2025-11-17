@@ -11,8 +11,8 @@ using LoanService.Application.UseCase.Command.StartLoanRequestDto;
 using LoanService.Application.UseCase.Command.SubmitPayRequest;
 using LoanService.Application.UseCase.Command.TransferRegister;
 using LoanService.Application.UseCase.Query.GetInstallments;
-using LoanService.Domain.Entities;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Entities.Loan;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.IRepository;
 using Microsoft.AspNetCore.Mvc;
 
@@ -41,9 +41,9 @@ namespace LoanGateway.Api.Controllers
         public async Task<IActionResult> StartInquiry([FromBody] CustomerInquiryCommand cmd, CancellationToken ct)
         {
             var entity = LoanRequest.Create(cmd.NationalCode,cmd.BirthDate,cmd.PostalCode,cmd.MobileNo,cmd.ProviderType,cmd.ApprovalCode,false);
-            await _repo.InsertAsync(entity, ct);
 
             var result = await _orchestrator.StartInquiryAsync(cmd, entity, ct);
+           
             return ToHttp(result);
         }
 
@@ -54,12 +54,16 @@ namespace LoanGateway.Api.Controllers
         /// <param name="ProviderType"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
+     
+        
         [HttpGet("{loanId:guid}/inquiry/result")]
         public async Task<IActionResult> InquiryResult(Guid loanId, BankProviderType ProviderType, CancellationToken ct)
         {
             var result = await _orchestrator.GetInquiryResultAsync(loanId, ProviderType, ct);
             return ToHttp(result);
         }
+       
+        
         /// <summary>
         /// فایل قرارداد بدون وثیقه
         /// </summary>
@@ -244,7 +248,7 @@ namespace LoanGateway.Api.Controllers
         private IActionResult ToHttp<T>(Result<T> result)
         {
             if (result.IsSuccess) return Ok(result.Value);
-            return BadRequest(new { error = result.Error!.Message, code = result.Error.Code });
+            return BadRequest(new { error = result.Error!.Message, code = result.Error.Code,details=result.Error.Details });
         }
     }
 

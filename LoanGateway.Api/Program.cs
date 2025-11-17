@@ -1,29 +1,15 @@
 using Bank.Mellat.Infrastructure.Services;
 using Bank.Mellat.Provider;
 using Common;
+using FluentValidation;
 using Hangfire;
 using LoanGateway.Infrastructure.Utility;
 using LoanService.Application.Contracts;
 using LoanService.Application.Mapping;
 using LoanService.Application.PloicyProvider;
 using LoanService.Application.PloicyProvider.Mellat;
-using LoanService.Application.UseCase.Command.CustomerInquiry;
-using LoanService.Application.UseCase.Command.DepositRequest;
-using LoanService.Application.UseCase.Command.GetCollateralContractFile;
-using LoanService.Application.UseCase.Command.GetContractFile;
-using LoanService.Application.UseCase.Command.GetCustomerBilling;
-using LoanService.Application.UseCase.Command.GetCustomerCreditBalance;
-using LoanService.Application.UseCase.Command.GetCustomerPurchaseDetails;
-using LoanService.Application.UseCase.Command.OtpRequest;
-using LoanService.Application.UseCase.Command.RepaymentReques;
+using LoanService.Application.UseCase;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
-using LoanService.Application.UseCase.Command.SubmitPayRequest;
-using LoanService.Application.UseCase.Command.TransferRegister;
-using LoanService.Application.UseCase.Query.CustomerInquiryStatus;
-using LoanService.Application.UseCase.Query.GetInstallments;
-using LoanService.Application.UseCase.Query.PayResponse;
-using LoanService.Application.UseCase.Query.ReturnTransferReport;
-using LoanService.Application.UseCase.Query.TransferInquiry;
 using LoanService.Domain.Entities;
 using LoanService.Domain.IRepository;
 using LoanService.Infrastructure.Configurations;
@@ -31,15 +17,11 @@ using LoanService.Infrastructure.Jobs;
 using LoanService.Infrastructure.Repositories;
 using LoanService.Infrastructure.Services;
 using Mapster;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using MediatR;
 using Microsoft.OpenApi.Models;
-using System;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
+
 
 var builder = WebApplication.CreateBuilder(args);
 var conn = builder.Configuration.GetConnectionString("TransactionDB");
@@ -54,8 +36,14 @@ builder.Services.AddHttpClient("MellatApi", client =>
     UseCookies = true,
     CookieContainer = new CookieContainer()
 });
-//builder.Services.Configure<MellatPolicyRulesOptions>(
-//    builder.Configuration.GetSection("MellatPolicyRules"));
+
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(LoanService.Application.AssemblyReference).Assembly));
+
+builder.Services.AddValidatorsFromAssembly(typeof(LoanService.Application.AssemblyReference).Assembly);
+
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+
 
 var root = builder.Environment.ContentRootPath;
 var rulesPath = Path.Combine(root, builder.Configuration["MellatPolicy:RulesPath"]);
@@ -106,20 +94,7 @@ builder.Services.AddHttpClient<MellatBankService>()
         c.BaseAddress = new Uri("https://gw4t.chub.behsazan.com/api/fs-contract-management");
         c.Timeout = TimeSpan.FromSeconds(60);
     });
-//.ConfigurePrimaryHttpMessageHandler(sp =>
-//{
 
-//    var opt = sp.GetRequiredService<IOptions<MellatApiOptions>>().Value;
-//    return new HttpClientHandler
-//    {
-//        Proxy = new WebProxy(opt.Proxy),
-//        UseProxy = true
-//    };
-//});
-//builder.Services.AddMediatR(cfg =>
-//{
-//    cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly);
-//});
 builder.Services.AddScoped<LoanRequestOrchestrator>();
 
 
@@ -133,8 +108,9 @@ builder.Services.AddScoped<IInstallmentRepository, InstallmentRepository>();
 builder.Services.AddScoped<IPayResponseInfoRepository, PayResponseInfoRepository>();
 builder.Services.AddScoped<IContractFileStorage, FileSystemContractFileStorage>();
 
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(LoanService.Application.AssemblyReference).Assembly));
+
+
+
 //builder.Services.AddMediatR(cfg =>
 //{
 //    cfg.RegisterServicesFromAssemblies(
@@ -159,8 +135,8 @@ builder.Services.AddMediatR(cfg =>
 //});
 builder.Services.AddScoped<IBankProviderFactory, BankProviderFactory>();
 
-    // ?? Hangfire
-    builder.Services.AddHangfire(config =>
+// ?? Hangfire
+builder.Services.AddHangfire(config =>
 {
     config
         .UseSimpleAssemblyNameTypeSerializer()
@@ -168,7 +144,7 @@ builder.Services.AddScoped<IBankProviderFactory, BankProviderFactory>();
         .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection"));
 });
 
-    builder.Services.AddHangfireServer();
+builder.Services.AddHangfireServer();
 
 
 // ?? Loan services

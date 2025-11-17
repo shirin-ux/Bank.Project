@@ -1,6 +1,4 @@
-﻿
-
-using LoanService.Domain.Entities;
+﻿using LoanService.Domain.Entities.Loan;
 
 namespace Common;
 public record ProviderDecisionResult(

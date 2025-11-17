@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LoanService.Domain.Enum
+namespace LoanService.Domain.Enum.Loan
 {
     public enum LoanStatus
     {

@@ -1,16 +1,14 @@
-﻿using LoanService.Domain.Enum;
+﻿using LoanService.Domain.Entities.Investment;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.ValueObjects;
 using System.Net;
-using static LoanService.Domain.Entities.InquiryInfo;
+using static LoanService.Domain.Entities.Loan.InquiryInfo;
 
-namespace LoanService.Domain.Entities
+namespace LoanService.Domain.Entities.Loan
 {
-    public sealed class LoanRequest // : IAggregateRoot (در صورت داشتن مارکر)
+    public sealed class LoanRequest :BaseEntity
     {
-        // -------- Keys / Timestamps --------
-        public Guid Id { get; set; }
-        public DateTime CreatedAtUtc { get; private set; } = DateTime.UtcNow;
-        public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
+  
 
         // -------- Core --------
         public LoanRequestState State { get;  set; } 
@@ -134,7 +132,7 @@ namespace LoanService.Domain.Entities
             string? phoneNumber,
             string postalCode,
             string contractPath,
-            decimal contractNumber,
+            string contractNumber,
              int reasonCode = -1, string? uiMessage = null
             )
         {
@@ -177,7 +175,7 @@ namespace LoanService.Domain.Entities
             string? phoneNumber,
             string postalCode,
             string contractPath,
-            decimal contractNumber,
+            string contractNumber,
              int reasonCode = -1, string? uiMessage = null
                                               )
         {

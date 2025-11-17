@@ -1,4 +1,4 @@
-﻿using LoanService.Domain.Enum;
+﻿using LoanService.Domain.Enum.Loan;
 
 namespace LoanService.Application.Contracts
 {

@@ -1,4 +1,4 @@
-﻿using LoanService.Domain.Enum;
+﻿using LoanService.Domain.Enum.Loan;
 using System;
 using System.Collections.Generic;
 using System.Linq;

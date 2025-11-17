@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Common;
 
-public sealed record Error(int? Code, string Message)
+public sealed record Error(int? Code, string Message, Dictionary<string, string[]>? Details = null)
 {
     public static Error Provider(string provider, string message)
           => new(-1, message);

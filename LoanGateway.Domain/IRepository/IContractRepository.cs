@@ -1,4 +1,4 @@
-﻿using LoanService.Domain.Entities;
+﻿using LoanService.Domain.Entities.Loan;
 using System;
 using System.Collections.Generic;
 using System.Linq;

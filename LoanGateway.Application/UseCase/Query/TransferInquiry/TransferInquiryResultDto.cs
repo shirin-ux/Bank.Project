@@ -15,15 +15,11 @@ public sealed record TransferInquiryResultDto:IBankResponse
     public string? Message { get; init; }
 
     public IReadOnlyList<InquiryDetailDto> InquiryDetails { get; init; } = Array.Empty<InquiryDetailDto>();
-    public string[] NextActions { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string State { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-    public string RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public string[] NextActions { get; set; }
+    public string State { get; set; }
+    public string RequestId { get; set; }
 
-    int? IBankResponse.MessageCode => throw new NotImplementedException();
-
-    string? IBankResponse.Message => throw new NotImplementedException();
-
-    string IBankResponse.RequestId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+    public Dictionary<string, string[]>? Details { get; set; }
 
     public sealed record InquiryDetailDto
     {

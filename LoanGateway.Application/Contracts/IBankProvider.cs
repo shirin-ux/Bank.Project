@@ -16,7 +16,7 @@ using LoanService.Application.UseCase.Query.GetInstallments;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.ReturnTransferReport;
 using LoanService.Application.UseCase.Query.TransferInquiry;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,7 +33,7 @@ namespace LoanService.Application.Contracts
         Task<GetContractFileResultDto> GetContractFileAsync(GetContractFileCommand cmd, CancellationToken ct);
         Task<GetCollateralContractFileResultDto> GetCollateralContractFileAsync(GetCollateralContractFileCommand cmd, CancellationToken ct);
         Task<GetPayResponseResultDto> GetPayResponseAsync(string payRequestId, CancellationToken ct);
-        Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, decimal contractNumber, CancellationToken ct);
+        Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, string contractNumber, CancellationToken ct);
         Task<SubmitPayRequestResultDto> SubmitPayRequestAsync(SubmitPayRequestCommand cmd, CancellationToken ct);
 
         Task<GetCustomerCreditBalanceResultDto> GetCustomerCreditBalanceAsync(GetCustomerCreditBalanceCommand cmd, CancellationToken ct);

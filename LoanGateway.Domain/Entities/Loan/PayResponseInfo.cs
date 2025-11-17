@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LoanService.Domain.Entities
+namespace LoanService.Domain.Entities.Loan
 {
     /// <summary>
     /// پاسخ پرداخت از بانک

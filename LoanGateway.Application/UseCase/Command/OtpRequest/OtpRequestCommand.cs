@@ -1,5 +1,5 @@
 ﻿using Common;
-using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ public sealed record OtpRequestCommand : IRequest<OtpRequestResultDto>
 
     public enum serviceType:short
     {
-    deposit=1,
-    repayment=2
+          deposit=1,
+          repayment=2
     }
 }
