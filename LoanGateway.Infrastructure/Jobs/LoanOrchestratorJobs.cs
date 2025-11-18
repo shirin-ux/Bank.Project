@@ -4,6 +4,7 @@ using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.OtpRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
+using LoanService.Application.UseCase.Command.TransferRegister;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities;
 using LoanService.Domain.Enum.Loan;
@@ -73,6 +74,15 @@ public sealed class LoanOrchestratorJobs : ILoanOrchestratorJobRunner
     public Task EnqueueOtpRequestRetryAsync(Guid loanId, OtpRequestCommand cmd, TimeSpan delay, CancellationToken ct)
     {
         _bg.Schedule<LoanJobRunner>( runner => runner.RunSendOtp(loanId, cmd),  delay);
+
+        _logger.LogInformation("Scheduled SendOtpAsync retry for Loan {LoanId} after {Delay} seconds", loanId, delay.TotalSeconds);
+
+        return Task.CompletedTask;
+    }
+
+    public Task EnqueueTransferInquiryAsync(Guid loanId, TimeSpan delay, CancellationToken ct)
+    {
+        _bg.Schedule<LoanJobRunner>(runner => runner.RunTransferRegister(loanId), delay);
 
         _logger.LogInformation("Scheduled SendOtpAsync retry for Loan {LoanId} after {Delay} seconds", loanId, delay.TotalSeconds);
 

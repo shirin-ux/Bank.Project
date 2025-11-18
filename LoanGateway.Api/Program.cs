@@ -44,7 +44,7 @@ builder.Services.AddValidatorsFromAssembly(typeof(LoanService.Application.Assemb
 
 builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
-
+builder.Services.AddScoped<ILoanNotificationBus, RabbitMqLoanNotificationBus>();
 var root = builder.Environment.ContentRootPath;
 var rulesPath = Path.Combine(root, builder.Configuration["MellatPolicy:RulesPath"]);
 

@@ -37,13 +37,15 @@ public sealed class LoanRequestOrchestrator
     private readonly IBankPolicyFactory _bankPolicyFactory;
     private readonly IMapper _mapper;
     private readonly IContractFileStorage _contractFileStorage;
+    private readonly ILoanNotificationBus _loanNotification;
     public LoanRequestOrchestrator(
         IMediator mediator,
         ILoanRequestRepository repo,
         ILoanOrchestratorJobRunner jobs,
         IMapper mapper,
         IBankPolicyFactory bankPolicyFactory,
-        IContractFileStorage contractFileStorage)
+        IContractFileStorage contractFileStorage,
+        ILoanNotificationBus loanNotification)
 
     {
         _mapper = mapper;
@@ -52,7 +54,7 @@ public sealed class LoanRequestOrchestrator
         _jobs = jobs;
         _bankPolicyFactory = bankPolicyFactory;
         _contractFileStorage = contractFileStorage;
-
+        _loanNotification = loanNotification;
     }
 
 
@@ -71,10 +73,7 @@ public sealed class LoanRequestOrchestrator
             var decisionResult = policy.Evaluate(bankRes);
 
             if (!decisionResult.IsSuccess)
-                return await FailAndReturn<CustomerInquiryResultDto>(
-                    loan,
-                    decisionResult.Error!,
-                    ct);
+                return await FailAndReturn<CustomerInquiryResultDto>(loan, decisionResult.Error!, ct);
 
             var decision = decisionResult.Value!;
 
@@ -315,8 +314,7 @@ public sealed class LoanRequestOrchestrator
 
     public async Task<Result<GetCollateralContractFileResultDto>> GetContractFileWithCollateralAsync(Guid loanId, GetCollateralContractFileCommand cmd, CancellationToken ct)
     {
-        try
-        {
+       
             var loan = await RequireAsync(loanId, ct);
 
 
@@ -342,7 +340,8 @@ public sealed class LoanRequestOrchestrator
             if (cmd.CollateralNo == 0)
                 return Result<GetCollateralContractFileResultDto>.Failure(
                     new Error(loan.LastErrorCode, "شماره و تاریخ وثیقه الزامی است."));
-
+        try
+        {
 
             var bankRes = await _mediator.Send(cmd with { ApprovalCode = Convert.ToDecimal(loan.Provider.ApprovalCode)! }, ct);
             var fileName = $"mellat-{bankRes.ContractNumber}.pdf";
@@ -419,19 +418,21 @@ public sealed class LoanRequestOrchestrator
 
     public async Task<Result<SubmitPayRequestResultDto>> SubmitPayRequestAsync(Guid loanId, SubmitPayRequestCommand cmd, CancellationToken ct)
     {
+
+        var loan = await RequireAsync(loanId, ct);
+
+        if (loan.State != LoanRequestState.ContractsPrepared)
+            return Result<SubmitPayRequestResultDto>.Failure(
+                new Error(-1, "قرارداد باید در وضعیت آماده (ContractsPrepared) باشد."));
+
+
+        if (loan.GrantRequest.ContractId < 0)
+            return Result<SubmitPayRequestResultDto>.Failure(
+                new Error(-1, "شماره قرارداد مشخص نیست."));
+        var shouldUpdate = false;
+        SubmitPayRequestResultDto res;
         try
         {
-            var loan = await RequireAsync(loanId, ct);
-
-            if (loan.State != LoanRequestState.ContractsPrepared)
-                return Result<SubmitPayRequestResultDto>.Failure(
-                    new Error(-1, "قرارداد باید در وضعیت آماده (ContractsPrepared) باشد."));
-
-
-            if (loan.GrantRequest.ContractId < 0)
-                return Result<SubmitPayRequestResultDto>.Failure(
-                    new Error(-1, "شماره قرارداد مشخص نیست."));
-
             var req = new SubmitPayRequestCommand
             {
                 ContractPath = cmd.ContractPath,
@@ -439,45 +440,8 @@ public sealed class LoanRequestOrchestrator
                 ProviderType = cmd.ProviderType,
                 ContractNumber = cmd.ContractNumber
             };
-            var shouldUpdate = false;
-            var res = await _mediator.Send(req, ct);
 
-            var providerType = loan.Provider.ProviderType;
-
-            var policy = _bankPolicyFactory.CreatePolicy<SubmitPayRequestResultDto>(providerType, "PayRequest");
-
-            var decision = policy.Evaluate(res);
-
-            if (!decision.IsSuccess)
-                return await FailAndReturn<SubmitPayRequestResultDto>(loan, decision.Error!, ct);
-
-            var d = decision.Value!;
-            loan.MarkFacilitySubmitted(d.ReasonCode, d.UiMessage);
-
-            if (res.PayRequestId != null)
-            {
-                loan.SetPayRequestId(res.PayRequestId);
-                shouldUpdate = true;
-            }
-
-            if (shouldUpdate)
-                await _repo.UpdateAsync(loan, ct);
-
-            if (decision.Value.Retryable == true)
-            {
-                await _jobs.EnqueuePayResponseInquiryAsync(loan.Id, res.PayRequestId, TimeSpan.FromSeconds(30), ct);
-            }
-
-
-            return Result<SubmitPayRequestResultDto>.Success(new SubmitPayRequestResultDto
-            {
-                RequestId = res.RequestId,
-                PayRequestId = res.PayRequestId,
-                State = loan.State.ToString(),
-                Message = d.UiMessage,
-                MessageCode = res.MessageCode,
-                NextActions = GetNextActions(loan)
-            });
+            res = await _mediator.Send(req, ct);
         }
         catch (ValidationException ex)
         {
@@ -496,6 +460,43 @@ public sealed class LoanRequestOrchestrator
             return Result<SubmitPayRequestResultDto>.Failure(error);
 
         }
+        var providerType = loan.Provider.ProviderType;
+
+        var policy = _bankPolicyFactory.CreatePolicy<SubmitPayRequestResultDto>(providerType, "PayRequest");
+
+        var decision = policy.Evaluate(res);
+
+        if (!decision.IsSuccess)
+            return await FailAndReturn<SubmitPayRequestResultDto>(loan, decision.Error!, ct);
+
+        var d = decision.Value!;
+        loan.MarkFacilitySubmitted(d.ReasonCode, d.UiMessage);
+
+        if (res.PayRequestId != null)
+        {
+            loan.SetPayRequestId(res.PayRequestId);
+            shouldUpdate = true;
+        }
+
+        if (shouldUpdate)
+            await _repo.UpdateAsync(loan, ct);
+
+        if (decision.Value.Retryable == true)
+        {
+            await _jobs.EnqueuePayResponseInquiryAsync(loan.Id, res.PayRequestId, TimeSpan.FromSeconds(30), ct);
+        }
+
+
+        return Result<SubmitPayRequestResultDto>.Success(new SubmitPayRequestResultDto
+        {
+            RequestId = res.RequestId,
+            PayRequestId = res.PayRequestId,
+            State = loan.State.ToString(),
+            Message = d.UiMessage,
+            MessageCode = res.MessageCode,
+            NextActions = GetNextActions(loan)
+        });
+
     }
 
     public async Task<Result<GetPayResponseResultDto>> GetPayResponseAsync(Guid loanId, CancellationToken ct)
@@ -509,11 +510,13 @@ public sealed class LoanRequestOrchestrator
 
         var providerType = loan.Provider.ProviderType;
 
-        var res = await _mediator.Send(new GetPayResponseQuery
+        GetPayResponseResultDto res;
+        res = await _mediator.Send(new GetPayResponseQuery
         {
             PayRequestId = loan.PayRequest.PayRequestId,
             ProviderType = providerType
         }, ct);
+
 
         if (res is null)
             return Result<GetPayResponseResultDto>.Failure(new Error(-1, "پاسخی دریافت نشد."));
@@ -589,22 +592,23 @@ public sealed class LoanRequestOrchestrator
 
     public async Task<Result<OtpRequestResultDto>> SendOtpAsync(Guid loanId, OtpRequestCommand cmd, CancellationToken ct)
     {
+
+        var loan = await RequireAsync(loanId, ct);
+
+        if (loan is null)
+            return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
+
+        if (string.IsNullOrEmpty(loan.Contract.ContractNumber))
+            return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
+
+
+        if (cmd.ServiceType != serviceType.deposit && cmd.ServiceType != serviceType.repayment)
+            return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "serviceType باید 1 (واریز) یا 2 (بازپرداخت) باشد."));
+
+        OtpRequestResultDto res;
         try
         {
-            var loan = await RequireAsync(loanId, ct);
-
-            if (loan is null)
-                return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
-
-            if (string.IsNullOrEmpty(loan.Contract.ContractNumber))
-                return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
-
-
-            if (cmd.ServiceType != serviceType.deposit && cmd.ServiceType != serviceType.repayment)
-                return Result<OtpRequestResultDto>.Failure(new Error(loan.LastErrorCode, "serviceType باید 1 (واریز) یا 2 (بازپرداخت) باشد."));
-
-
-            var res = await _mediator.Send(cmd with
+            res = await _mediator.Send(cmd with
             {
                 ContractNumber = cmd.ContractNumber,
                 NationalCode = cmd.NationalCode,
@@ -613,50 +617,6 @@ public sealed class LoanRequestOrchestrator
                 ProviderType = cmd.ProviderType,
                 ServiceType = cmd.ServiceType
             }, ct);
-            var providerType = loan.Provider.ProviderType;
-
-            var policy = _bankPolicyFactory.CreatePolicy<OtpRequestResultDto>(providerType, "OtpRequest");
-
-            var decision = policy.Evaluate(res);
-
-            if (!decision.IsSuccess)
-                return await FailAndReturn<OtpRequestResultDto>(loan, decision.Error!, ct);
-
-
-            if (decision.Value.Retryable == true)
-            {
-
-                const int maxRetry = 5;
-
-                if (loan.RetryCount < maxRetry)
-                {
-                    loan.RetryCount++;
-                    loan.TransitionTo(decision.Value.NextState ?? LoanRequestState.OtpSent, decision.Value.ReasonCode, decision.Value.UiMessage);
-                    await _repo.UpdateAsync(loan, ct);
-
-                    await _jobs.EnqueueOtpRequestRetryAsync(loanId, cmd, TimeSpan.FromSeconds(30), ct);
-                }
-                else
-                {
-
-                    loan.State = LoanRequestState.Failed;
-                    await _repo.UpdateAsync(loan, ct);
-                }
-            }
-            if (loan.State != LoanRequestState.Failed)
-            {
-                loan.MarkOtpSent(decision.Value.ReasonCode, decision.Value.UiMessage);
-                await _repo.UpdateAsync(loan, ct);
-            }
-
-            return Result<OtpRequestResultDto>.Success(new OtpRequestResultDto
-            {
-                LoanRequestId = loan.Id,
-                State = loan.State.ToString(),
-                MessageCode = res.MessageCode,
-                Message = decision.Value.UiMessage,
-                NextActions = GetNextActions(loan)
-            });
 
         }
         catch (ValidationException ex)
@@ -676,87 +636,83 @@ public sealed class LoanRequestOrchestrator
             return Result<OtpRequestResultDto>.Failure(error);
 
         }
+        var providerType = loan.Provider.ProviderType;
 
+        var policy = _bankPolicyFactory.CreatePolicy<OtpRequestResultDto>(providerType, "OtpRequest");
+
+        var decision = policy.Evaluate(res);
+
+        if (!decision.IsSuccess)
+            return await FailAndReturn<OtpRequestResultDto>(loan, decision.Error!, ct);
+
+
+        if (decision.Value.Retryable == true)
+        {
+
+            const int maxRetry = 5;
+
+            if (loan.RetryCount < maxRetry)
+            {
+                loan.RetryCount++;
+                loan.TransitionTo(decision.Value.NextState ?? LoanRequestState.OtpSent, decision.Value.ReasonCode, decision.Value.UiMessage);
+                await _repo.UpdateAsync(loan, ct);
+
+                await _jobs.EnqueueOtpRequestRetryAsync(loanId, cmd, TimeSpan.FromSeconds(30), ct);
+            }
+            else
+            {
+
+                loan.State = LoanRequestState.Failed;
+                await _repo.UpdateAsync(loan, ct);
+            }
+        }
+        if (loan.State != LoanRequestState.Failed)
+        {
+            loan.MarkOtpSent(decision.Value.ReasonCode, decision.Value.UiMessage);
+            await _repo.UpdateAsync(loan, ct);
+        }
+
+        return Result<OtpRequestResultDto>.Success(new OtpRequestResultDto
+        {
+            LoanRequestId = loan.Id,
+            State = loan.State.ToString(),
+            MessageCode = res.MessageCode,
+            Message = decision.Value.UiMessage,
+            NextActions = GetNextActions(loan)
+        });
     }
 
 
     public async Task<Result<DepositRequestResultDto>> DepositRequestAsync(Guid loanId, DepositRequestCommand cmd, CancellationToken ct)
     {
+
+        var loan = await RequireAsync(loanId, ct);
+
+        if (loan is null)
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
+
+        if (loan.Contract.ApprovalCode <= 0)
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
+
+
+        if (loan.IsPurchaseCredit)
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست واریز وجه صرفاً برای اعتبار در خرید مجاز است."));
+
+
+        if (loan.RequiresOtp && loan.State is not LoanRequestState.OtpVerified and not LoanRequestState.RemittanceRegistering)
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "برای ثبت واریز، تایید رمز یکبار مصرف الزامی است."));
+
+
+
+        if (!Enum.IsDefined(typeof(depositType), cmd.DepositType))
+            return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, $"نوع حساب باید یکی از مقادیر ({depositType.AnyAccount} ,{depositType.FixedAccount},{depositType.CustomerAccount}) باشد."));
+
+        DepositRequestResultDto res;
         try
         {
 
-            var loan = await RequireAsync(loanId, ct);
 
-            if (loan is null)
-                return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
-
-            if (loan.Contract.ApprovalCode <= 0)
-                return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
-
-
-            if (loan.IsPurchaseCredit)
-                return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست واریز وجه صرفاً برای اعتبار در خرید مجاز است."));
-
-
-            if (loan.RequiresOtp && loan.State is not LoanRequestState.OtpVerified and not LoanRequestState.RemittanceRegistering)
-                return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, "برای ثبت واریز، تایید رمز یکبار مصرف الزامی است."));
-
-
-
-            if (!Enum.IsDefined(typeof(depositType), cmd.DepositType))
-                return Result<DepositRequestResultDto>.Failure(new Error(loan.LastErrorCode, $"نوع حساب باید یکی از مقادیر ({depositType.AnyAccount} ,{depositType.FixedAccount},{depositType.CustomerAccount}) باشد."));
-
-
-            var res = await _mediator.Send(cmd, ct);
-            var providerType = loan.Provider.ProviderType;
-
-            var policy = _bankPolicyFactory.CreatePolicy<DepositRequestResultDto>(providerType, "DepositRequest");
-
-            var decision = policy.Evaluate(res);
-
-            if (!decision.IsSuccess)
-            {
-                if (decision.Value?.Retryable == true)
-                {
-
-                    const int maxRetry = 5;
-
-                    if (loan.RetryCount < maxRetry)
-                    {
-                        loan.RetryCount++;
-                        loan.TransitionTo(LoanRequestState.Failed, decision.Value.ReasonCode, decision.Value.UiMessage);
-                        await _repo.UpdateAsync(loan, ct);
-
-                        await _jobs.EnqueueDepositRetryAsync(loanId, TimeSpan.FromSeconds(30), ct, cmd);
-                        return Result<DepositRequestResultDto>.Failure(new Error(decision.Value.ReasonCode, "در حال تلاش مجدد برای واریز وجه..."));
-                    }
-                    else
-                    {
-
-                        loan.State = LoanRequestState.Failed;
-                        await _repo.UpdateAsync(loan, ct);
-                        return Result<DepositRequestResultDto>.Failure(new Error(decision.Value.ReasonCode, decision.Value.UiMessage));
-                    }
-
-                }
-
-                return await FailAndReturn<DepositRequestResultDto>(loan, decision.Error!, ct);
-            }
-
-            var d = decision.Value!;
-            loan.MarkRemittanceRegistering(d.ReasonCode, d.UiMessage);
-            loan.SetTransactionNumber(res.TransactionNumber);
-            await _repo.UpdateAsync(loan, ct);
-
-            return Result<DepositRequestResultDto>.Success(new DepositRequestResultDto
-            {
-                RequestId = res.RequestId,
-                TransactionNumber = res.TransactionNumber,
-                State = loan.State.ToString(),
-                Message = d.UiMessage,
-                NextActions = GetNextActions(loan)
-            });
-
+            res = await _mediator.Send(cmd, ct);
         }
         catch (ValidationException ex)
         {
@@ -775,58 +731,81 @@ public sealed class LoanRequestOrchestrator
             return Result<DepositRequestResultDto>.Failure(error);
 
         }
+        var providerType = loan.Provider.ProviderType;
+
+        var policy = _bankPolicyFactory.CreatePolicy<DepositRequestResultDto>(providerType, "DepositRequest");
+
+        var decision = policy.Evaluate(res);
+
+        if (!decision.IsSuccess)
+        {
+            if (decision.Value?.Retryable == true)
+            {
+
+                const int maxRetry = 5;
+
+                if (loan.RetryCount < maxRetry)
+                {
+                    loan.RetryCount++;
+                    loan.TransitionTo(LoanRequestState.Failed, decision.Value.ReasonCode, decision.Value.UiMessage);
+                    await _repo.UpdateAsync(loan, ct);
+
+                    await _jobs.EnqueueDepositRetryAsync(loanId, TimeSpan.FromSeconds(30), ct, cmd);
+                    return Result<DepositRequestResultDto>.Failure(new Error(decision.Value.ReasonCode, "در حال تلاش مجدد برای واریز وجه..."));
+                }
+                else
+                {
+
+                    loan.State = LoanRequestState.Failed;
+                    await _repo.UpdateAsync(loan, ct);
+                    return Result<DepositRequestResultDto>.Failure(new Error(decision.Value.ReasonCode, decision.Value.UiMessage));
+                }
+
+            }
+
+            return await FailAndReturn<DepositRequestResultDto>(loan, decision.Error!, ct);
+        }
+
+        var d = decision.Value!;
+        loan.MarkRemittanceRegistering(d.ReasonCode, d.UiMessage);
+        loan.SetTransactionNumber(res.TransactionNumber);
+        await _repo.UpdateAsync(loan, ct);
+
+        return Result<DepositRequestResultDto>.Success(new DepositRequestResultDto
+        {
+            RequestId = res.RequestId,
+            TransactionNumber = res.TransactionNumber,
+            State = loan.State.ToString(),
+            Message = d.UiMessage,
+            NextActions = GetNextActions(loan)
+        });
+
+
     }
 
     public async Task<Result<RepaymentRequestResultDto>> RepaymentRequestAsync(Guid loanId, RepaymentRequestCommand cmd, CancellationToken ct)
     {
+
+        var loan = await RequireAsync(loanId, ct);
+        if (loan is null)
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
+
+        if (loan.Contract.ApprovalCode <= 0)
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
+
+
+        if (loan.State is not LoanRequestState.Approved and not LoanRequestState.Disbursed)
+            return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "در این وضعیت ثبت بازپرداخت مجاز نیست."));
+
+
+        if (!loan.CanPerformRepayment(cmd.OtpCode))
+            return Result<RepaymentRequestResultDto>.Failure(
+                new Error(loan.LastErrorCode, "براساس تنظیمات مصوبه، رمز دوم الزامی است."));
+        RepaymentRequestResultDto res;
         try
         {
 
-
-            var loan = await RequireAsync(loanId, ct);
-            if (loan is null)
-                return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "درخواست وام یافت نشد."));
-
-            if (loan.Contract.ApprovalCode <= 0)
-                return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "شماره قرارداد معتبر نیست."));
-
-
-            if (loan.State is not LoanRequestState.Approved and not LoanRequestState.Disbursed)
-                return Result<RepaymentRequestResultDto>.Failure(new Error(loan.LastErrorCode, "در این وضعیت ثبت بازپرداخت مجاز نیست."));
-
-
-            if (!loan.CanPerformRepayment(cmd.OtpCode))
-                return Result<RepaymentRequestResultDto>.Failure(
-                    new Error(loan.LastErrorCode, "براساس تنظیمات مصوبه، رمز دوم الزامی است."));
-
-            var res = await _mediator.Send(cmd, ct);
-
-            var providerType = loan.Provider.ProviderType;
-
-            var policy = _bankPolicyFactory.CreatePolicy<RepaymentRequestResultDto>(providerType, "RepaymentRequest");
-
-            var decision = policy.Evaluate(res);
-            if (!decision.IsSuccess)
-                return await FailAndReturn<RepaymentRequestResultDto>(loan, decision.Error!, ct);
-
-            var d = decision.Value!;
-            loan.MarkRepaymentRegistered(d.ReasonCode, d.UiMessage, res.TrackNumber.ToString(), res.AccountNumber.ToString(), res.RepaymentAmount, res.RepaymentDate);
-
-            //loan.SetLastRepaymentInfo(
-            //     trackNumber: res.TrackNumber?.ToString(),
-            //     accountNo: res.AccountNumber?.ToString(),
-            //     amount: res.RepaymentAmount,
-            //     whenUtc: res.RepaymentDate?.ToUniversalTime());
-            await _repo.UpdateAsync(loan, ct);
-
-            return Result<RepaymentRequestResultDto>.Success(new RepaymentRequestResultDto
-            {
-                RequestId = res.RequestId,
-                TrackNumber = res.TrackNumber,
-                State = loan.State.ToString(),
-                Message = d.UiMessage,
-                NextActions = GetNextActions(loan)
-            });
+            res = await _mediator.Send(cmd, ct);
         }
         catch (ValidationException ex)
         {
@@ -845,16 +824,42 @@ public sealed class LoanRequestOrchestrator
             return Result<RepaymentRequestResultDto>.Failure(error);
 
         }
+        var providerType = loan.Provider.ProviderType;
+
+        var policy = _bankPolicyFactory.CreatePolicy<RepaymentRequestResultDto>(providerType, "RepaymentRequest");
+
+        var decision = policy.Evaluate(res);
+        if (!decision.IsSuccess)
+            return await FailAndReturn<RepaymentRequestResultDto>(loan, decision.Error!, ct);
+
+        var d = decision.Value!;
+        loan.MarkRepaymentRegistered(d.ReasonCode, d.UiMessage, res.TrackNumber.ToString(), res.AccountNumber.ToString(), res.RepaymentAmount, res.RepaymentDate);
+
+        //loan.SetLastRepaymentInfo(
+        //     trackNumber: res.TrackNumber?.ToString(),
+        //     accountNo: res.AccountNumber?.ToString(),
+        //     amount: res.RepaymentAmount,
+        //     whenUtc: res.RepaymentDate?.ToUniversalTime());
+        await _repo.UpdateAsync(loan, ct);
+
+        return Result<RepaymentRequestResultDto>.Success(new RepaymentRequestResultDto
+        {
+            RequestId = res.RequestId,
+            TrackNumber = res.TrackNumber,
+            State = loan.State.ToString(),
+            Message = d.UiMessage,
+            NextActions = GetNextActions(loan)
+        });
+
     }
 
 
     public async Task<Result<GetInstallmentsResultDto>> GetInstallmentsAsync(Guid loanId, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
-        if (loan is null)
-            return Result<GetInstallmentsResultDto>.Failure(new Error(-1, "درخواست وام یافت نشد."));
 
-        if (loan.Contract is null ||string.IsNullOrEmpty(loan.Contract.ContractNumber))
+
+        if (loan.Contract is null || string.IsNullOrEmpty(loan.Contract.ContractNumber))
             return Result<GetInstallmentsResultDto>.Failure(new Error(-2, "قرارداد برای این درخواست ثبت نشده است."));
 
 
@@ -876,8 +881,6 @@ public sealed class LoanRequestOrchestrator
 
         var decision = policy.Evaluate(res);
 
-        var d = decision.Value!;
-
         if (!decision.IsSuccess)
         {
 
@@ -886,16 +889,20 @@ public sealed class LoanRequestOrchestrator
                 loan.TransitionTo(LoanRequestState.InstallmentsRetryPending, decision.Value.ReasonCode, decision.Value.UiMessage);
                 await _repo.UpdateAsync(loan, ct);
 
-                await _jobs.EnqueueRetryGetInstallment(loanId, TimeSpan.FromSeconds(45), ct);
+                await _jobs.EnqueueRetryGetInstallment(loanId, TimeSpan.FromMinutes(15), ct);
+                return Result<GetInstallmentsResultDto>.Failure(new Error(decision.Value!.ReasonCode, decision.Value!.UiMessage ?? "اقساط هنوز اماده نیست در حال تلاش مجدد "));
             }
-            return await FailAndReturn<GetInstallmentsResultDto>(loan, decision.Error!, ct);
+            var err = decision.Error
+              ?? new Error(decision.Value?.ReasonCode ?? -1, decision.Value?.UiMessage ?? "خطای نامشخص در دریافت اقساط.");
+
+            return await FailAndReturn<GetInstallmentsResultDto>(loan, err, ct);
         }
 
         if (res.Installments is not null && res.Installments.Any())
         {
             var installments = _mapper.Map<List<InstallmentStatus>>(res.Installments);
 
-            var contractNo = res.ContractNumber !=0m ? res.ContractNumber :decimal.Parse(loan.Contract.ContractNumber);
+            var contractNo = res.ContractNumber != 0m ? res.ContractNumber : decimal.Parse(loan.Contract.ContractNumber);
 
             foreach (var item in installments)
                 item.ContractNumber = contractNo;
@@ -903,7 +910,7 @@ public sealed class LoanRequestOrchestrator
             await _repo.InsertInstallmentAsync(installments, loanId, ct);
         }
 
-        loan.TransitionTo(LoanRequestState.InstallmentsFetched, null, "اقساط با موفقیت دریافت شد.");
+        loan.TransitionTo(LoanRequestState.InstallmentsFetched, decision.Value?.ReasonCode, decision.Value?.UiMessage ?? "اقساط با موفقیت دریافت شد.");
         await _repo.UpdateAsync(loan, ct);
 
         return Result<GetInstallmentsResultDto>.Success(new GetInstallmentsResultDto
@@ -919,6 +926,7 @@ public sealed class LoanRequestOrchestrator
 
     public async Task<Result<GetCustomerCreditBalanceResultDto>> GetCreditBalanceAsync(Guid loanId, CancellationToken ct)
     {
+
         var loan = await RequireAsync(loanId, ct);
 
         if (loan is null)
@@ -928,20 +936,38 @@ public sealed class LoanRequestOrchestrator
             return Result<GetCustomerCreditBalanceResultDto>.Failure(new Error(-2, "برای این درخواست، قرارداد نهایی نشده است."));
 
         var providerType = loan.Provider.ProviderType;
-
-        var res = await _mediator.Send(new GetCustomerCreditBalanceCommand
+        GetCustomerCreditBalanceResultDto res;
+        try
         {
-            NationalCode = loan.Customer.NationalCode,
-            ContractNumber =loan.Contract.ContractNumber,
-            ProviderType = providerType
-        }, ct);
+            res = await _mediator.Send(new GetCustomerCreditBalanceCommand
+            {
+                NationalCode = loan.Customer.NationalCode,
+                ContractNumber = loan.Contract.ContractNumber,
+                ProviderType = providerType
+            }, ct);
+        }
+        catch (ValidationException ex)
+        {
 
+            var details = ex.Errors
+                            .GroupBy(e => e.PropertyName)
+                            .ToDictionary(
+                                          g => g.Key,
+                                          g => g.Select(e => e.ErrorMessage)
+                                                .Distinct()
+                                                .ToArray()
+                                          );
+
+            var error = new Error(400, "ورودی‌ها نامعتبر هستند.", details);
+
+            return Result<GetCustomerCreditBalanceResultDto>.Failure(error);
+
+        }
         var policy = _bankPolicyFactory.CreatePolicy<GetCustomerCreditBalanceResultDto>(providerType, "CommonRules");
 
 
         var decision = policy.Evaluate(res);
-
-        if (decision.Value.IsSuccess == false)
+        if (!decision.IsSuccess)
         {
 
             if (decision.Value is not null && decision.Value.Retryable == true)
@@ -978,54 +1004,117 @@ public sealed class LoanRequestOrchestrator
             MessageCode = res.MessageCode,
             NextActions = GetNextActions(loan)
         });
+
     }
 
     public async Task<Result<GetCustomerBillingResultDto>> GetBillingAsync(Guid loanId, GetCustomerBillingCommand cmd, CancellationToken ct)
     {
+
+        var loan = await RequireAsync(loanId, ct);
+        if (loan is null)
+            return Result<GetCustomerBillingResultDto>.Failure(
+                new Error(-1, "درخواست وام یافت نشد."));
+
+        GetCustomerBillingResultDto res;
         try
         {
-            var loan = await RequireAsync(loanId, ct);
-            var res = await _mediator.Send(cmd with { ContractNumber =loan.Contract.ContractNumber, NationalCode = loan.Customer.NationalCode! }, ct);
-            var providerType = loan.Provider.ProviderType;
-
-            var policy = _bankPolicyFactory.CreatePolicy<GetCustomerBillingResultDto>(providerType, "CustomerBilling");
-
-            var decision = policy.Evaluate(res);
-
-            if (!decision.IsSuccess)
-                return await FailAndReturn<GetCustomerBillingResultDto>(loan, decision.Error!, ct);
-
-            return Result<GetCustomerBillingResultDto>.Success(new GetCustomerBillingResultDto
-            {
-                RequestId = res.RequestId,
-                Billings = res.Billings,
-                State = loan.State.ToString(),
-                Message = decision.Value!.UiMessage,
-                NextActions = GetNextActions(loan)
-            });
+            res = await _mediator.Send(cmd with { ContractNumber = loan.Contract.ContractNumber, NationalCode = loan.Customer.NationalCode! }, ct);
         }
-        catch (Exception)
+        catch (ValidationException ex)
         {
 
-            throw;
+            var details = ex.Errors
+                            .GroupBy(e => e.PropertyName)
+                            .ToDictionary(
+                                          g => g.Key,
+                                          g => g.Select(e => e.ErrorMessage)
+                                                .Distinct()
+                                                .ToArray()
+                                          );
+
+            var error = new Error(400, "ورودی‌ها نامعتبر هستند.", details);
+
+            return Result<GetCustomerBillingResultDto>.Failure(error);
+
         }
+        var providerType = loan.Provider.ProviderType;
+
+        var policy = _bankPolicyFactory.CreatePolicy<GetCustomerBillingResultDto>(providerType, "CustomerBilling");
+
+        var decision = policy.Evaluate(res);
+
+        if (!decision.IsSuccess)
+            return await FailAndReturn<GetCustomerBillingResultDto>(loan, decision.Error!, ct);
+
+        return Result<GetCustomerBillingResultDto>.Success(new GetCustomerBillingResultDto
+        {
+            RequestId = res.RequestId,
+            Billings = res.Billings,
+            State = loan.State.ToString(),
+            Message = decision.Value!.UiMessage,
+            NextActions = GetNextActions(loan)
+        });
+
     }
 
 
     public async Task<Result<GetCustomerPurchaseDetailsResultDto>> GetPurchasesAsync(Guid loanId, GetCustomerPurchaseDetailsCommand cmd, CancellationToken ct)
     {
-        var loan = await RequireAsync(loanId, ct);
 
+        var loan = await RequireAsync(loanId, ct);
+        if (loan is null)
+            return Result<GetCustomerPurchaseDetailsResultDto>.Failure(
+                new Error(-1, "درخواست وام یافت نشد."));
+
+        if (loan.Provider is null)
+            return Result<GetCustomerPurchaseDetailsResultDto>.Failure(
+                new Error(-1, "برای این درخواست وام، بانک ارائه‌دهنده ثبت نشده است."));
+
+
+        if (string.IsNullOrEmpty(loan.Contract.ContractNumber))
+            return Result<GetCustomerPurchaseDetailsResultDto>.Failure(
+                new Error(-1, "برای این وام قرارداد معتبری ثبت نشده است."));
+
+
+        if (string.IsNullOrWhiteSpace(loan.Customer?.NationalCode))
+            return Result<GetCustomerPurchaseDetailsResultDto>.Failure(
+                new Error(-1, "کد ملی مشتری برای این وام موجود نیست."));
 
         var providerType = loan.Provider.ProviderType;
-        var res = await _mediator.Send(cmd with
+        GetCustomerPurchaseDetailsResultDto res;
+        try
         {
-            ContractNumber = loan.Contract.ContractNumber,
-            NationalCode = loan.Customer.NationalCode!,
-            ProviderType = providerType
-        }, ct);
+            res = await _mediator.Send(cmd with
+            {
+                ContractNumber = loan.Contract.ContractNumber,
+                NationalCode = loan.Customer.NationalCode!,
+                ProviderType = providerType
+            }, ct);
+        }
+        catch (ValidationException ex)
+        {
+
+            var details = ex.Errors
+                            .GroupBy(e => e.PropertyName)
+                            .ToDictionary(
+                                          g => g.Key,
+                                          g => g.Select(e => e.ErrorMessage)
+                                                .Distinct()
+                                                .ToArray()
+                                          );
+
+            var error = new Error(400, "ورودی‌ها نامعتبر هستند.", details);
+
+            return Result<GetCustomerPurchaseDetailsResultDto>.Failure(error);
+
+        }
+        if (res is null)
+            return Result<GetCustomerPurchaseDetailsResultDto>.Failure(
+                new Error(-1, "پاسخی از سرویس دریافت نشد."));
+
         var policy = _bankPolicyFactory.CreatePolicy<GetCustomerPurchaseDetailsResultDto>(providerType, "PurchaseDetails");
         var decision = policy.Evaluate(res);
+
         if (!decision.IsSuccess)
             return await FailAndReturn<GetCustomerPurchaseDetailsResultDto>(loan, decision.Error!, ct);
 
@@ -1037,14 +1126,45 @@ public sealed class LoanRequestOrchestrator
             Message = decision.Value!.UiMessage,
             NextActions = GetNextActions(loan)
         });
+
     }
 
 
     public async Task<Result<TransferRegisterResultDto>> TransferRegisterAsync(Guid loanId, TransferRegisterCommand cmd, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
-        var res = await _mediator.Send(cmd, ct);
+        if (loan is null)
+            return Result<TransferRegisterResultDto>.Failure(
+                new Error(-1, "درخواست وام یافت نشد."));
+
+        if (loan.Provider is null)
+            return Result<TransferRegisterResultDto>.Failure(
+                new Error(-1, "بانک ارائه‌دهنده برای این درخواست وام ثبت نشده است."));
+
         var providerType = loan.Provider.ProviderType;
+
+        TransferRegisterResultDto res;
+        try
+        {
+            res = await _mediator.Send(cmd, ct);
+        }
+        catch (ValidationException ex)
+        {
+            var details = ex.Errors
+                .GroupBy(e => e.PropertyName)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(e => e.ErrorMessage)
+                          .Distinct()
+                          .ToArray()
+                );
+
+            var error = new Error(400, "ورودی‌ها نامعتبر هستند.", details);
+            return Result<TransferRegisterResultDto>.Failure(error);
+        }
+        if (res is null)
+            return Result<TransferRegisterResultDto>.Failure(
+                new Error(-1, "پاسخی دریافت نشد."));
 
         var policy = _bankPolicyFactory.CreatePolicy<TransferRegisterResultDto>(providerType, "TransferRegister");
         var decision = policy.Evaluate(res);
@@ -1052,12 +1172,14 @@ public sealed class LoanRequestOrchestrator
             return await FailAndReturn<TransferRegisterResultDto>(loan, decision.Error!, ct);
 
         var d = decision.Value!;
+
+
         loan.MarkRemittanceRegistering(d.ReasonCode, d.UiMessage);
         loan.SetRegisterCode(res.RegisterCode);
         await _repo.UpdateAsync(loan, ct);
 
 
-        //  await _jobs.EnqueueTransferInquiryAsync(loan.Id, res.RegisterCode, TimeSpan.FromSeconds(45), ct);
+         await _jobs.EnqueueTransferInquiryAsync(loan.Id, TimeSpan.FromMinutes(15), ct);
 
         return Result<TransferRegisterResultDto>.Success(new TransferRegisterResultDto
         {
@@ -1072,7 +1194,16 @@ public sealed class LoanRequestOrchestrator
     public async Task<Result<TransferInquiryResultDto>> TransferInquiryAsync(Guid loanId, CancellationToken ct)
     {
         var loan = await RequireAsync(loanId, ct);
+        if (loan is null)
+            return Result<TransferInquiryResultDto>.Failure(
+                new Error(-1, "درخواست وام یافت نشد."));
+
+        if (loan.Transfer is null || string.IsNullOrWhiteSpace(loan.Transfer.RegisterCode))
+           return Result<TransferInquiryResultDto>.Failure(
+                new Error(-1, "شماره پیگیری یافت نشد."));
+
         var res = await _mediator.Send(new TransferInquiryQuery { RegisterCode = loan.Transfer.RegisterCode! }, ct);
+
         var providerType = loan.Provider.ProviderType;
 
         var policy = _bankPolicyFactory.CreatePolicy<TransferInquiryResultDto>(providerType, "TransferInquiry");
@@ -1082,17 +1213,35 @@ public sealed class LoanRequestOrchestrator
             return await FailAndReturn<TransferInquiryResultDto>(loan, decision.Error!, ct);
 
         var d = decision.Value!;
-        if (res.InquiryDetails.FirstOrDefault().transferStatus == TransferInquiryResultDto.TransferStatus.Registered)
-            loan.MarkDisbursed(d.ReasonCode, d.UiMessage);
-        // برگشتی/لغو و برگشت
-        else if (res.InquiryDetails.FirstOrDefault().transferStatus == TransferInquiryResultDto.TransferStatus.Returned ||
-            res.InquiryDetails.FirstOrDefault().transferStatus == TransferInquiryResultDto.TransferStatus.CanceledAndReturned)
-            loan.MarkRemittanceReturned(d.ReasonCode, d.UiMessage);
-        // عدم امکان ارسال
-        else if (res.InquiryDetails.FirstOrDefault().transferStatus == TransferInquiryResultDto.TransferStatus.Unsendable)
-            loan.MarkRemittanceFailed(d.ReasonCode, d.UiMessage);
 
-        else loan.MarkRemittancePending(d.ReasonCode, d.UiMessage);
+        var detail = res.InquiryDetails?.FirstOrDefault();
+
+        if (detail is null)
+        {
+            loan.MarkRemittancePending(d.ReasonCode, d.UiMessage ?? "بانک بدون جزئیات حواله پاسخ داد.");
+        }
+        else
+        {
+            switch (detail.transferStatus)
+            {
+                case TransferInquiryResultDto.TransferStatus.Registered:
+                    loan.MarkDisbursed(d.ReasonCode, d.UiMessage);
+                    break;
+
+                case TransferInquiryResultDto.TransferStatus.Returned:
+                case TransferInquiryResultDto.TransferStatus.CanceledAndReturned:
+                    loan.MarkRemittanceReturned(d.ReasonCode, d.UiMessage);
+                    break;
+
+                case TransferInquiryResultDto.TransferStatus.Unsendable:
+                    loan.MarkRemittanceFailed(d.ReasonCode, d.UiMessage);
+                    break;
+
+                default:
+                    loan.MarkRemittancePending(d.ReasonCode, d.UiMessage);
+                    break;
+            }
+        }
 
         await _repo.UpdateAsync(loan, ct);
 
@@ -1110,7 +1259,7 @@ public sealed class LoanRequestOrchestrator
 
     // --------- Helpers ----------
     private async Task<LoanRequest> RequireAsync(Guid id, CancellationToken ct)
-        => await _repo.GetByIdAsync(id, ct) ?? throw new InvalidOperationException("Loan request not found.");
+        => await _repo.GetByIdAsync(id, ct) ?? throw new InvalidOperationException("درخواست وام یافت نشد.");
 
     private async Task<Result<T>> FailAndReturn<T>(LoanRequest e, Error error, CancellationToken ct)
     {

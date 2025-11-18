@@ -13,5 +13,5 @@ public sealed record GetCustomerCreditBalanceCommand : IRequest<GetCustomerCredi
 {
     public BankProviderType ProviderType { get; set; }
     public string ContractNumber { get; set; }
-   public string NationalCode { get; set; }
+    public string NationalCode { get; set; }
 }

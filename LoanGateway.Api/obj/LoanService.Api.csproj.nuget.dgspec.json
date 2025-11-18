@@ -408,6 +408,10 @@
             "Microsoft.Extensions.Http": {
               "target": "Package",
               "version": "[9.0.10, )"
+            },
+            "RabbitMQ.Client": {
+              "target": "Package",
+              "version": "[6.8.1, )"
             }
           },
           "imports": [

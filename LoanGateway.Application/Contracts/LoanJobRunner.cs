@@ -2,6 +2,7 @@
 using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.OtpRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
+using LoanService.Application.UseCase.Command.TransferRegister;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.Enum.Loan;
@@ -130,6 +131,27 @@ public class LoanJobRunner(
         _logger.LogInformation("Running scheduled SendOtpAsync for Loan {LoanId}", loanId);
 
         var result = await service.SendOtpAsync(loanId, cmd, ct);
+
+        if (!result.IsSuccess)
+        {
+            _logger.LogWarning("Scheduled SendOtpAsync for Loan {LoanId} failed: {Msg}", loanId, result.Error?.Message);
+        }
+
+    }
+
+
+    public void RunTransferRegister(Guid loanId)
+    {
+        _ = TransferRegisterAsync(loanId, CancellationToken.None);
+    }
+    public async Task TransferRegisterAsync(Guid loanId, CancellationToken ct)
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var service = scope.ServiceProvider.GetRequiredService<LoanRequestOrchestrator>();
+
+        _logger.LogInformation("Running scheduled SendOtpAsync for Loan {LoanId}", loanId);
+
+        var result = await service.TransferInquiryAsync(loanId, ct);
 
         if (!result.IsSuccess)
         {

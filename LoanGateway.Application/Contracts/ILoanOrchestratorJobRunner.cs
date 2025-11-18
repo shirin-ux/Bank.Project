@@ -1,5 +1,6 @@
 ﻿using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.OtpRequest;
+using LoanService.Application.UseCase.Command.TransferRegister;
 using LoanService.Domain.Enum.Loan;
 
 namespace LoanService.Application.Contracts;
@@ -14,4 +15,5 @@ public interface ILoanOrchestratorJobRunner
     Task EnqueueDepositRetryAsync(Guid loanId, TimeSpan delay, CancellationToken ct, DepositRequestCommand cmd);
     Task EnqueueInquiryResultRetryAsync(Guid loanId, BankProviderType providerType, TimeSpan delay, CancellationToken ct);
     Task EnqueueOtpRequestRetryAsync(Guid loanId, OtpRequestCommand cmd, TimeSpan delay, CancellationToken ct);
+   Task EnqueueTransferInquiryAsync(Guid loanId, TimeSpan delay, CancellationToken ct);
 }
