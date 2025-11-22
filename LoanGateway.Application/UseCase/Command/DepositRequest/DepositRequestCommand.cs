@@ -1,16 +1,10 @@
-﻿using Common;
-using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Command.DepositRequest;
 public sealed record DepositRequestCommand : IRequest<DepositRequestResultDto>
 {
-    public BankProviderType ProviderType { get; set; }
+    public ProviderType ProviderType { get; set; }
     public decimal ContractNumber { get; init; }
     public string BuyerNationalCode { get; init; } = default!;
     public string? SellerNationalCode { get; init; }

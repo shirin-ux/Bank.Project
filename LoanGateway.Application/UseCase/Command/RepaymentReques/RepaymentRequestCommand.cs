@@ -1,4 +1,4 @@
-﻿using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum;
 using MediatR;
 
 namespace LoanService.Application.UseCase.Command.RepaymentReques;
@@ -8,6 +8,6 @@ public sealed record RepaymentRequestCommand : IRequest<RepaymentRequestResultDt
     public string ContractNo { get; init; }
     public string NationalCode { get; init; } = default!;
     public decimal RepaymentAmount { get; init; }
-    public BankProviderType ProviderType { get; set; }
+    public ProviderType ProviderType { get; set; }
     public int? OtpCode { get; init; }
 }

@@ -1,15 +1,14 @@
-﻿using Common;
-using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum;
 using MediatR;
 
 
 namespace LoanService.Application.UseCase.Query.CustomerInquiryStatus;
 
-public sealed class GetCustomerInquiryStatusQuery 
+public sealed class GetCustomerInquiryStatusQuery
     : IRequest<CustomerInquiryStatusResultDto>
 {
     public string RequestId { get; set; } = default!;
     public Guid LoanId { get; set; } = default!;
-    public BankProviderType ProviderType { get; set; }
+    public ProviderType ProviderType { get; set; }
 
 }

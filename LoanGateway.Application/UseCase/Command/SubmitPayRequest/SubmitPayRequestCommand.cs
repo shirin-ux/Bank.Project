@@ -1,4 +1,4 @@
-﻿using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum;
 using MediatR;
 
 
@@ -8,5 +8,5 @@ public sealed record SubmitPayRequestCommand : IRequest<SubmitPayRequestResultDt
     public decimal ContractNumber { get; init; }
     public decimal? RequestAmount { get; init; }
     public string? ContractPath { get; init; }
-    public BankProviderType ProviderType { get; set; }
+    public ProviderType ProviderType { get; set; }
 }

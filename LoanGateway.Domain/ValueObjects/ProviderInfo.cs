@@ -1,4 +1,4 @@
-﻿using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +14,7 @@ namespace LoanService.Domain.ValueObjects
     /// <param name="ApprovalCode"></param>
     /// <param name="RequiresOtp"></param>
     public sealed record ProviderInfo(
-        BankProviderType ProviderType,
+        ProviderType ProviderType,
         decimal? ApprovalCode,
         bool RequiresOtp
     );

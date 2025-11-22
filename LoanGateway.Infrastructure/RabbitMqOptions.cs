@@ -8,7 +8,7 @@ namespace LoanService.Infrastructure;
 
 public sealed class RabbitMqOptions
 {
-    public string HostName { get; set; } = "localhost";
+    public string HostName { get; set; } = "192.168.87.12";
     public int Port { get; set; } = 5672;
     public string VirtualHost { get; set; } = "/";
     public string UserName { get; set; } = "guest";

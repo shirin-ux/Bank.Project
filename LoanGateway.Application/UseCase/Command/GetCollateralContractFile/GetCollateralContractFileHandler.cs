@@ -5,13 +5,13 @@ using MediatR;
 
 namespace LoanService.Application.UseCase.Command.GetCollateralContractFile;
 
-public sealed class GetCollateralContractFileHandler(IBankProviderFactory factory)
+public sealed class GetCollateralContractFileHandler(IProviderFactory factory)
     : IRequestHandler<GetCollateralContractFileCommand, GetCollateralContractFileResultDto>
 {
-    private readonly IBankProviderFactory _factory = factory;
+    private readonly IProviderFactory _factory = factory;
     public async  Task<GetCollateralContractFileResultDto> Handle(GetCollateralContractFileCommand cmd, CancellationToken ct)
     {
-        var provider = _factory.GetProvider(cmd.ProviderType);
+        var provider = _factory.GetProvider<IProvider>(cmd.ProviderType);
         return await provider.GetCollateralContractFileAsync(cmd, ct);
     }
     

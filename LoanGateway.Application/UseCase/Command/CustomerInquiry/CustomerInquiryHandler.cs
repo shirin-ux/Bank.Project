@@ -1,6 +1,4 @@
-﻿using Common;
-using LoanService.Application.Contracts;
-using LoanService.Domain.Enum;
+﻿using LoanService.Application.Contracts;
 using MapsterMapper;
 using MediatR;
 
@@ -8,18 +6,14 @@ using MediatR;
 namespace LoanService.Application.UseCase.Command.CustomerInquiry
 {
     public sealed class CustomerInquiryHandler(
-         IBankProviderFactory factory,
-         IMapper mapper)
-         : IRequestHandler<CustomerInquiryCommand,CustomerInquiryResultDto>
+                                               IProviderFactory factory,
+                                               IMapper mapper) : IRequestHandler<CustomerInquiryCommand, CustomerInquiryResultDto>
     {
-
-
-
-        private readonly IBankProviderFactory _factory = factory;
+        private readonly IProviderFactory _factory = factory;
 
         public async Task<CustomerInquiryResultDto> Handle(CustomerInquiryCommand command, CancellationToken ct)
         {
-            var provider = _factory.GetProvider(command.ProviderType);
+            var provider = _factory.GetProvider<IProvider>(command.ProviderType);
             return await provider.CustomerInquiryAsync(command, ct);
         }
     }

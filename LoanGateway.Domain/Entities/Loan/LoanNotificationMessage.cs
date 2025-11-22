@@ -2,6 +2,7 @@
 
 public class LoanNotificationMessage:BaseEntity
 {
+    public Guid LoanId { get; set; }
     public string EventType { get; set; } = default!; 
     public string? Message { get; set; }
     public string? Mobile { get; set; }

@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Query.ReturnTransferReport;
 
-public sealed class ReturnTransferReportHandler(IBankProviderFactory factory)
+public sealed class ReturnTransferReportHandler(IProviderFactory factory)
     : IRequestHandler<ReturnTransferReportCommand,ReturnTransferReportResultDto>
 {
-    private readonly IBankProviderFactory _factory = factory;
+    private readonly IProviderFactory _factory = factory;
 
     public async Task<ReturnTransferReportResultDto> Handle(ReturnTransferReportCommand cmd, CancellationToken ct)
     {
-        var provider = _factory.GetProvider(cmd.ProviderType);
+        var provider = _factory.GetProvider<IProvider>(cmd.ProviderType);
         return await provider.GetReturnTransferReportAsync(cmd, ct);
     }
 }

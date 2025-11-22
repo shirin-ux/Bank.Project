@@ -1,23 +1,16 @@
-﻿using Common;
-using LoanService.Application.Contracts;
-using LoanService.Domain.Enum;
+﻿using LoanService.Application.Contracts;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Command.OtpRequest;
 
-public sealed class OtpRequestHandler(IBankProviderFactory factory)
+public sealed class OtpRequestHandler(IProviderFactory factory)
 : IRequestHandler<OtpRequestCommand, OtpRequestResultDto>
 {
-    private readonly IBankProviderFactory _factory = factory;
+    private readonly IProviderFactory _factory = factory;
 
     public async Task<OtpRequestResultDto> Handle(OtpRequestCommand cmd, CancellationToken ct)
     {
-        var provider = _factory.GetProvider(cmd.ProviderType);
+        var provider = _factory.GetProvider<IProvider>(cmd.ProviderType);
         return await provider.RequestOtpAsync(cmd, ct);
     }
 }

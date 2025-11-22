@@ -2,10 +2,9 @@
 using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.OtpRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
-using LoanService.Application.UseCase.Command.TransferRegister;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Domain.Entities.Loan;
-using LoanService.Domain.Enum.Loan;
+using LoanService.Domain.Enum;
 using LoanService.Domain.IRepository;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,14 +20,14 @@ public class LoanJobRunner(
                    IBackgroundJobClient bg
                          )
 {
-    private readonly IBackgroundJobClient _bg= bg;
+    private readonly IBackgroundJobClient _bg = bg;
     private readonly IMediator _mediator = mediator;
     private readonly ILoanRequestRepository _repo = repo;
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<LoanJobRunner> _logger = logger;
 
 
-    public async Task RunPayResponseInquiryAsync(Guid loanId, string payRequestId, int attempt , CancellationToken ct = default)
+    public async Task RunPayResponseInquiryAsync(Guid loanId, string payRequestId, int attempt, CancellationToken ct = default)
     {
         using var scope = _serviceProvider.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<LoanRequestOrchestrator>();
@@ -36,6 +35,7 @@ public class LoanJobRunner(
         _logger.LogInformation("Running scheduled PayResponse inquiry for Loan {LoanId}, attempt {Attempt}", loanId, attempt);
 
         var result = await service.GetPayResponseAsync(loanId, ct);
+
         if (!result.IsSuccess)
         {
             _logger.LogWarning("PayResponse inquiry for {LoanId} failed: {Error}", loanId, result.Error?.Message);
@@ -53,8 +53,9 @@ public class LoanJobRunner(
     }
     private static bool ShouldRetry(GetPayResponseResultDto dto)
     {
-        var code = dto?.MessageCode ?? 0;
-        return code is 1 or 3;
+        return dto?.CanRetry == true;
+        //var code = dto?.MessageCode ?? 0;
+        //return code is 1 or 3;
     }
     public async Task RetryGetInstallments(Guid loanId, CancellationToken ct)
     {
@@ -104,7 +105,7 @@ public class LoanJobRunner(
             _logger.LogWarning("Scheduled Deposit for Loan {LoanId} failed: {Msg}", loanId, result.Error?.Message);
         }
     }
-    public async Task RunInquiryResultAsync(Guid loanId, BankProviderType providerType, CancellationToken ct)
+    public async Task RunInquiryResultAsync(Guid loanId, ProviderType providerType, CancellationToken ct)
     {
         using var scope = _serviceProvider.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<LoanRequestOrchestrator>();
@@ -125,7 +126,7 @@ public class LoanJobRunner(
     }
     public async Task SendOtpAsyncInternal(Guid loanId, OtpRequestCommand cmd, CancellationToken ct)
     {
-         using var scope = _serviceProvider.CreateScope();
+        using var scope = _serviceProvider.CreateScope();
         var service = scope.ServiceProvider.GetRequiredService<LoanRequestOrchestrator>();
 
         _logger.LogInformation("Running scheduled SendOtpAsync for Loan {LoanId}", loanId);

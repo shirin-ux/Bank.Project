@@ -1,17 +1,11 @@
-﻿using Common;
-using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Command.GetCustomerBilling;
 
 public sealed record GetCustomerBillingCommand(
-    short BillingNumber,  
+    short BillingNumber,
     string ContractNumber,
     string NationalCode,
-   BankProviderType ProviderType 
+   ProviderType ProviderType
 ) : IRequest<GetCustomerBillingResultDto>;

@@ -1,18 +1,12 @@
 ﻿using Dapper;
-using Hangfire.Logging;
 using LoanGateway.Infrastructure.Utility;
 using LoanService.Domain.Entities.Investment;
 using LoanService.Domain.Entities.Loan;
-using LoanService.Domain.Enum.Loan;
+using LoanService.Domain.Enum;
 using LoanService.Domain.IRepository;
 using LoanService.Domain.ValueObjects;
 using LoanService.Infrastructure.RequestFlat;
-using Microsoft.Data.SqlClient;
-using Microsoft.VisualBasic;
-using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics.Contracts;
-using static Hangfire.Storage.JobStorageFeatures;
 
 
 namespace LoanService.Infrastructure.Repositories
@@ -139,14 +133,14 @@ namespace LoanService.Infrastructure.Repositories
             var flat = await multi.ReadSingleOrDefaultAsync<LoanRequestFlat>();
 
             if (flat is null)
-                   return null;
+                return null;
 
             // حالا Domain Model رو بساز و ValueObjectها رو تزریق کن
             var loan = new LoanRequest()
             {
-                State=flat.State,
-                 Id=id,
-                RetryCount=flat.RetryCount,
+                State = flat.State,
+                Id = id,
+                RetryCount = flat.RetryCount,
                 Customer = new CustomerInfo(
                     flat.Customer_NationalCode,
                     flat.Customer_BirthDate,
@@ -156,7 +150,7 @@ namespace LoanService.Infrastructure.Repositories
                 ),
 
                 Provider = new ProviderInfo(
-                    (BankProviderType)flat.Provider_Type,
+                    (ProviderType)flat.Provider_Type,
                     flat.Provider_ApprovalCode,
                     flat.Provider_RequiresOtp
                 ),
@@ -164,11 +158,11 @@ namespace LoanService.Infrastructure.Repositories
                 InqueryRequest = new InqueryRequest(flat.InquiryRequest_Id),
                 PayRequest = flat.PayRequest_Id != null ? new PayRequestInfo(flat.PayRequest_Id, flat.PayRequest_RequestedAmount) : null,
                 LastDecision = new DecisionStamp(flat.Decision_ErrorCode, flat.Decision_ErrorMessage, flat.Decision_ReasonCode, flat.Decision_ReasonMessage),
-                GrantRequest = new GrantRequest(flat.Grant_ContractId??0, flat.Grant_Status, flat.PayRequest_Id, flat.Grant_RequestedAmount, flat.Grant_SignedContractBase64),
-       
+                GrantRequest = new GrantRequest(flat.Grant_ContractId ?? 0, flat.Grant_Status, flat.PayRequest_Id, flat.Grant_RequestedAmount, flat.Grant_SignedContractBase64),
+
             };
 
-           
+
             loan.Contract = await multi.ReadSingleOrDefaultAsync<ContractInfo>();
             loan.Inquiry = await multi.ReadSingleOrDefaultAsync<InquiryInfo>();
             loan.PayResponse = await multi.ReadSingleOrDefaultAsync<PayResponseInfo>();
@@ -230,7 +224,7 @@ namespace LoanService.Infrastructure.Repositories
                     Decision_ErrorMessage = loan.LastDecision.ErrorMessage,
                     Decision_ReasonCode = loan.LastDecision.ReasonCode,
                     Decision_ReasonMessage = loan.LastDecision.ReasonMessage,
-                  
+
                     Grant_ContractId = loan.GrantRequest.ContractId,
                     InquiryRequest_Id = loan.InqueryRequest.RequestId,
                     PayRequest_Id = loan.PayRequest.PayRequestId,

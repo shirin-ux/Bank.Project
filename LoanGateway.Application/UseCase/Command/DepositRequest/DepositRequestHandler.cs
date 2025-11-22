@@ -5,14 +5,14 @@ using MediatR;
 
 namespace LoanService.Application.UseCase.Command.DepositRequest;
 
-public sealed class DepositRequestHandler(IBankProviderFactory factory)
+public sealed class DepositRequestHandler(IProviderFactory factory)
     : IRequestHandler<DepositRequestCommand, DepositRequestResultDto>
 {
-    private readonly IBankProviderFactory _factory = factory;
+    private readonly IProviderFactory _factory = factory;
 
     public async Task<DepositRequestResultDto> Handle(DepositRequestCommand cmd, CancellationToken ct)
     {
-        var provider = _factory.GetProvider(cmd.ProviderType);
+        var provider = _factory.GetProvider<IProvider>(cmd.ProviderType);
         return await provider.DepositRequestAsync(cmd, ct);
     }
        

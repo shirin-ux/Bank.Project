@@ -1,5 +1,6 @@
 ﻿using LoanService.Domain.Entities.Investment;
 using LoanService.Domain.Enum.Loan;
+using LoanService.Domain.Enum;
 using LoanService.Domain.ValueObjects;
 using System.Net;
 using static LoanService.Domain.Entities.Loan.InquiryInfo;
@@ -55,7 +56,13 @@ namespace LoanService.Domain.Entities.Loan
         // ===================== Factory =====================
 
 
-        public static LoanRequest Create(string nationalCode, string? birthDate, string? postalCode, string? mobileNo, BankProviderType providerType, decimal? ApprovalCode, bool requiresOtp)
+        public static LoanRequest Create(string nationalCode,
+            string? birthDate, 
+            string? postalCode,
+            string? mobileNo,
+            ProviderType providerType,
+            decimal? ApprovalCode,
+            bool requiresOtp)
         {
             return new LoanRequest
             {

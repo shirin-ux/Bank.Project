@@ -5,7 +5,7 @@ namespace LoanService.Application.UseCase.Query.PayResponse;
 
 public sealed record GetPayResponseResultDto:IBankResponse
 {
-    //public PayRequestStatusDto PayRequestStatus { get; set; } = new();
+   
     public PayContractInfoDto PayContractInfo { get; set; }
 
     public string Message { get; init; }
@@ -16,19 +16,11 @@ public sealed record GetPayResponseResultDto:IBankResponse
     public string RequestId { get; set; }
     public Dictionary<string, string[]>? Details { get; set; }
 
+    public bool CanRetry { get; set; }
     public IEnumerable<BankStatusItem> GetStatusItems()
     {
         throw new NotImplementedException();
     }
-
-    //public sealed record PayRequestStatusDto
-    //{
-
-    //    public int? responseCode { get; set; }
-    //    public string? responseMessage { get; set; }
-    //    public string? responseMessageCode { get; set; }
-
-    //}
 
     public sealed record PayContractInfoDto
     {

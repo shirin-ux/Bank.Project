@@ -10,15 +10,15 @@ using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Query.TransferInquiry;
 
-public sealed class TransferInquiryHandler(IBankProviderFactory factory)
+public sealed class TransferInquiryHandler(IProviderFactory factory)
     : IRequestHandler<TransferInquiryQuery, TransferInquiryResultDto>
 {
-    private readonly IBankProviderFactory _factory = factory;
+    private readonly IProviderFactory _factory = factory;
 
     public async Task<TransferInquiryResultDto> Handle(TransferInquiryQuery q, CancellationToken ct)
 
     {
-        var provider = _factory.GetProvider(q.ProviderType);
+        var provider = _factory.GetProvider<IProvider>(q.ProviderType);
         return await provider.TransferInquiryAsync(q, ct);
     }
 }

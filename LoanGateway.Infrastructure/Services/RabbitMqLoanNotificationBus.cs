@@ -6,29 +6,32 @@ using LoanService.Domain.Entities.Loan;
 using Microsoft.Extensions.Options;
 
 
+
 namespace LoanService.Infrastructure.Services
 {
     public class RabbitMqLoanNotificationBus : ILoanNotificationBus, IDisposable
     {
-        private readonly IOptions<RabbitMqOptions> _options;
+        private readonly RabbitMqOptions _options;
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly JsonSerializerOptions _jsonOptions;
         public RabbitMqLoanNotificationBus(IOptions<RabbitMqOptions> options)
         {
+           _options=options.Value;
             var factory = new ConnectionFactory()
             {
-                HostName = _options.Value.HostName,
-                Port = _options.Value.Port,
-                VirtualHost = _options.Value.VirtualHost,
-                UserName = _options.Value.UserName,
-                Password = _options.Value.Password,
+              
+                Port = _options.Port,
+                HostName = _options.HostName,
+                VirtualHost = _options.VirtualHost,
+                UserName = _options.UserName,
+                Password = _options.Password,
                 DispatchConsumersAsync = true
             };
             _connection = factory.CreateConnection();   
             _channel = _connection.CreateModel();
 
-            _channel.ExchangeDeclare(exchange: _options.Value.ExchangeName, type: _options.Value.ExchangeType, durable: true, autoDelete: false);
+            _channel.ExchangeDeclare(exchange: _options.ExchangeName, type: _options.ExchangeType, durable: true, autoDelete: false);
 
             _jsonOptions = new JsonSerializerOptions
             {
@@ -60,9 +63,11 @@ namespace LoanService.Infrastructure.Services
 
             if (string.IsNullOrEmpty(message.EventType))
                 throw new ArgumentException("");
+
             var routingKey = $"loan.{message.EventType}".ToLowerInvariant();
+
             if (ct.IsCancellationRequested)
-                return Task.FromCanceled(ct);
+                      return Task.FromCanceled(ct);
 
             var body = JsonSerializer.SerializeToUtf8Bytes(message, _jsonOptions);
 
@@ -73,7 +78,7 @@ namespace LoanService.Infrastructure.Services
             props.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
 
             _channel.BasicPublish(
-                exchange: _options.Value.ExchangeName,
+                exchange: _options.ExchangeName,
                 routingKey: routingKey,
                 basicProperties: props,
                 body: body

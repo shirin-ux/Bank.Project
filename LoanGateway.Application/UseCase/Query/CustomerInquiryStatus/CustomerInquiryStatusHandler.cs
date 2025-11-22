@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Query.CustomerInquiryStatus;
 
-public sealed class CustomerInquiryStatusHandler(IBankProviderFactory factory)
+public sealed class CustomerInquiryStatusHandler(IProviderFactory factory)
 : IRequestHandler<GetCustomerInquiryStatusQuery, CustomerInquiryStatusResultDto>
 {
-    private readonly IBankProviderFactory _factory = factory;
+    private readonly IProviderFactory _factory = factory;
 
     public async Task<CustomerInquiryStatusResultDto> Handle(GetCustomerInquiryStatusQuery query, CancellationToken ct)
     {
-        var provider = _factory.GetProvider(query.ProviderType);
+        var provider = _factory.GetProvider<IProvider>(query.ProviderType);
         return await provider.GetCustomerInquiryStatusAsync(query.RequestId, ct);
     }
 

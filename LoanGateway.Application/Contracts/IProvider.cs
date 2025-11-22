@@ -1,6 +1,4 @@
-﻿
-using Common;
-using LoanService.Application.UseCase.Command.CustomerInquiry;
+﻿using LoanService.Application.UseCase.Command.CustomerInquiry;
 using LoanService.Application.UseCase.Command.DepositRequest;
 using LoanService.Application.UseCase.Command.GetCollateralContractFile;
 using LoanService.Application.UseCase.Command.GetContractFile;
@@ -16,18 +14,13 @@ using LoanService.Application.UseCase.Query.GetInstallments;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.ReturnTransferReport;
 using LoanService.Application.UseCase.Query.TransferInquiry;
-using LoanService.Domain.Enum.Loan;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using LoanService.Domain.Enum;
 
 namespace LoanService.Application.Contracts
 {
-    public interface IBankProvider
+    public interface IProvider:IProviderBase
     {
-        BankProviderType ProviderType { get; }
+
         Task<CustomerInquiryResultDto> CustomerInquiryAsync(CustomerInquiryCommand cmd, CancellationToken ct);
         Task<CustomerInquiryStatusResultDto> GetCustomerInquiryStatusAsync(string requestId, CancellationToken ct);
         Task<GetContractFileResultDto> GetContractFileAsync(GetContractFileCommand cmd, CancellationToken ct);

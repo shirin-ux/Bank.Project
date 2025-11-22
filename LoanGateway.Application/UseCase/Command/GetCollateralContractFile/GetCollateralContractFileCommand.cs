@@ -1,11 +1,12 @@
-﻿using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using MediatR;
 
 namespace LoanService.Application.UseCase.Command.GetCollateralContractFile
 {
     public sealed record GetCollateralContractFileCommand : IRequest<GetCollateralContractFileResultDto>
     {
-        public BankProviderType ProviderType { get; set; }
+        public ProviderType ProviderType { get; set; }
         public decimal ApprovalCode { get; init; }
         public string NationalCode { get; init; } = default!;
         public string CollateralDate { get; init; } = default!;

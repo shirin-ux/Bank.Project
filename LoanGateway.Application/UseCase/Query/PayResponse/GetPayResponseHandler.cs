@@ -9,14 +9,14 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace LoanService.Application.UseCase.Query.PayResponse;
-public sealed class GetPayResponseHandler(IBankProviderFactory factory)
+public sealed class GetPayResponseHandler(IProviderFactory factory)
     : IRequestHandler<GetPayResponseQuery, GetPayResponseResultDto>
 {
-    private readonly IBankProviderFactory _factory = factory;
+    private readonly IProviderFactory _factory = factory;
 
     public  async Task<GetPayResponseResultDto> Handle(GetPayResponseQuery q, CancellationToken ct)
     {
-        var provider = _factory.GetProvider(q.ProviderType);
+        var provider = _factory.GetProvider<IProvider>(q.ProviderType);
         return await provider.GetPayResponseAsync(q.PayRequestId, ct);
     }
 }

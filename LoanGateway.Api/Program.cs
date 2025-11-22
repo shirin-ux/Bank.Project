@@ -4,6 +4,7 @@ using Common;
 using FluentValidation;
 using Hangfire;
 using LoanGateway.Infrastructure.Utility;
+
 using LoanService.Application.Contracts;
 using LoanService.Application.Mapping;
 using LoanService.Application.PloicyProvider;
@@ -12,6 +13,7 @@ using LoanService.Application.UseCase;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
 using LoanService.Domain.Entities;
 using LoanService.Domain.IRepository;
+using LoanService.Infrastructure;
 using LoanService.Infrastructure.Configurations;
 using LoanService.Infrastructure.Jobs;
 using LoanService.Infrastructure.Repositories;
@@ -58,8 +60,10 @@ builder.Services.Configure<MellatApiOptions>(
     builder.Configuration.GetSection("MellatApiOptions"));
 
 
+builder.Services.Configure<RabbitMqOptions>(
+    builder.Configuration.GetSection("RabbitMqOptions"));
 
-
+builder.Services.AddSingleton<ILoanNotificationBus,RabbitMqLoanNotificationBus>();
 builder.Services.AddSingleton<TransactionDBUtility>();
 builder.Services.AddScoped<MellatBankProvider>();
 
@@ -101,7 +105,9 @@ builder.Services.AddScoped<LoanRequestOrchestrator>();
 BankMellatMappingConfig.RegisterMappings();
 builder.Services.AddScoped<IBankPolicyFactory, BankPolicyFactory>();
 builder.Services.AddScoped<IMellatBankService, MellatBankService>();
-builder.Services.AddScoped<IBankProvider, MellatBankProvider>();
+builder.Services.AddScoped<IProviderBase, MellatBankProvider>();
+//builder.Services.AddScoped<IProviderBase, SamanBankProvider>();
+builder.Services.AddScoped<IProviderBase, KarizmahInvestmentProvider>();
 builder.Services.AddScoped<IInquiryInfoRepository, InquiryInfoRepository>();
 builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IInstallmentRepository, InstallmentRepository>();
@@ -133,7 +139,7 @@ builder.Services.AddScoped<IContractFileStorage, FileSystemContractFileStorage>(
 
 //    );
 //});
-builder.Services.AddScoped<IBankProviderFactory, BankProviderFactory>();
+builder.Services.AddScoped<IProviderFactory, ProviderFactory>();
 
 // ?? Hangfire
 builder.Services.AddHangfire(config =>

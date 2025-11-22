@@ -1,7 +1,5 @@
-﻿using Azure;
-using Bank.Mellat.Provider;
+﻿using Bank.Mellat.Provider;
 using Bank.Mellat.Provider.Dtos;
-using Common;
 using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Command.CustomerInquiry;
 using LoanService.Application.UseCase.Command.DepositRequest;
@@ -19,25 +17,22 @@ using LoanService.Application.UseCase.Query.GetInstallments;
 using LoanService.Application.UseCase.Query.PayResponse;
 using LoanService.Application.UseCase.Query.ReturnTransferReport;
 using LoanService.Application.UseCase.Query.TransferInquiry;
-using LoanService.Domain.Entities;
+using LoanService.Domain.Enum;
 using LoanService.Domain.Enum.Loan;
 using LoanService.Infrastructure.Extention;
 using MapsterMapper;
 using System.Globalization;
-using System.Security.Cryptography.Pkcs;
 using static Bank.Mellat.Provider.Dtos.MellatPayResponseRes;
-using static LoanService.Application.UseCase.Query.CustomerInquiryStatus.CustomerInquiryStatusResultDto;
-using static LoanService.Application.UseCase.Query.ReturnTransferReport.ReturnTransferReportResultDto;
 
 
 namespace Bank.Mellat.Infrastructure.Services
 {
-    public class MellatBankProvider(IMellatBankService client, IMapper mapper, IContractFileStorage contractFileStorage) : IBankProvider
+    public class MellatBankProvider(IMellatBankService client, IMapper mapper, IContractFileStorage contractFileStorage) : IProvider
     {
         private readonly IMellatBankService _client = client;
         private readonly IMapper _mapper = mapper;
         private readonly IContractFileStorage _contractFileStorage = contractFileStorage;
-        public BankProviderType ProviderType => BankProviderType.Mellat;
+        public ProviderType ProviderType => ProviderType.Mellat;
 
         public async Task<CustomerInquiryResultDto> CustomerInquiryAsync(CustomerInquiryCommand cmd, CancellationToken ct)
         {
@@ -143,7 +138,7 @@ namespace Bank.Mellat.Infrastructure.Services
         {
             var mellatReq = new MellatCustomerCreditBalanceReq
             {
-                contractNumber =decimal.Parse( cmd.ContractNumber,NumberStyles.None,CultureInfo.InvariantCulture),
+                contractNumber = decimal.Parse(cmd.ContractNumber, NumberStyles.None, CultureInfo.InvariantCulture),
                 nationalCode = cmd.NationalCode
             };
             var response = await client.GetCustomerCreditBalanceAsync(mellatReq, ct);
@@ -393,7 +388,7 @@ namespace Bank.Mellat.Infrastructure.Services
 
         public async Task<GetInstallmentsResultDto> GetInstallmentsAsync(string nationalCode, string contractNumber, CancellationToken ct)
         {
-            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { NationalCode = nationalCode, ContractNumber =decimal.Parse( contractNumber,NumberStyles.None,CultureInfo.InvariantCulture) }, ct);
+            var response = await _client.GetInstallmentsAsync(new MellatInstallmentsReq { NationalCode = nationalCode, ContractNumber = decimal.Parse(contractNumber, NumberStyles.None, CultureInfo.InvariantCulture) }, ct);
             var result = new GetInstallmentsResultDto
             {
                 ContractNumber = response.ContractNumber,

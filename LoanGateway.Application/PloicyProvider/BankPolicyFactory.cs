@@ -1,6 +1,7 @@
 ﻿using Common;
 using LoanService.Application.Contracts;
 using LoanService.Application.PloicyProvider.Mellat;
+using LoanService.Domain.Enum;
 using LoanService.Domain.Enum.Loan;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -23,11 +24,11 @@ public class BankPolicyFactory: IBankPolicyFactory
         _opts = opts;
     }
 
-    public IBankPolicy<TResponse> CreatePolicy<TResponse>(BankProviderType bank, string policyName) where TResponse : IBankResponse
+    public IBankPolicy<TResponse> CreatePolicy<TResponse>(ProviderType bank, string policyName) where TResponse : IBankResponse
     {
         return bank switch
         {
-            BankProviderType.Mellat => new MellatPolicy<TResponse>(_opts, policyName),
+            ProviderType.Mellat => new MellatPolicy<TResponse>(_opts, policyName),
            // BankProviderType.Saman => new SamanPolicy<T>(_config, policyName),
             //_ => new NoBankPolicy<T>()
         };
