@@ -7,8 +7,8 @@ namespace LoanService.Api.Middlewares
 {
     public class GlobalExceptionMiddleware(RequestDelegate next, ILogger<GlobalExceptionMiddleware> logger)
     {
-        private readonly RequestDelegate _next= next;
-        private ILogger<GlobalExceptionMiddleware> _logger= logger;
+        private readonly RequestDelegate _next = next;
+        private ILogger<GlobalExceptionMiddleware> _logger = logger;
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -19,7 +19,7 @@ namespace LoanService.Api.Middlewares
             catch (Exception ex)
             {
 
-               await HandleExceptionAsync(context, ex);
+                await HandleExceptionAsync(context, ex);
             }
         }
 
@@ -42,7 +42,7 @@ namespace LoanService.Api.Middlewares
                     });
                     break;
 
-                case NotFoundException notFoundEx:   
+                case NotFoundException notFoundEx:
                     statusCode = StatusCodes.Status404NotFound;
                     message = notFoundEx.Message;
                     break;
@@ -56,21 +56,21 @@ namespace LoanService.Api.Middlewares
                     message = "خطای غیرمنتظره‌ای در سرور رخ داد.";
                     break;
             }
-                    var errorResponse = new
-                    {
-                        error = message,
-                        code = statusCode,
-                        details,
-                        traceId = context.TraceIdentifier  
-                    };
+            var errorResponse = new
+            {
+                error = message,
+                code = statusCode,
+                details,
+                traceId = context.TraceIdentifier
+            };
 
-                    context.Response.Clear();
-                    context.Response.StatusCode = statusCode;
-                    context.Response.ContentType = "application/json; charset=utf-8";
+            context.Response.Clear();
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json; charset=utf-8";
 
-                    var json = JsonSerializer.Serialize(errorResponse);
-                    await context.Response.WriteAsync(json);
-            }
+            var json = JsonSerializer.Serialize(errorResponse);
+            await context.Response.WriteAsync(json);
         }
     }
 }
+

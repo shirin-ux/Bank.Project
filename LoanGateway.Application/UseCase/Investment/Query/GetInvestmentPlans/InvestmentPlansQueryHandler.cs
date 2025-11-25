@@ -15,7 +15,7 @@ namespace LoanService.Application.UseCase.Investment.Query.GetInvestmentPlans
                 if (plans == null || !plans.Any())
                 {
                     return Result<List<InvestmentPlanResultDto>>.Failure(
-                        new Error(404"هیچ پلن سرمایه‌گذاری فعالی یافت نشد.")
+                        new Error(404,"هیچ پلن سرمایه‌گذاری فعالی یافت نشد.")
                     );
                 }
                 var res = plans.Select(x => new InvestmentPlanResultDto
