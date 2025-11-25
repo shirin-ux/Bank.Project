@@ -23,6 +23,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Mellat.Provider", "pro
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bank.Saman.Provider", "providers\Bank.Saman.Provider\Bank.Saman.Provider.csproj", "{2F8A323A-57A4-5AF3-F37E-298E3D7ABBEC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Karizmah.Provider", "Karizmah.Provider\Karizmah.Provider.csproj", "{C24FC614-178D-449C-9A8E-7AF9694510C7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -57,6 +59,10 @@ Global
 		{2F8A323A-57A4-5AF3-F37E-298E3D7ABBEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F8A323A-57A4-5AF3-F37E-298E3D7ABBEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F8A323A-57A4-5AF3-F37E-298E3D7ABBEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C24FC614-178D-449C-9A8E-7AF9694510C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C24FC614-178D-449C-9A8E-7AF9694510C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C24FC614-178D-449C-9A8E-7AF9694510C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C24FC614-178D-449C-9A8E-7AF9694510C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -69,6 +75,7 @@ Global
 		{943DF057-7E15-4E70-A2E8-EA57596BB822} = {8AA19BDD-1A12-41AB-ABED-C7829C6A41A1}
 		{5F3ED8EF-4A67-2AD9-5FE7-5BFFB8DBCB25} = {18060485-BF61-48C7-9C23-477EB8B71118}
 		{2F8A323A-57A4-5AF3-F37E-298E3D7ABBEC} = {18060485-BF61-48C7-9C23-477EB8B71118}
+		{C24FC614-178D-449C-9A8E-7AF9694510C7} = {18060485-BF61-48C7-9C23-477EB8B71118}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C237D96-5429-4C6B-88A9-778AD724856A}

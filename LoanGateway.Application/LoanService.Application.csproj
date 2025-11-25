@@ -22,4 +22,8 @@
     <ProjectReference Include="..\providers\Bank.Mellat.Provider\Bank.Mellat.Provider.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="UseCase\Investment\Command\" />
+  </ItemGroup>
+
 </Project>

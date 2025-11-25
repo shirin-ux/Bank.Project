@@ -8,7 +8,8 @@ namespace LoanService.Domain.Enum.Investment;
 
 public enum InvestmentState
 {
-    New = 0,          // تازه ایجاد شده، هنوز شاید سرمایه‌گذاری نشده
+    CreatedWithoutDeposit  = 0,          // تازه ایجاد شده، هنوز شاید سرمایه‌گذاری نشده
     Active = 1,       // دارای سرمایه‌گذاری فعال
-    Closed = 2        // حساب بسته شده (اختیاری، برای آینده)
+    Closed = 2 ,       // حساب بسته شده (اختیاری، برای آینده)
+    Suspended=3
 }

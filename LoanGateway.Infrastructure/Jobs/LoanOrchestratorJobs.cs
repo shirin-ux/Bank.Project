@@ -1,7 +1,7 @@
 ﻿using Hangfire;
 using LoanService.Application.Contracts;
-using LoanService.Application.UseCase.Command.DepositRequest;
-using LoanService.Application.UseCase.Command.OtpRequest;
+using LoanService.Application.UseCase.Loan.Command.DepositRequest;
+using LoanService.Application.UseCase.Loan.Command.OtpRequest;
 using LoanService.Domain.Enum;
 using Microsoft.Extensions.Logging;
 

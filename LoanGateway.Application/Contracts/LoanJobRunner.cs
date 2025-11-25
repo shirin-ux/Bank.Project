@@ -1,11 +1,11 @@
 ﻿using Hangfire;
-using LoanService.Application.UseCase.Command.DepositRequest;
-using LoanService.Application.UseCase.Command.OtpRequest;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
-using LoanService.Application.UseCase.Query.PayResponse;
+using LoanService.Application.UseCase.Loan.Command.DepositRequest;
+using LoanService.Application.UseCase.Loan.Command.OtpRequest;
+using LoanService.Application.UseCase.Loan.Query.PayResponse;
 using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.Enum;
-using LoanService.Domain.IRepository;
+using LoanService.Domain.IRepository.Loan;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

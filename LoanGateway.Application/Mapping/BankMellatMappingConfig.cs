@@ -1,17 +1,10 @@
 ﻿using Bank.Mellat.Provider.Dtos;
-using Common;
-using LoanService.Application.UseCase.Command.GetCollateralContractFile;
-using LoanService.Application.UseCase.Command.GetContractFile;
-using LoanService.Application.UseCase.Command.GetCustomerBilling;
-using LoanService.Application.UseCase.Command.GetCustomerCreditBalance;
-using LoanService.Application.UseCase.Command.GetCustomerPurchaseDetails;
-using LoanService.Application.UseCase.Command.OtpRequest;
-using LoanService.Application.UseCase.Command.RepaymentReques;
-using LoanService.Application.UseCase.Command.TransferRegister;
-using LoanService.Application.UseCase.Query.GetInstallments;
-using LoanService.Application.UseCase.Query.PayResponse;
-using LoanService.Application.UseCase.Query.TransferInquiry;
-using LoanService.Domain.Entities.Investment;
+using LoanService.Application.UseCase.Loan.Command.GetCustomerBilling;
+using LoanService.Application.UseCase.Loan.Command.GetCustomerCreditBalance;
+using LoanService.Application.UseCase.Loan.Command.OtpRequest;
+using LoanService.Application.UseCase.Loan.Query.GetInstallments;
+using LoanService.Application.UseCase.Loan.Query.PayResponse;
+using LoanService.Domain.Entities.Loan;
 using Mapster;
 
 
@@ -188,12 +181,12 @@ public static class BankMellatMappingConfig
             .NewConfig()
               .Map(dest => dest.ContractNumber, src => src.ContractNumber);
 
-        TypeAdapterConfig<GetInstallmentsResultDto.InstallmentItemDto,InstallmentStatus>
+        TypeAdapterConfig<GetInstallmentsResultDto.InstallmentItemDto, InstallmentStatus>
             .NewConfig()
-              .Map(dest => dest.InstallmentNo, src => src.InstallmentNo) 
-              .Map(dest => dest.DueDate, src => DateTimeOffset.FromUnixTimeSeconds(src.DueDate).DateTime) 
+              .Map(dest => dest.InstallmentNo, src => src.InstallmentNo)
+              .Map(dest => dest.DueDate, src => DateTimeOffset.FromUnixTimeSeconds(src.DueDate).DateTime)
               .Map(dest => dest.Amount, src => src.InstallmentAmount)
-              .Map(dest => dest.PaidAmount, src => src.PaymentState == 1 ? src.InstallmentAmount : 0) 
+              .Map(dest => dest.PaidAmount, src => src.PaymentState == 1 ? src.InstallmentAmount : 0)
               .Map(dest => dest.Status, src => src.PaymentState == 1 ? "Paid" : "Pending");
 
         //TypeAdapterConfig< GetCustomerPurchaseDetailsCommand, MellatCustomerPurchaseDetailsReq>

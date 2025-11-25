@@ -1,5 +1,4 @@
-﻿using LoanService.Domain.Entities.Investment;
-using LoanService.Domain.Enum.Loan;
+﻿using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.Enum;
 using LoanService.Domain.ValueObjects;
 using System.Net;

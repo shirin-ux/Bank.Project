@@ -4,19 +4,20 @@ using Common;
 using FluentValidation;
 using Hangfire;
 using LoanGateway.Infrastructure.Utility;
-
+using LoanService.Api.Middlewares;
 using LoanService.Application.Contracts;
 using LoanService.Application.Mapping;
 using LoanService.Application.PloicyProvider;
 using LoanService.Application.PloicyProvider.Mellat;
 using LoanService.Application.UseCase;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
-using LoanService.Domain.Entities;
-using LoanService.Domain.IRepository;
+using LoanService.Domain.IRepository.Investment;
+using LoanService.Domain.IRepository.Loan;
 using LoanService.Infrastructure;
 using LoanService.Infrastructure.Configurations;
 using LoanService.Infrastructure.Jobs;
-using LoanService.Infrastructure.Repositories;
+using LoanService.Infrastructure.Repositories.Investment;
+using LoanService.Infrastructure.Repositories.Loan;
 using LoanService.Infrastructure.Services;
 using Mapster;
 using MediatR;
@@ -156,6 +157,7 @@ builder.Services.AddHangfireServer();
 // ?? Loan services
 builder.Services.AddScoped<LoanJobRunner>();
 builder.Services.AddScoped<ILoanRequestRepository, LoanRequestRepository>();
+builder.Services.AddScoped<IInvestmentPlanReadRepository, InvestmentPlanReadRepository>();
 builder.Services.AddScoped(typeof(IBankPolicy<>), typeof(MellatPolicy<>));
 builder.Services.AddScoped<ILoanOrchestratorJobRunner, LoanOrchestratorJobs>();
 builder.Services.AddCors(o => o.AddPolicy("AllowAll",
@@ -176,5 +178,6 @@ app.UseHangfireDashboard("/hangfire");
 
 
 app.UseCors("AllowAll");
+app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
 app.Run();
