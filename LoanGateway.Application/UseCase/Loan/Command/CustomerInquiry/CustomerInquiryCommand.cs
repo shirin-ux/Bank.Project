@@ -7,7 +7,7 @@ public sealed record CustomerInquiryCommand : IRequest<CustomerInquiryResultDto>
 {
     public ProviderType ProviderType { get; set; }
     public string NationalCode { get; init; } = default!;
-    public short? ConfigType { get; init; }
+   // public short? ConfigType { get; init; }
     public string? BirthDate { get; init; }
     public string? MobileNo { get; init; }
     public string? PostalCode { get; init; }

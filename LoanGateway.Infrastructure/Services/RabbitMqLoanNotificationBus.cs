@@ -28,10 +28,10 @@ namespace LoanService.Infrastructure.Services
                 Password = _options.Password,
                 DispatchConsumersAsync = true
             };
-            _connection = factory.CreateConnection();   
-            _channel = _connection.CreateModel();
+            //_connection = factory.CreateConnection();   
+            //_channel = _connection.CreateModel();
 
-            _channel.ExchangeDeclare(exchange: _options.ExchangeName, type: _options.ExchangeType, durable: true, autoDelete: false);
+            //_channel.ExchangeDeclare(exchange: _options.ExchangeName, type: _options.ExchangeType, durable: true, autoDelete: false);
 
             _jsonOptions = new JsonSerializerOptions
             {

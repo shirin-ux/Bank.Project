@@ -47,7 +47,7 @@ namespace Bank.Mellat.Infrastructure.Services
                     requestAmount = cmd.RequestAmount.ToString(),
                     approvalCode = cmd.ApprovalCode,
                     cbTrackingCode = cmd.CbTrackingCode,
-                    configType = cmd.ConfigType,
+                    //configType = cmd.ConfigType,
                     postalCode = cmd.PostalCode
 
                 };

@@ -38,10 +38,16 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         try
         {
             var client = _http.CreateClient("MellatApi");
+
             var token = await GetAccessTokenAsync(ct);
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-inquiry";
 
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
+
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+       
+            
             var body = new
             {
                 nationalCode = req.nationalCode,
@@ -56,14 +62,15 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-inquiry", content, ct);
+            var response = await client.SendAsync(message, ct);
 
             var responseText = await response.Content.ReadAsStringAsync(ct);
 
 
             var responseBank = JsonSerializer.Deserialize<MellatInquiryRegisterRes>(responseText);
+
             if (responseBank.messageCode == 11112)
             {
                 _logger.LogError("Mellat API Error: {Status} - {Response}", response.StatusCode, responseText);
@@ -140,9 +147,12 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
     public async Task<MellatFileUploadRes> UploadContractFileAsync(MellatFileUploadReq req, CancellationToken ct)
     {
         var client = _http.CreateClient("MellatApi");
+
         var token = await GetAccessTokenAsync(ct);
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        using var message = new HttpRequestMessage(HttpMethod.Post, "/api/fs-contract-management/hub/mellat-contract-file" );
+
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var body = new
         {
@@ -164,9 +174,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
 
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/mellat-contract-file", content, ct);
+        var response = await client.SendAsync(message, ct);
 
         var responseText = await response.Content.ReadAsStringAsync(ct);
 
@@ -209,9 +219,14 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
     public async Task<MellatFileUploadRes> UploadCollateralFileAsync(MellatContractWithCollateralReq req, CancellationToken ct)
     {
         var client = _http.CreateClient("MellatApi");
-        var token = await GetAccessTokenAsync(ct);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
+        var token = await GetAccessTokenAsync(ct);
+
+        var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/mellat-contract-file-collateral";
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, url);
+
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         var body = new
         {
@@ -240,9 +255,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
 
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+       message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        using var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/mellat-contract-file-collateral", content, ct);
+        using var response = await client.SendAsync(message, ct);
         var responseText = await response.Content.ReadAsStringAsync(ct);
 
         if (!response.IsSuccessStatusCode)
@@ -284,13 +299,13 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         var client = _http.CreateClient("MellatApi");
         var token = await GetAccessTokenAsync(ct);
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
         var url = _options.Value.BaseUrlApi + $"/api/fs-contract-management/contract/pay-response/{req.PayRequestId}";
 
-        using var msg = new HttpRequestMessage(HttpMethod.Get, url);
+        using var message = new HttpRequestMessage(HttpMethod.Get, url);
 
-        using var res = await client.SendAsync(msg, ct);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+  
+        using var res = await client.SendAsync(message, ct);
 
         if (!res.IsSuccessStatusCode)
         {
@@ -319,14 +334,15 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         var client = _http.CreateClient("MellatApi");
         var token = await GetAccessTokenAsync(ct);
 
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-
         var url = _options.Value.BaseUrlApi + $"/fs-contract-management/hub/installment/installments/{req.NationalCode}/{req.ContractNumber}";
 
-        var msg = new HttpRequestMessage(HttpMethod.Get, url);
+  
 
-        using var res = await client.SendAsync(msg, ct);
+        using var message = new HttpRequestMessage(HttpMethod.Get, url);
+
+       message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        using var res = await client.SendAsync(message, ct);
 
         if (!res.IsSuccessStatusCode)
         {
@@ -356,8 +372,11 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         {
             var client = _http.CreateClient("MellatApi");
             var token = await GetAccessTokenAsync(ct);
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-credit-balance";
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
+
+             message.Headers.Authorization= new AuthenticationHeaderValue("Bearer", token);
 
             var body = new
             {
@@ -372,10 +391,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }); ;
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-credit-balance";
-            using var res = await client.PostAsync(url, content, ct);
+          
+            using var res = await client.SendAsync(message, ct);
 
             var responseText = await res.Content.ReadAsStringAsync(ct);
 
@@ -398,8 +417,11 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         {
             var client = _http.CreateClient("MellatApi");
             var token = await GetAccessTokenAsync(ct);
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/otp-request";
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
+
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var body = new
             {
@@ -416,10 +438,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }); ;
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+           message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/otp-request";
-            using var res = await client.PostAsync(url, content, ct);
+       
+            using var res = await client.SendAsync(message, ct);
 
             var responseText = await res.Content.ReadAsStringAsync(ct);
 
@@ -442,8 +464,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         {
             var client = _http.CreateClient("MellatApi");
             var token = await GetAccessTokenAsync(ct);
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/deposit-request";
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var body = new
             {
@@ -463,10 +487,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }); ;
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/deposit-request";
-            using var res = await client.PostAsync(url, content, ct);
+       
+            using var res = await client.SendAsync(message, ct);
 
             var responseText = await res.Content.ReadAsStringAsync(ct);
 
@@ -490,8 +514,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
         {
             var client = _http.CreateClient("MellatApi");
             var token = await GetAccessTokenAsync(ct);
-
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/repayment-request";
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var body = new
             {
@@ -508,10 +533,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }); ;
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+           message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/repayment-request";
-            using var res = await client.PostAsync(url, content, ct);
+     
+            using var res = await client.SendAsync(message, ct);
 
             var responseText = await res.Content.ReadAsStringAsync(ct);
 
@@ -535,8 +560,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             var client = _http.CreateClient("MellatApi");
             var token = await GetAccessTokenAsync(ct);
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-billing";
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             var body = new
             {
                 contractNumber = req.contractNumber,
@@ -550,10 +576,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }); ;
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-billing";
-            using var res = await client.PostAsync(url, content, ct);
+   
+            using var res = await client.SendAsync(message, ct);
 
             var responseText = await res.Content.ReadAsStringAsync(ct);
 
@@ -577,7 +603,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             var client = _http.CreateClient("MellatApi");
             var token = await GetAccessTokenAsync(ct);
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-purchase-details";
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var body = new
             {
@@ -593,10 +622,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }); ;
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+            message.Content= new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/customer-purchase-details";
-            using var res = await client.PostAsync(url, content, ct);
+            using var res = await client.SendAsync(message, ct);
 
             var responseText = await res.Content.ReadAsStringAsync(ct);
 
@@ -620,7 +648,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             var client = _http.CreateClient("MellatApi");
             var token = await GetAccessTokenAsync(ct);
 
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/transfer-register";
+            using var message = new HttpRequestMessage(HttpMethod.Post, url);
+            message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
             var body = new
             {
@@ -644,10 +674,10 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             }); ;
 
-            using var content = new StringContent(json, Encoding.UTF8, "application/json");
+           message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/transfer-register";
-            using var res = await client.PostAsync(url, content, ct);
+       
+            using var res = await client.SendAsync(message, ct);
 
             var responseText = await res.Content.ReadAsStringAsync(ct);
 
@@ -665,12 +695,16 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
 
     public async Task<(bool IsSuccess, MellatTransferInquiryRes? Result, string? Error)> GetTransferInquiryAsync(MellatTransferInquiryReq req, CancellationToken ct)
     {
+        var client = _http.CreateClient("MellatApi");
 
-        var client = await CreateApiClientAsync(ct);
-
+        var token = await GetAccessTokenAsync(ct);
+      
         using var msg = new HttpRequestMessage(HttpMethod.Get, _options.Value.BaseUrlApi + $"/api/fs-contract-management/hub/return-transfer-report");
-
+       
+        msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+       
         using var res = await client.SendAsync(msg, ct);
+       
         string? errorBody = null;
         if (!res.IsSuccessStatusCode)
         {
@@ -696,7 +730,11 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
     {
         var client = _http.CreateClient("MellatApi");
         var token = await GetAccessTokenAsync(ct);
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var url = _options.Value.BaseUrlApi + "/api/fs-contract-management/hub/contract-pay-request";
+
+        using var message = new HttpRequestMessage(HttpMethod.Post, url);
+
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
 
 
@@ -713,9 +751,9 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
 
-        using var content = new StringContent(json, Encoding.UTF8, "application/json");
+        message.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        using var response = await client.PostAsync(_options.Value.BaseUrlApi + "/api/fs-contract-management/hub/contract-pay-request", content, ct);
+        using var response = await client.SendAsync(message, ct);
 
 
 
@@ -759,14 +797,14 @@ public sealed class MellatBankService(IHttpClientFactory http, IOptions<MellatAp
 
     public async Task<(bool IsSuccess, MellatReturnTransferReportRes? Result, string? Error)>  GetReturnTransferReportAsync(MellatReturnTransferReportReq req, CancellationToken ct)
     {
+        var client = _http.CreateClient("MellatApi");
 
-
-
-        var client = await CreateApiClientAsync(ct);
+        var token = await GetAccessTokenAsync(ct);
 
         using var msg = new HttpRequestMessage(HttpMethod.Get, _options.Value.BaseUrlApi + $"/api/fs-contract-management/hub/return-transfer-report");
-
+        msg.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         using var res = await client.SendAsync(msg, ct);
+
         string? errorBody = null;
         if (!res.IsSuccessStatusCode)
         {

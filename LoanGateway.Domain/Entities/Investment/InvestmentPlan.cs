@@ -10,4 +10,5 @@ public class InvestmentPlan : BaseEntity
     public bool IsActive { get; set; }
     public string SortOrder { get; set; }
     public decimal MinAmount { get; set; }
+
 }

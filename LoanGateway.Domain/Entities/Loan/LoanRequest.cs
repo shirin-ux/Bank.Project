@@ -18,7 +18,6 @@ namespace LoanService.Domain.Entities.Loan
         public decimal? RequestAmount { get; private set; }
         public bool RequiresCollateral { get; private set; }
         public CollateralType CollateralType { get; private set; } = CollateralType.Unknown;
-        public byte[] RowVersion { get; set; }
         public Guid CorrelationId { get; set; }
         // -------- Slices --------
 
@@ -42,7 +41,7 @@ namespace LoanService.Domain.Entities.Loan
         public bool IsPurchaseCredit =>
         Provider.ApprovalCode <= 0;
 
-        private void Touch() => UpdatedAtUtc = DateTime.UtcNow;
+
 
 
         // -------- Error / Reason --------

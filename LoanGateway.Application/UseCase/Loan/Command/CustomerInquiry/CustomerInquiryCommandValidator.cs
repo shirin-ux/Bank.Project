@@ -19,9 +19,9 @@ public class CustomerInquiryCommandValidator : AbstractValidator<CustomerInquiry
             .Must(BeValidIranianNationalCode).WithMessage("کد ملی نامعتبر است.");
 
 
-        RuleFor(x => x.ConfigType)
-            .Must(ct => ct is null or 1 or 2 or 3)
-            .WithMessage("ConfigType در صورت ارسال فقط می‌تواند یکی از مقادیر 1، 2 یا 3 باشد.");
+        //RuleFor(x => x.ConfigType)
+        //    .Must(ct => ct is null or 1 or 2 or 3)
+        //    .WithMessage("ConfigType در صورت ارسال فقط می‌تواند یکی از مقادیر 1، 2 یا 3 باشد.");
 
         //RuleFor(x => x.BirthDate)
         //    .Must(BeValidBirthDate)
