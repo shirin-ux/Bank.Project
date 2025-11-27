@@ -3,6 +3,7 @@ using Bank.Mellat.Provider;
 using Common;
 using FluentValidation;
 using Hangfire;
+using Karizmah.Provider;
 using LoanGateway.Infrastructure.Utility;
 using LoanService.Api.Middlewares;
 using LoanService.Application.Contracts;
@@ -21,6 +22,7 @@ using LoanService.Infrastructure.Repositories.Loan;
 using LoanService.Infrastructure.Services;
 using Mapster;
 using MediatR;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System.Net;
 using System.Net.Http.Headers;
@@ -40,6 +42,15 @@ builder.Services.AddHttpClient("MellatApi", client =>
     CookieContainer = new CookieContainer()
 });
 
+builder.Services.Configure<KarizmahInvestmentOptions>(
+    builder.Configuration.GetSection("Karizmah"));
+
+builder.Services.AddHttpClient("KarizmahApi", (sp, client) =>
+{
+    var opt = sp.GetRequiredService<IOptions<KarizmahInvestmentOptions>>().Value;
+    client.BaseAddress = new Uri(opt.BaseUrlApi);
+
+});
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(LoanService.Application.AssemblyReference).Assembly));
 
@@ -63,6 +74,8 @@ builder.Services.Configure<MellatApiOptions>(
 
 builder.Services.Configure<RabbitMqOptions>(
     builder.Configuration.GetSection("RabbitMqOptions"));
+
+
 
 builder.Services.AddSingleton<ILoanNotificationBus,RabbitMqLoanNotificationBus>();
 builder.Services.AddSingleton<TransactionDBUtility>();
