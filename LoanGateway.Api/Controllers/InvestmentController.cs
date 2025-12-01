@@ -10,10 +10,10 @@ namespace LoanGateway.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class InvestmentController(IMediator mediator) : ControllerBase
+    public class InvestmentController(IMediator mediator, ILogger<InvestmentController> logger) : ControllerBase
     {
         private readonly IMediator _mediator = mediator;
-
+        private readonly ILogger<InvestmentController> _logger = logger;
 
         [HttpGet("getInvestmentPlan")]
         public async Task<IActionResult> GetInvestmentPlan(CancellationToken ct)
@@ -29,8 +29,10 @@ namespace LoanGateway.Api.Controllers
         /// </summary>
         [HttpGet("{planType}/details")]
       
-        public async Task<IActionResult> GetPlanDetails([FromRoute] InvestmentPlanType planType, [FromQuery] InvestmentChartRange range = InvestmentChartRange.SixMonths,CancellationToken ct = default)
+        public async Task<IActionResult> GetPlanDetails([FromRoute] InvestmentPlanType planType, [FromQuery]InvestmentChartRange range ,CancellationToken ct = default)
         {
+            _logger.LogInformation("GetPlanDetails called. planType={PlanType}, range={Range}", planType, range);
+
             var result = await _mediator.Send(new GetInvestmentPlanDetailsQuery(planType, range), ct);
            return ToHttp(result);
         }

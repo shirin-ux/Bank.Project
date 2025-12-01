@@ -1,20 +1,17 @@
-﻿using Bank.Mellat.Provider.Dtos;
-using Karizmah.Provider;
+﻿using Karizmah.Provider;
 using Karizmah.Provider.Dtos;
 using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsPlans;
-using LoanService.Application.UseCase.Loan.Command.DepositRequest;
 using LoanService.Domain.Enum;
 using LoanService.Domain.Enum.Investment;
-using System.Diagnostics.Metrics;
 using System.Globalization;
 
 namespace LoanService.Infrastructure.Services;
 
-public class KarizmahInvestmentProvider(IKarizmahService client) : IProviderBase,IInvestmentProvider
+public class KarizmahInvestmentProvider(IKarizmahService client) : IProviderBase, IInvestmentProvider
 {
     public ProviderType ProviderType => ProviderType.Karizmah;
-    private readonly IKarizmahService _client= client;
+    private readonly IKarizmahService _client = client;
     public async Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan, InvestmentChartRange range, CancellationToken ct)
     {
         var nowUtc = DateTime.UtcNow;
@@ -25,7 +22,7 @@ public class KarizmahInvestmentProvider(IKarizmahService client) : IProviderBase
         var fromLocal = new DateTimeOffset(fromUtc, TimeSpan.Zero).ToOffset(iranOffset);
         var toLocal = new DateTimeOffset(toUtc, TimeSpan.Zero).ToOffset(iranOffset);
 
-     
+
         var fromKey = fromLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
         var toKey = toLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
 
@@ -81,7 +78,7 @@ public class KarizmahInvestmentProvider(IKarizmahService client) : IProviderBase
         if (history is null || history.Count == 0)
             throw new InvalidOperationException("هیچ دیتای شاخصی برای این طرح یافت نشد.");
 
-     
+
         var ordered = history.OrderBy(p => p.Date).ToList();
 
         // آخرین نقطه‌ی دوره (آخرین قیمت / شاخص)

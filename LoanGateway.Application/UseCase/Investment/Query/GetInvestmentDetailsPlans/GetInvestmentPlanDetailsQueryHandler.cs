@@ -1,6 +1,7 @@
 ﻿using Common;
 using LoanService.Application.Contracts;
 using LoanService.Application.Exceptions;
+using LoanService.Domain.Enum.Investment;
 using LoanService.Domain.IRepository.Investment;
 using MediatR;
 
@@ -28,50 +29,97 @@ public class GetInvestmentPlanDetailsQueryHandler
         var plan = await _planRepo.GetPlanWithMetaAsync(request.PlanType, ct);
         if (plan is null)
             throw new NotFoundException("طرح سرمایه‌گذاری مورد نظر یافت نشد.");
+        PlanSnapshotDto snapshot;
+        IReadOnlyList<IndexPointDto> history;
 
+        switch (request.PlanType)
+        {
+            case InvestmentPlanType.Gold:
+            case InvestmentPlanType.Silver:
+                {
 
-        var snapshotTask = _karizmahProvider.GetPlanSnapshotAsync(request.PlanType, ct);
-        var historyTask = _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct);
+                    snapshot = await _karizmahProvider.GetPlanSnapshotAsync(request.PlanType, ct);
+                    history = await _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct);
+                    break;
+                }
 
-        await Task.WhenAll(snapshotTask, historyTask);
+            case InvestmentPlanType.FixedIncome:
+                {
 
-        var snapshot = await snapshotTask;
-        var indexHistory = await historyTask ?? Array.Empty<IndexPointDto>();
+                    history = await _karizmahProvider
+                        .GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct);
 
+                    snapshot = CalculateFixedIncomeSnapshot(request.PlanType, request.Range, history);
+                    break;
+                }
+
+            default:
+                throw new NotSupportedException($"نوع طرح '{request.PlanType}' پشتیبانی نمی‌شود.");
+        }
 
         var res = new InvestmentPlanDetailsResultDto
         {
             PlanType = request.PlanType,
             PlanTitle = plan.Title,
 
-
             GramPrice = snapshot.GramPrice,
             DailyChangePercent = snapshot.DailyChangePercent,
+
             EffectiveAnnualRate = snapshot.EffectiveAnnualRate,
             ReturnFromStartPercent = snapshot.ReturnFromStartPercent,
 
-
-            IndexHistory = indexHistory.ToList(),
+            IndexHistory = history,
 
             Features = plan.Features
                 .OrderBy(f => f.Order)
-                .Select(f => new PlanFeatureDto
-                {
-                    Title = f.Title,
-                    Description = f.Description
-                })
+                .Select(f => new PlanFeatureDto { Title = f.Title, Description = f.Description })
                 .ToList(),
 
             Faqs = plan.Faqs
                 .OrderBy(f => f.Order)
-                .Select(f => new FaqItemDto
-                {
-                    Question = f.Question,
-                    Answer = f.Answer
-                })
+                .Select(f => new FaqItemDto { Question = f.Question, Answer = f.Answer })
                 .ToList()
         };
 
         return Result<InvestmentPlanDetailsResultDto>.Success(res);
     }
+    private PlanSnapshotDto CalculateFixedIncomeSnapshot( InvestmentPlanType plan, InvestmentChartRange range, IReadOnlyList<IndexPointDto> history)
+    {
+        if (history == null || history.Count == 0)
+            throw new InvalidOperationException("هیچ دیتای شاخصی برای طرح درآمد ثابت یافت نشد.");
+
+        var ordered = history.OrderBy(p => p.Date).ToList();
+        var first = ordered.First();
+        var last = ordered.Last();
+
+ 
+        decimal totalReturnPercent = 0m;
+        if (first.IndexValue != 0)
+        {
+            var diff = last.IndexValue - first.IndexValue;
+            totalReturnPercent = diff / first.IndexValue * 100m;
+        }
+
+        var totalDays = (last.Date.Date - first.Date.Date).TotalDays;
+        decimal effectiveAnnualRate = 0m;
+
+        if (totalDays > 0 && totalReturnPercent != 0)
+        {
+            var grossReturn = 1m + (totalReturnPercent / 100m);
+            var annualized = Math.Pow((double)grossReturn, 365d / totalDays);
+            effectiveAnnualRate = ((decimal)annualized - 1m) * 100m;
+        }
+
+        return new PlanSnapshotDto
+        {
+            PlanType = plan,
+            GramPrice = 0,              
+            DailyChangePercent = 0,        
+
+            EffectiveAnnualRate = effectiveAnnualRate,      
+            ReturnFromStartPercent = totalReturnPercent,
+            LastUpdateUtc = last.Date.DateTime
+        };
+    }
+
 }
