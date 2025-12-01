@@ -1930,6 +1930,22 @@
           "bin/placeholder/Common.dll": {}
         }
       },
+      "Karizmah.Provider/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Microsoft.AspNetCore.WebUtilities": "2.3.0",
+          "Microsoft.Extensions.Http": "9.0.10",
+          "Microsoft.Extensions.Logging.Abstractions": "9.0.10",
+          "Microsoft.Extensions.Options": "9.0.10"
+        },
+        "compile": {
+          "bin/placeholder/Karizmah.Provider.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Karizmah.Provider.dll": {}
+        }
+      },
       "LoanService.Application/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -5586,6 +5602,11 @@
       "path": "../Common/Common.csproj",
       "msbuildProject": "../Common/Common.csproj"
     },
+    "Karizmah.Provider/1.0.0": {
+      "type": "project",
+      "path": "../Karizmah.Provider/Karizmah.Provider.csproj",
+      "msbuildProject": "../Karizmah.Provider/Karizmah.Provider.csproj"
+    },
     "LoanService.Application/1.0.0": {
       "type": "project",
       "path": "../LoanGateway.Application/LoanService.Application.csproj",
@@ -5601,6 +5622,7 @@
     "net8.0": [
       "Dapper >= 2.1.66",
       "Hangfire.Core >= 1.8.21",
+      "Karizmah.Provider >= 1.0.0",
       "LoanService.Application >= 1.0.0",
       "Mapster >= 7.4.0",
       "Microsoft.Data.SqlClient >= 6.1.2",
@@ -5640,6 +5662,9 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
+            "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj": {
+              "projectPath": "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj"
+            },
             "D:\\ProjectBank\\src\\LoanGateway.Application\\LoanService.Application.csproj": {
               "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Application\\LoanService.Application.csproj"
             }

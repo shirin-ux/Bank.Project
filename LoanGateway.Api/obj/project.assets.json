@@ -2153,6 +2153,7 @@
         "dependencies": {
           "Dapper": "2.1.66",
           "Hangfire.Core": "1.8.21",
+          "Karizmah.Provider": "1.0.0",
           "LoanService.Application": "1.0.0",
           "Mapster": "7.4.0",
           "Microsoft.Data.SqlClient": "6.1.2",

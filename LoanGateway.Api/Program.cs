@@ -26,6 +26,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text.Json.Serialization;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -104,7 +105,12 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(o =>
+    {
+        o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 builder.Services.AddHttpClient<MellatBankService>()
     .ConfigureHttpClient(c =>
@@ -168,8 +174,11 @@ builder.Services.AddHangfireServer();
 
 
 // ?? Loan services
+
 builder.Services.AddScoped<LoanJobRunner>();
 builder.Services.AddScoped<ILoanRequestRepository, LoanRequestRepository>();
+builder.Services.AddScoped<IInvestmentProvider, KarizmahInvestmentProvider>();
+builder.Services.AddScoped<IKarizmahService, KarizmahService>();
 builder.Services.AddScoped<IInvestmentPlanReadRepository, InvestmentPlanReadRepository>();
 builder.Services.AddScoped(typeof(IBankPolicy<>), typeof(MellatPolicy<>));
 builder.Services.AddScoped<ILoanOrchestratorJobRunner, LoanOrchestratorJobs>();

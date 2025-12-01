@@ -453,6 +453,9 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
+              "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj": {
+                "projectPath": "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj"
+              },
               "D:\\ProjectBank\\src\\LoanGateway.Application\\LoanService.Application.csproj": {
                 "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Application\\LoanService.Application.csproj"
               }

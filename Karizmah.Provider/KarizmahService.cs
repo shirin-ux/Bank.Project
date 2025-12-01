@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -162,44 +163,57 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
     public async Task<KarizmaTokenResponse> GetAccessTokenAsync(CancellationToken ct)
     {
-        var client = _http.CreateClient("KarizmahApi");
-        var request = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlToken)
+        try
         {
-            Content = new FormUrlEncodedContent(new Dictionary<string, string>
-          {
-              { "grant_type", _options.Value.GrantType },
-              { "client_id", _options.Value.ClientId},
-              { "client_secret", _options.Value.ClientSecret },
-              { "username",_options.Value.UserName},
-              { "password",_options.Value.Password }
-          })
-        };
+            var client = _http.CreateClient();
+
+            var request = new HttpRequestMessage(HttpMethod.Post, _options.Value.BaseUrlToken);
+
+            // بدنه فرم مثل Postman
+            var form = new Dictionary<string, string>
+    {
+        { "grant_type", _options.Value.GrantType },   
+        { "client_id", _options.Value.ClientId },
+        { "client_secret", _options.Value.ClientSecret }
+    };
+            request.Content = new FormUrlEncodedContent(form);
 
 
+            var basicBytes = Encoding.ASCII.GetBytes($"{_options.Value.ClientId}:{_options.Value.ClientSecret}");
+            var basicToken = Convert.ToBase64String(basicBytes);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", basicToken);
 
-        var resp = await client.SendAsync(request, ct);
-        resp.EnsureSuccessStatusCode();
-        var json = await resp.Content.ReadAsStringAsync();
-        if (!resp.IsSuccessStatusCode)
-        {
-            _logger.LogError(
-                "Karizmah token endpoint failed. Status={StatusCode}, Body={Body}",
-                (int)resp.StatusCode, json);
 
-            throw new HttpRequestException(
-                $"Karizmah token endpoint failed. Status={(int)resp.StatusCode}, Body={json}");
+            var resp = await client.SendAsync(request, ct);
+            var json = await resp.Content.ReadAsStringAsync(ct);
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                _logger.LogError(
+                    "Karizmah token endpoint failed. Status={StatusCode}, Body={Body}",
+                    (int)resp.StatusCode, json);
+
+                throw new HttpRequestException(
+                    $"Karizmah token endpoint failed. Status={(int)resp.StatusCode}, Body={json}");
+            }
+
+            var tokenResponse = JsonSerializer.Deserialize<KarizmaTokenResponse>(json,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            if (tokenResponse is null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
+                throw new InvalidOperationException("Invalid token response from Karizmah.");
+
+            return tokenResponse;
         }
-        var tokenResponse = JsonSerializer.Deserialize<KarizmaTokenResponse>(json);
-        if (tokenResponse is null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
+        catch (Exception ex)
         {
-            throw new InvalidOperationException("Invalid token response from Karizmah.");
-        }
 
-        return new KarizmaTokenResponse
-        {
-            AccessToken = tokenResponse.AccessToken
-        };
+            throw;
+        }
+      
     }
+
+    
     //درگاه
     public async Task<BaseResponse<KarizmahOrderBuyResponseDto>> BuyOrderAsync(KarizmahOrderBuyRequestDto req, CancellationToken ct)
     {
@@ -1011,6 +1025,154 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
             data = dto
         };
     }
+
+    public async Task<ChindxIndexValueResponseDto> GetGoldIndexAsync(ChindxIndexValueRequestDto req, CancellationToken cancellationToken = default)
+    {
+        var client = _http.CreateClient();
+        var tokenRes = await GetAccessTokenChindxAsync(cancellationToken);
+        if (req is null)
+            throw new ArgumentNullException(nameof(req));
+        var queryString = BuildQueryString(req);
+        var url =_options.Value.BaseUrlApi+ $"chindx/v2.0/indexValue{queryString}";
+        using var message = new HttpRequestMessage(HttpMethod.Get, url);
+
+        message.Headers.Authorization =
+            new AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
+
+        message.Headers.Add("x-agent-id", _options.Value.agentId);
+        message.Headers.Accept.Clear();
+        message.Headers.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+        using var response = await client.SendAsync(message, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var bankResponse = JsonSerializer.Deserialize<ChindxIndexValueResponseDto>(
+           body,
+           new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError(
+                $"پاسخ ناموفق از سرویس کاریزما برای Index طلا. Code = {response.StatusCode}, Content = {body}",
+                (int)response.StatusCode, body);
+
+            throw new HttpRequestException(
+                $"در فراخوانی سرویس Index طلا کاریزما خطا رخ داد. Code={(int)response.StatusCode}");
+        }
+      
+        ChindxIndexValueResponseDto? result;
+        try
+        {
+            result = bankResponse;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "خطا در Deserialize پاسخ سرویس Index طلا کاریزما. Content = {Content}", bankResponse);
+            throw;
+        }
+
+        if (result is null)
+        {
+            _logger.LogError(
+                "پاسخ سرویس Index طلا کاریزما خالی یا نامعتبر بود. Content = {Content}", bankResponse);
+            throw new InvalidOperationException("پاسخ سرویس Index طلا کاریزما نامعتبر است.");
+        }
+
+        return result;
+
+
+    }
+    private static string BuildQueryString(ChindxIndexValueRequestDto request)
+    {
+        var parameters = new List<string>();
+
+        static void AddIfNotNullOrEmpty(string name, string? value, List<string> list)
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                list.Add($"{name}={Uri.EscapeDataString(value)}");
+            }
+        }
+
+        AddIfNotNullOrEmpty("instrumentId", request.InstrumentId, parameters);
+        AddIfNotNullOrEmpty("fromDateKey", request.FromDateKey, parameters);
+        AddIfNotNullOrEmpty("toDateKey", request.ToDateKey, parameters);
+
+        if (request.FromDate.HasValue)
+        {
+            var from = request.FromDate.Value.ToString("yyyy-MM-dd'T'HH:mm:ssK", CultureInfo.InvariantCulture);
+            AddIfNotNullOrEmpty("fromDate", from, parameters);
+        }
+
+        if (request.ToDate.HasValue)
+        {
+            var to = request.ToDate.Value.ToString("yyyy-MM-dd'T'HH:mm:ssK", CultureInfo.InvariantCulture);
+            AddIfNotNullOrEmpty("toDate", to, parameters);
+        }
+
+        AddIfNotNullOrEmpty("size",
+            request.Size.ToString(CultureInfo.InvariantCulture),
+            parameters);
+
+        AddIfNotNullOrEmpty("offset",
+            request.Offset.ToString(CultureInfo.InvariantCulture),
+            parameters);
+
+        return parameters.Count == 0
+            ? string.Empty
+            : "?" + string.Join("&", parameters);
+    }
+
+    public async Task<KarizmaTokenResponse> GetAccessTokenChindxAsync(CancellationToken ct)
+    {
+        var client = _http.CreateClient();
+
+
+        var tokenUrl = _options.Value.BaseUrlTokenchindex;
+
+
+
+        var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
+        {
+            Content = new FormUrlEncodedContent(new[]
+            {
+            new KeyValuePair<string, string>("grant_type", "client_credentials")
+        })
+        };
+
+
+        var basicBytes = Encoding.ASCII.GetBytes(
+            $"{_options.Value.ConsumerKey}:{_options.Value.ConsumerSecret}");
+        var basicToken = Convert.ToBase64String(basicBytes);
+
+        request.Headers.Authorization =
+            new AuthenticationHeaderValue("Basic", basicToken);
+
+        var resp = await client.SendAsync(request, ct);
+        var json = await resp.Content.ReadAsStringAsync(ct);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            _logger.LogError(
+                "Karizmah chindx token endpoint failed. Status={StatusCode}, Body={Body}",
+                (int)resp.StatusCode, json);
+
+            throw new HttpRequestException(
+                $"Karizmah chindx token endpoint failed. Status={(int)resp.StatusCode}, Body={json}");
+        }
+
+        var tokenResponse = JsonSerializer.Deserialize<KarizmaTokenResponse>(json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        if (tokenResponse is null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
+            throw new InvalidOperationException("Invalid token response from Karizmah chindx.");
+
+        return tokenResponse;
+    }
+
+
 }
+
 
 

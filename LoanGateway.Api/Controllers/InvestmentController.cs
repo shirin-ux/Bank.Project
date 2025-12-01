@@ -1,6 +1,9 @@
 ﻿using Common;
+using LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsPlans;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentPlans;
+using LoanService.Domain.Enum.Investment;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LoanGateway.Api.Controllers
@@ -21,6 +24,16 @@ namespace LoanGateway.Api.Controllers
         }
 
 
+        /// <summary>
+        /// جزئیات طرح سرمایه‌گذاری 
+        /// </summary>
+        [HttpGet("{planType}/details")]
+      
+        public async Task<IActionResult> GetPlanDetails([FromRoute] InvestmentPlanType planType, [FromQuery] InvestmentChartRange range = InvestmentChartRange.SixMonths,CancellationToken ct = default)
+        {
+            var result = await _mediator.Send(new GetInvestmentPlanDetailsQuery(planType, range), ct);
+           return ToHttp(result);
+        }
 
 
 

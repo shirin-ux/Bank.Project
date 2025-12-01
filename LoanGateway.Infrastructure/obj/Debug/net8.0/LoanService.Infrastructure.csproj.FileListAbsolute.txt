@@ -20,3 +20,5 @@ D:\ProjectBank\src\LoanGateway.Infrastructure\obj\Debug\net8.0\LoanService.Infra
 D:\ProjectBank\src\LoanGateway.Infrastructure\obj\Debug\net8.0\refint\LoanService.Infrastructure.dll
 D:\ProjectBank\src\LoanGateway.Infrastructure\obj\Debug\net8.0\LoanService.Infrastructure.pdb
 D:\ProjectBank\src\LoanGateway.Infrastructure\obj\Debug\net8.0\ref\LoanService.Infrastructure.dll
+D:\ProjectBank\src\LoanGateway.Infrastructure\bin\Debug\net8.0\Karizmah.Provider.dll
+D:\ProjectBank\src\LoanGateway.Infrastructure\bin\Debug\net8.0\Karizmah.Provider.pdb

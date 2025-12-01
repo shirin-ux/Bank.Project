@@ -20,10 +20,10 @@ namespace LoanService.Application.UseCase.Investment.Query.GetInvestmentPlans
                 }
                 var res = plans.Select(x => new InvestmentPlanResultDto
                 {
-                    Name = x.Name,
-                    MinAmount = x.MinAmount,
+                    Name = x.Title,
                     PlanType = x.PlanType,
-                    ShortDescription = x.ShortDescription
+                    ShortDescription = x.Description,
+                    MinAmount=x.MinAmount
                 }).ToList();
                 return Result<List<InvestmentPlanResultDto>>.Success(res);
             }

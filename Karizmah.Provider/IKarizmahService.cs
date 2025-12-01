@@ -18,10 +18,10 @@ public interface IKarizmahService
     Task<BaseResponse<KarizmahOrderResponseDto>> GetOrder(KarizmahOrderRequestDto req, CancellationToken ct);
     Task<BaseResponse<KarizmahOrderRevokableAmountResponseDto>> GetOrderRevokableAmount(KarizmahOrderRevokableAmountRequestDto req, CancellationToken ct);
 
-    Task<BaseResponse<KarizmahPolicyHistoryResponseDto>> GetPolicyHistory(KarizmahPolicyHistoryRequestDto req, CancellationToken ct)
+    Task<BaseResponse<KarizmahPolicyHistoryResponseDto>> GetPolicyHistory(KarizmahPolicyHistoryRequestDto req, CancellationToken ct);
 
+    Task<ChindxIndexValueResponseDto> GetGoldIndexAsync(ChindxIndexValueRequestDto req,CancellationToken cancellationToken = default);
 
-
-
+    Task<KarizmaTokenResponse> GetAccessTokenChindxAsync(CancellationToken ct);
 }
 

@@ -1,15 +1,16 @@
 ﻿using LoanService.Domain.Entities.Investment;
+using LoanService.Domain.Enum.Investment;
 
 namespace LoanService.Domain.IRepository.Investment
 {
     public interface IInvestmentPlanReadRepository
     {
-        Task<IEnumerable<InvestmentPlan>> GetActivePlansAsync(CancellationToken ct);
-        Task<InvestmentPlan> GetByIdAsync(Guid Id, CancellationToken ct);
-        Task<InvestmentPlan> GetByCodeAsync(string Code, CancellationToken ct);
-        Task<Guid> InsertAsync(InvestmentPlan plan, CancellationToken ct);
-        Task<bool> UpdateAsync(InvestmentPlan plan, CancellationToken ct);
-        Task<bool> DeletAsync(InvestmentPlan plan, CancellationToken ct);
-
+        Task<IEnumerable<InvestmentPlans>> GetActivePlansAsync(CancellationToken ct);
+        Task<InvestmentPlans> GetByIdAsync(Guid Id, CancellationToken ct);
+        Task<InvestmentPlans> GetByCodeAsync(string Code, CancellationToken ct);
+        Task<Guid> InsertAsync(InvestmentPlans plan, CancellationToken ct);
+        Task<bool> UpdateAsync(InvestmentPlans plan, CancellationToken ct);
+        Task<bool> DeletAsync(InvestmentPlans plan, CancellationToken ct);
+        Task<InvestmentPlans?> GetPlanWithMetaAsync(InvestmentPlanType planType, CancellationToken ct);
     }
 }

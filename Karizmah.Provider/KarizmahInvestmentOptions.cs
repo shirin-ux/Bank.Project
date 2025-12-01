@@ -18,11 +18,12 @@ public sealed class KarizmahInvestmentOptions
     public string OrderTransactionEnspoint { get; set; } = default!;
     public string RevokableAmountEndpoint { get; set; } = default!;
     public string OrderEnspoint { get; set; } = default!;
-    public string UserName { get; set; } = default!;
-    public string Password { get; set; } = default!;
     public string ClientId { get; set; } = default!;
     public string ClientSecret { get; set; } = default!;
     public string GrantType { get; set; } = default!;
+    public string ConsumerSecret { get; set; } = default!;
+    public string ConsumerKey { get; set; } = default!;
+    public string BaseUrlTokenchindex { get; set; } = default!;
 
     public string agentId { get; set; } = default!;
 
