@@ -2,6 +2,7 @@
 using LoanService.Application.Contracts;
 using LoanService.Application.Exceptions;
 using LoanService.Domain.Enum.Investment;
+using LoanService.Domain.Exceptions;
 using LoanService.Domain.IRepository.Investment;
 using MediatR;
 
@@ -29,38 +30,31 @@ public class GetInvestmentPlanDetailsQueryHandler
         var plan = await _planRepo.GetPlanWithMetaAsync(request.PlanType, ct);
         if (plan is null)
             throw new NotFoundException("طرح سرمایه‌گذاری مورد نظر یافت نشد.");
-        PlanSnapshotDto snapshot;
-        IReadOnlyList<IndexPointDto> history;
 
-        switch (request.PlanType)
+        var historyRange = request.Range;
+
+        if (request.PlanType == InvestmentPlanType.FixedIncome &&
+       (historyRange is InvestmentChartRange.OneHour or InvestmentChartRange.OneDay))
         {
-            case InvestmentPlanType.Gold:
-            case InvestmentPlanType.Silver:
-                {
-
-                    snapshot = await _karizmahProvider.GetPlanSnapshotAsync(request.PlanType, ct);
-                    history = await _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct);
-                    break;
-                }
-
-            case InvestmentPlanType.FixedIncome:
-                {
-
-                    history = await _karizmahProvider
-                        .GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct);
-
-                    snapshot = CalculateFixedIncomeSnapshot(request.PlanType, request.Range, history);
-                    break;
-                }
-
-            default:
-                throw new NotSupportedException($"نوع طرح '{request.PlanType}' پشتیبانی نمی‌شود.");
+            throw new LogicException("برای طرح درآمد ثابت فقط بازه‌های ۳، ۶ و ۹ ماهه مجاز است.");
         }
+
+        var history =await _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, historyRange,ct);
+
+        if (history is null || history.Count == 0)
+            throw new InvalidOperationException("هیچ دیتای شاخصی برای این طرح یافت نشد.");
+
+        PlanSnapshotDto snapshot = request.PlanType switch
+        {
+            InvestmentPlanType.FixedIncome => CalculateFixedIncomeSnapshot(request.PlanType, history),
+            InvestmentPlanType.Gold or InvestmentPlanType.Silver=> CalculateGoldSilverSnapshot(request.PlanType, history, historyRange),
+               _ => throw new NotSupportedException($"نوع طرح '{request.PlanType}' پشتیبانی نمی‌شود.")
+        };
+
 
         var res = new InvestmentPlanDetailsResultDto
         {
             PlanType = request.PlanType,
-            PlanTitle = plan.Title,
 
             GramPrice = snapshot.GramPrice,
             DailyChangePercent = snapshot.DailyChangePercent,
@@ -83,29 +77,32 @@ public class GetInvestmentPlanDetailsQueryHandler
 
         return Result<InvestmentPlanDetailsResultDto>.Success(res);
     }
-    private PlanSnapshotDto CalculateFixedIncomeSnapshot( InvestmentPlanType plan, InvestmentChartRange range, IReadOnlyList<IndexPointDto> history)
+    private PlanSnapshotDto CalculateFixedIncomeSnapshot( InvestmentPlanType plan,  IReadOnlyList<IndexPointDto> history)
     {
         if (history == null || history.Count == 0)
             throw new InvalidOperationException("هیچ دیتای شاخصی برای طرح درآمد ثابت یافت نشد.");
 
-        var ordered = history.OrderBy(p => p.Date).ToList();
+        var ordered = history.Where(p => p.IndexValue > 0m).OrderBy(p => p.Date).ToList();
+    
+        if (!ordered.Any())
+            throw new LogicException("هیچ نقطه‌ی شاخص معتبری برای طرح درآمد ثابت یافت نشد.");
+
         var first = ordered.First();
         var last = ordered.Last();
 
- 
-        decimal totalReturnPercent = 0m;
+        decimal returnFromStartPercent = 0m;
         if (first.IndexValue != 0)
         {
             var diff = last.IndexValue - first.IndexValue;
-            totalReturnPercent = diff / first.IndexValue * 100m;
+            returnFromStartPercent = diff / first.IndexValue * 100m;
         }
 
-        var totalDays = (last.Date.Date - first.Date.Date).TotalDays;
+        var totalDays = (last.Date - first.Date).TotalDays;
         decimal effectiveAnnualRate = 0m;
 
-        if (totalDays > 0 && totalReturnPercent != 0)
+        if (totalDays > 0 && returnFromStartPercent != 0)
         {
-            var grossReturn = 1m + (totalReturnPercent / 100m);
+            var grossReturn = 1m + (returnFromStartPercent / 100m);
             var annualized = Math.Pow((double)grossReturn, 365d / totalDays);
             effectiveAnnualRate = ((decimal)annualized - 1m) * 100m;
         }
@@ -117,8 +114,70 @@ public class GetInvestmentPlanDetailsQueryHandler
             DailyChangePercent = 0,        
 
             EffectiveAnnualRate = effectiveAnnualRate,      
-            ReturnFromStartPercent = totalReturnPercent,
+            ReturnFromStartPercent = returnFromStartPercent,
             LastUpdateUtc = last.Date.DateTime
+        };
+    }
+    private PlanSnapshotDto CalculateGoldSilverSnapshot(
+    InvestmentPlanType plan,IReadOnlyList<IndexPointDto> history,InvestmentChartRange renge)
+    {
+        if (history == null || history.Count == 0)
+            throw new InvalidOperationException("هیچ دیتای شاخصی برای این طرح یافت نشد.");
+
+        var ordered = history
+             .Where(p => p.IndexValue > 0m)
+            .OrderBy(p => p.Date)
+            .ToList();
+
+        if (!ordered.Any())
+            throw new InvalidOperationException("هیچ نقطه‌ی شاخص معتبری برای این طرح یافت نشد.");
+
+        var first = ordered.First();
+
+        var last = ordered.Last();
+
+ 
+        var gramPrice = last.IndexValue;
+
+
+        var lastDay = last.Date.Date;
+
+        var previous = ordered.LastOrDefault(p => p.Date.Date < lastDay);// آخرین نقطه‌ی روز قبل
+
+        decimal dailyChangePercent = 0m;
+        if (previous is not null && previous.IndexValue != 0m)
+        {
+            var diff = gramPrice - previous.IndexValue;
+            dailyChangePercent = diff / previous.IndexValue * 100m;
+        }
+        bool shoulComputeReturn = renge is InvestmentChartRange.ThreeMonths
+                                       or InvestmentChartRange.SixMonths
+                                       or InvestmentChartRange.OneYear;
+
+        decimal returnFromStartPercent = 0m;
+        decimal effectiveAnnualRate = 0m;
+        if(shoulComputeReturn && first.IndexValue>0)
+        {
+            var diffFromStart = gramPrice - first.IndexValue;
+            returnFromStartPercent = diffFromStart / first.IndexValue * 100m;
+
+            var totalDays = (last.Date - first.Date).TotalDays;
+            if (totalDays > 0 && returnFromStartPercent != 0m)
+            {
+                var grossReturn = 1m + (returnFromStartPercent / 100m);
+                var annualized = Math.Pow((double)grossReturn, 365d / totalDays);
+                effectiveAnnualRate = ((decimal)annualized - 1m) * 100m;
+            }
+        }
+        return new PlanSnapshotDto
+        {
+            PlanType = plan,
+
+            GramPrice = gramPrice,
+            DailyChangePercent = dailyChangePercent,
+            EffectiveAnnualRate = effectiveAnnualRate,
+            ReturnFromStartPercent = returnFromStartPercent,
+             LastUpdateUtc = last.Date.UtcDateTime
         };
     }
 

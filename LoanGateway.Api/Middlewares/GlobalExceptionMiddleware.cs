@@ -50,7 +50,10 @@ namespace LoanService.Api.Middlewares
                     statusCode = StatusCodes.Status400BadRequest;
                     message = logicEx.Message;
                     break;
-
+                case ExternalServiceException extEx:
+                    statusCode = extEx.ExternalStatusCode;
+                    message =extEx.Message;
+                    break;
                 default:
                     statusCode = StatusCodes.Status500InternalServerError;
                     message = "خطای غیرمنتظره‌ای در سرور رخ داد.";

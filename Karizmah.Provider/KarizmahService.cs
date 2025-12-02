@@ -1,4 +1,5 @@
 ﻿using Karizmah.Provider.Dtos;
+using LoanService.Domain.Exceptions;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -172,7 +173,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
             // بدنه فرم مثل Postman
             var form = new Dictionary<string, string>
     {
-        { "grant_type", _options.Value.GrantType },   
+        { "grant_type", _options.Value.GrantType },
         { "client_id", _options.Value.ClientId },
         { "client_secret", _options.Value.ClientSecret }
     };
@@ -210,10 +211,10 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
             throw;
         }
-      
+
     }
 
-    
+
     //درگاه
     public async Task<BaseResponse<KarizmahOrderBuyResponseDto>> BuyOrderAsync(KarizmahOrderBuyRequestDto req, CancellationToken ct)
     {
@@ -1014,7 +1015,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
                 solutionType = x.solutionType,
                 startValue = x.startValue,
                 transactionFee = x.transactionFee,
-                value=x.value
+                value = x.value
 
             }).ToList()
         };
@@ -1033,11 +1034,11 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         if (req is null)
             throw new ArgumentNullException(nameof(req));
         var queryString = BuildQueryString(req);
-        var url =_options.Value.BaseUrlApi+ $"chindx/v2.0/indexValue{queryString}";
+        var url = _options.Value.BaseUrlApi + $"chindx/v2.0/indexValue{queryString}";
         using var message = new HttpRequestMessage(HttpMethod.Get, url);
 
         message.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
+            new AuthenticationHeaderValue("Bearer",tokenRes.AccessToken);
 
         message.Headers.Add("x-agent-id", _options.Value.agentId);
         message.Headers.Accept.Clear();
@@ -1052,14 +1053,13 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
         if (!response.IsSuccessStatusCode)
         {
+            var code = (int)response.StatusCode;
             _logger.LogError(
-                $"پاسخ ناموفق از سرویس کاریزما برای Index طلا. Code = {response.StatusCode}, Content = {body}",
-                (int)response.StatusCode, body);
+                $"پاسخ ناموفق از سرویس کاریزما برای Index طلا. Code = {code}, Content = {body}",code, body);
 
-            throw new HttpRequestException(
-                $"در فراخوانی سرویس Index طلا کاریزما خطا رخ داد. Code={(int)response.StatusCode}");
+            throw new ExternalServiceException( $"در فراخوانی سرویس Index طلا کاریزما خطا رخ داد.", (int)response.StatusCode, body);
         }
-      
+
         ChindxIndexValueResponseDto? result;
         try
         {
@@ -1068,15 +1068,14 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "خطا در Deserialize پاسخ سرویس Index طلا کاریزما. Content = {Content}", bankResponse);
+                "خطا در Deserialize پاسخ سرویس Index طلا کاریزما. Content = {Content}", body);
             throw;
         }
 
         if (result is null)
         {
-            _logger.LogError(
-                "پاسخ سرویس Index طلا کاریزما خالی یا نامعتبر بود. Content = {Content}", bankResponse);
-            throw new InvalidOperationException("پاسخ سرویس Index طلا کاریزما نامعتبر است.");
+            _logger.LogError( "پاسخ سرویس Index طلا کاریزما خالی یا نامعتبر بود. Content = {Content}", body);
+            throw new ExternalServiceException( "پاسخ سرویس Index طلا کاریزما نامعتبر است.",(int)response.StatusCode,body);
         }
 
         return result;
@@ -1128,10 +1127,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     {
         var client = _http.CreateClient();
 
-
         var tokenUrl = _options.Value.BaseUrlTokenchindex;
-
-
 
         var request = new HttpRequestMessage(HttpMethod.Post, tokenUrl)
         {
@@ -1140,8 +1136,6 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
             new KeyValuePair<string, string>("grant_type", "client_credentials")
         })
         };
-
-
         var basicBytes = Encoding.ASCII.GetBytes(
             $"{_options.Value.ConsumerKey}:{_options.Value.ConsumerSecret}");
         var basicToken = Convert.ToBase64String(basicBytes);
@@ -1158,8 +1152,8 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
                 "Karizmah chindx token endpoint failed. Status={StatusCode}, Body={Body}",
                 (int)resp.StatusCode, json);
 
-            throw new HttpRequestException(
-                $"Karizmah chindx token endpoint failed. Status={(int)resp.StatusCode}, Body={json}");
+            throw new ExternalServiceException(
+                $"Karizmah chindx token endpoint failed.", (int)resp.StatusCode, json);
         }
 
         var tokenResponse = JsonSerializer.Deserialize<KarizmaTokenResponse>(json,

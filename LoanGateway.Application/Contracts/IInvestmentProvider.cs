@@ -5,7 +5,6 @@ namespace LoanService.Application.Contracts
 {
     public interface IInvestmentProvider
     {
-        Task<PlanSnapshotDto> GetPlanSnapshotAsync(InvestmentPlanType plan, CancellationToken ct);
         Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan, InvestmentChartRange range, CancellationToken ct);
     }
 }

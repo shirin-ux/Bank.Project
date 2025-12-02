@@ -62,7 +62,7 @@ builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBeh
 builder.Services.AddScoped<ILoanNotificationBus, RabbitMqLoanNotificationBus>();
 var root = builder.Environment.ContentRootPath;
 var rulesPath = Path.Combine(root, builder.Configuration["MellatPolicy:RulesPath"]);
-
+builder.Services.AddMemoryCache();
 builder.Services.Configure<MellatPolicyOptions>(options =>
 {
     options.RulesPath = rulesPath;
@@ -134,31 +134,6 @@ builder.Services.AddScoped<IInstallmentRepository, InstallmentRepository>();
 builder.Services.AddScoped<IPayResponseInfoRepository, PayResponseInfoRepository>();
 builder.Services.AddScoped<IContractFileStorage, FileSystemContractFileStorage>();
 
-
-
-
-//builder.Services.AddMediatR(cfg =>
-//{
-//    cfg.RegisterServicesFromAssemblies(
-//                typeof(CustomerInquiryHandler).Assembly,
-//                typeof(DepositRequestHandler).Assembly,
-//                typeof(GetCollateralContractFileHandler).Assembly,
-//                typeof(GetContractFileHandler).Assembly,
-//                typeof(GetCustomerBillingHandler).Assembly,
-//                typeof(GetCustomerCreditBalanceHandler).Assembly,
-//                typeof(GetCustomerPurchaseDetailsHandler).Assembly,
-//                typeof(OtpRequestHandler).Assembly,
-//                typeof(RepaymentRequestHandler).Assembly,
-//                typeof(SubmitPayRequestHandler).Assembly,
-//                typeof(TransferRegisterHandler).Assembly,
-//                typeof(CustomerInquiryStatusHandler).Assembly,
-//                typeof(GetInstallmentsHandler).Assembly,
-//                typeof(GetPayResponseHandler).Assembly,
-//                typeof(ReturnTransferReportHandler).Assembly,
-//                typeof(TransferInquiryHandler).Assembly
-
-//    );
-//});
 builder.Services.AddScoped<IProviderFactory, ProviderFactory>();
 
 // ?? Hangfire

@@ -106,7 +106,11 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj": {
+                "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj"
+              }
+            }
           }
         },
         "warningProperties": {
@@ -400,6 +404,10 @@
             "Microsoft.Data.SqlClient": {
               "target": "Package",
               "version": "[6.1.2, )"
+            },
+            "Microsoft.Extensions.Caching.Memory": {
+              "target": "Package",
+              "version": "[10.0.0, )"
             },
             "Microsoft.Extensions.Http": {
               "target": "Package",

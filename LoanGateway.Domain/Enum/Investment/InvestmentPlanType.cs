@@ -14,8 +14,8 @@ public static class InvestmentPlanTypeExtensions
         return plan switch
         {
             InvestmentPlanType.Gold => "IRTICHGOLD01",
-            InvestmentPlanType.Silver => "<<<PUT_SILVER_CODE_HERE>>>",
-            InvestmentPlanType.FixedIncome => "<<<PUT_FIXEDINCOME_CODE_HERE>>>",
+            InvestmentPlanType.Silver => "IRTICHSILV01",
+            InvestmentPlanType.FixedIncome => "",
             _ => throw new ArgumentOutOfRangeException(nameof(plan), plan, null)
         };
     }
