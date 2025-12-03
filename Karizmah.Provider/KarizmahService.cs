@@ -1133,7 +1133,8 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         {
             Content = new FormUrlEncodedContent(new[]
             {
-            new KeyValuePair<string, string>("grant_type", "client_credentials")
+            new KeyValuePair<string, string>("grant_type", "client_credentials"),
+            new KeyValuePair<string, string>("scope","khanoumi")
         })
         };
         var basicBytes = Encoding.ASCII.GetBytes(

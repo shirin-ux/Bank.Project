@@ -39,7 +39,7 @@ public class KarizmahInvestmentProvider(IKarizmahService client, IMemoryCache ca
         ? TimeSpan.FromMinutes(1)
         : TimeSpan.FromMinutes(10);
 
-        _cache.Set(cacheKey, data, ttl);
+        _cache.Set(cacheKey, result, ttl);
         return result;
     }
 
