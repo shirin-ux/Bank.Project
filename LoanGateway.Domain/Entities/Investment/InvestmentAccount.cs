@@ -11,37 +11,24 @@ public class InvestmentAccount : BaseEntity
 
     private InvestmentAccount() { }
 
-    private InvestmentAccount(  Guid id, string agentId,long policyId,string nationalCode,DateTime birthDate, InvestmentPlanType planCode, string? postalCode,string? address, string traceId)
+    private InvestmentAccount(long? policyId,string? nationalCode,string? birthDate, InvestmentPlanType? planCode, string? traceId)
     {
-        Id = id;
-        AgentId = agentId;
-        PolicyId = policyId;
         NationalCode = nationalCode;
         BirthDate = birthDate;
         PlanCode = planCode;
-        PostalCode = postalCode;
-        Address = address;
-
-        State = InvestmentState.CreatedWithoutDeposit;
-
         LastTraceId = traceId;
-
+        PolicyId = policyId;
         // ثبت رویداد "ایجاد حساب" به‌عنوان یک Operation
         var op = InvestmentOperation.CreateAccount(policyId, traceId, "ایجاد حساب سرمایه‌گذاری");
         _operations.Add(op);
     }
 
-    // ----- اطلاعات هویتی / پایه -----
 
-    /// <summary>x-agent-id → تننت/استفاده کننده سرویس</summary>
-    public string AgentId { get; private set; } = default!;
+    public long? PolicyId { get; private set; }
 
-    /// <summary>شناسه یونیک حساب سرمایه‌گذاری سمت کاریزما</summary>
-    public long PolicyId { get; private set; }
-
-    public string NationalCode { get; private set; } = default!;
-    public DateTime BirthDate { get; private set; }
-    public InvestmentPlanType PlanCode { get; private set; } = default!; 
+    public string? NationalCode { get; private set; } = default!;
+    public string? BirthDate { get; private set; }
+    public InvestmentPlanType? PlanCode { get; private set; } = default!; 
 
     public string? PostalCode { get; private set; }
     public string? Address { get; private set; }
@@ -79,17 +66,15 @@ public class InvestmentAccount : BaseEntity
     /// این متد فقط منطق دامینی را انجام می‌دهد؛ فراخوانی سرویس خارجی در لایه Application/Infrastructure انجام می‌شود.
     /// </summary>
     public static InvestmentAccount CreateNew(
-        string agentId,
-        long policyId,
-        string nationalCode,
-        DateTime birthDate,
-        InvestmentPlanType planCode,
-        string? postalCode,
-        string? address,
-        string traceId)
+ 
+        long? policyId,
+        string? nationalCode,
+        string? birthDate,
+        InvestmentPlanType? planCode,
+
+        string? traceId)
     {
-        if (string.IsNullOrWhiteSpace(agentId))
-            throw new LogicException("AgentId (x-agent-id) نامعتبر است.");
+
 
         if (policyId <= 0)
             throw new LogicException("PolicyId نامعتبر است.");
@@ -103,16 +88,7 @@ public class InvestmentAccount : BaseEntity
         if (string.IsNullOrWhiteSpace(traceId))
             throw new LogicException(" برای ایجاد حساب  شناسه رهگیری الزامی است.");
 
-        var acc = new InvestmentAccount(
-            Guid.NewGuid(),
-            agentId,
-            policyId,
-            nationalCode,
-            birthDate,
-            planCode,
-            postalCode,
-            address,
-            traceId);
+        var acc = new InvestmentAccount( policyId,  nationalCode,  birthDate,  planCode,  traceId);
 
         return acc;
     }
@@ -200,7 +176,7 @@ public class InvestmentAccount : BaseEntity
         if (op is null)
             throw new LogicException("عملیات افزایش آنلاین با این TraceId یافت نشد.");
 
-        if (op.Status == InvestmentOperationStatus.Completed)
+        if (op.Status == InvestmentOrderState.Created)
             return; // idempotent
 
         if (string.IsNullOrWhiteSpace(receiptNumber))

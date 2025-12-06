@@ -24,7 +24,7 @@ public sealed class ChindxIndexValueDataDto
 
 public sealed class ChindxIndexPointDto
 {
-    public DateTimeOffset Timestamp { get; set; }
+    public DateTime Timestamp { get; set; }
     public decimal Value { get; set; }
 }
 

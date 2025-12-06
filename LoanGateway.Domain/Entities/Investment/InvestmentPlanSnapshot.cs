@@ -44,4 +44,5 @@ public class InvestmentPlanSnapshot : BaseEntity
     /// زمان آخرین به‌روزرسانی این داده‌ها (برای نمایش "آخرین بروزرسانی")
     /// </summary>
     public DateTime LastUpdateUtc { get; set; }
+
 }

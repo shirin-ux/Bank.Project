@@ -20,6 +20,7 @@ namespace LoanService.Application.UseCase.Investment.Query.GetInvestmentPlans
                 }
                 var res = plans.Select(x => new InvestmentPlanResultDto
                 {
+                    Id=x.Id,
                     Name = x.Title,
                     PlanType = x.PlanType,
                     ShortDescription = x.Description,

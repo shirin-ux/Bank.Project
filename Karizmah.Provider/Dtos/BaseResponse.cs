@@ -1,6 +1,6 @@
 ﻿namespace Karizmah.Provider.Dtos
 {
-  public  class BaseResponse<T> where T:class
+  public  class BaseResponse<T>
     {
         public List<ErrorMessage> errorMessages { get; set; }
         public T data { get; set; }

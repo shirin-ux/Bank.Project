@@ -1,10 +1,13 @@
 ﻿using Common;
+using LoanService.Application.UseCase.Investment.Command.BuyPlanCommand;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsPlans;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentPlans;
+using LoanService.Application.UseCase.Investment.Query.PlanBuyInfo;
 using LoanService.Domain.Enum.Investment;
 using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace LoanGateway.Api.Controllers
 {
@@ -36,19 +39,19 @@ namespace LoanGateway.Api.Controllers
             var result = await _mediator.Send(new GetInvestmentPlanDetailsQuery(planType, range), ct);
            return ToHttp(result);
         }
+        [HttpGet("{planType}/getPlanBuyInfo")]
+        public async Task<IActionResult> GetPlanBuyInfo([FromRoute] InvestmentPlanType planType, CancellationToken ct = default)
+        {
+            var result = await _mediator.Send(new PlanBuyInfoQueryDto(planType), ct);
+            return ToHttp(result);
+        }
+        [HttpPost("plans/buy")]
+        public async Task<IActionResult> SubmitBuy([FromBody] BuyPlanCommand command, CancellationToken ct)
+        {
 
-
-
-
-
-
-
-
-
-
-
-
-
+            var result = await _mediator.Send(command, ct);
+            return ToHttp(result);
+        }
 
         // -------------------- Helper: Result → IActionResult --------------------
         private IActionResult ToHttp<T>(Result<T> result)

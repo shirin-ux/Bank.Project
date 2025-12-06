@@ -6,10 +6,10 @@ namespace LoanService.Domain.Entities.Investment
     {
         private InvestmentOperation() { }
 
-        public long PolicyId { get; private set; }
-        public string TraceId { get; private set; } = default!;
+        public long? PolicyId { get; private set; }
+        public string? TraceId { get; private set; } = default!;
         public InvestmentOperationType Type { get; private set; }
-        public InvestmentOperationStatus Status { get; private set; }
+        public InvestmentOrderState Status { get; private set; }
 
         public decimal Amount { get; private set; }
         public DateTime OperationDate { get; private set; }
@@ -17,7 +17,7 @@ namespace LoanService.Domain.Entities.Investment
         public string? ReceiptNumber { get; private set; }
         public string? Description { get; private set; }
 
-        public static InvestmentOperation CreateIncreaseDirect(long policyId, decimal amount,string traceId,DateTime receiptDate,string receiptNumber, string? description)
+        public static InvestmentOperation CreateIncreaseDirect(long? policyId, decimal amount,string traceId,DateTime receiptDate,string receiptNumber, string? description)
         {
             return new InvestmentOperation
             {
@@ -26,7 +26,7 @@ namespace LoanService.Domain.Entities.Investment
                 Amount = amount,
                 TraceId = traceId,
                 Type = InvestmentOperationType.IncreaseDirect,
-                Status = InvestmentOperationStatus.Completed,
+                Status = InvestmentOrderState.Created,
                 OperationDate = DateTime.UtcNow,
                 ReceiptDate = receiptDate,
                 ReceiptNumber = receiptNumber,
@@ -34,7 +34,7 @@ namespace LoanService.Domain.Entities.Investment
             };
         }
 
-        public static InvestmentOperation CreateIncreaseOnlineRequested( long policyId, decimal amount,string traceId, string? description)
+        public static InvestmentOperation CreateIncreaseOnlineRequested( long? policyId, decimal amount,string traceId, string? description)
         {
             return new InvestmentOperation
             {
@@ -43,14 +43,14 @@ namespace LoanService.Domain.Entities.Investment
                 Amount = amount,
                 TraceId = traceId,
                 Type = InvestmentOperationType.IncreaseOnline,
-                Status = InvestmentOperationStatus.Pending,
+                Status = InvestmentOrderState.PendingPayment,
                 OperationDate = DateTime.UtcNow,
                 Description = description
             };
         }
 
 
-        public static InvestmentOperation CreateDecreaseDirect(long policyId,decimal amount,string traceId,DateTime receiptDate,string? description)
+        public static InvestmentOperation CreateDecreaseDirect(long? policyId,decimal amount,string traceId,DateTime receiptDate,string? description)
         {
             return new InvestmentOperation
             {
@@ -59,14 +59,14 @@ namespace LoanService.Domain.Entities.Investment
                 Amount = amount,
                 TraceId = traceId,
                 Type = InvestmentOperationType.DecreaseDirect,
-                Status = InvestmentOperationStatus.Completed,
+                Status = InvestmentOrderState.Created,
                 OperationDate = DateTime.UtcNow,
                 ReceiptDate = receiptDate,
                 Description = description
             };
         }
 
-        public static InvestmentOperation CreateAccount( long policyId, string traceId,string? description = null)
+        public static InvestmentOperation CreateAccount( long? policyId, string? traceId,string? description = null)
         {
             return new InvestmentOperation
             {
@@ -75,7 +75,7 @@ namespace LoanService.Domain.Entities.Investment
                 Amount = 0,
                 TraceId = traceId,
                 Type = InvestmentOperationType.CreateAccount,
-                Status = InvestmentOperationStatus.Completed,
+                Status = InvestmentOrderState.Created,
                 OperationDate = DateTime.UtcNow,
                 Description = description
             };
@@ -83,14 +83,14 @@ namespace LoanService.Domain.Entities.Investment
 
         public void MarkCompleted(string? receiptNumber = null, DateTime? receiptDate = null)
         {
-            Status = InvestmentOperationStatus.Completed;
+            Status = InvestmentOrderState.Created;
             ReceiptNumber ??= receiptNumber;
             ReceiptDate ??= receiptDate;
         }
 
         public void MarkFailed(string? description = null)
         {
-            Status = InvestmentOperationStatus.Failed;
+            Status = InvestmentOrderState.Failed;
             if (!string.IsNullOrWhiteSpace(description))
                 Description = description;
         }

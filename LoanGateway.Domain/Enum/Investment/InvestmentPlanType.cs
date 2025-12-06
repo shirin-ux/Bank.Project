@@ -15,7 +15,7 @@ public static class InvestmentPlanTypeExtensions
         {
             InvestmentPlanType.Gold => "IRTICHGOLD01",
             InvestmentPlanType.Silver => "IRTICHSILV01",
-            InvestmentPlanType.FixedIncome => "",
+ 
             _ => throw new ArgumentOutOfRangeException(nameof(plan), plan, null)
         };
     }

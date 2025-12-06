@@ -3,6 +3,7 @@ using Bank.Mellat.Provider;
 using Common;
 using FluentValidation;
 using Hangfire;
+using Hangfire.Common;
 using Karizmah.Provider;
 using LoanGateway.Infrastructure.Utility;
 using LoanService.Api.Middlewares;
@@ -143,7 +144,9 @@ builder.Services.AddHangfire(config =>
         .UseSimpleAssemblyNameTypeSerializer()
         .UseRecommendedSerializerSettings()
         .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection"));
+   
 });
+
 
 builder.Services.AddHangfireServer();
 
@@ -151,16 +154,26 @@ builder.Services.AddHangfireServer();
 // ?? Loan services
 
 builder.Services.AddScoped<LoanJobRunner>();
+
 builder.Services.AddScoped<ILoanRequestRepository, LoanRequestRepository>();
 builder.Services.AddScoped<IInvestmentProvider, KarizmahInvestmentProvider>();
 builder.Services.AddScoped<IKarizmahService, KarizmahService>();
 builder.Services.AddScoped<IInvestmentPlanReadRepository, InvestmentPlanReadRepository>();
 builder.Services.AddScoped(typeof(IBankPolicy<>), typeof(MellatPolicy<>));
 builder.Services.AddScoped<ILoanOrchestratorJobRunner, LoanOrchestratorJobs>();
+builder.Services.AddScoped<IInvestmenJobRunner, KarizmahDailyIndexSyncJob>();
 builder.Services.AddCors(o => o.AddPolicy("AllowAll",
     p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 var app = builder.Build();
+using (var scope = app.Services.CreateScope())
+{
+    var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();
 
+    recurringJobManager.AddOrUpdate<IInvestmenJobRunner>(
+        "karizmah-index-history-warmup",
+        job => job.ExecuteAsync(CancellationToken.None),
+        "10 17 * * *");
+}
 // ?? Middleware
 if (app.Environment.IsDevelopment())
 {
@@ -177,4 +190,4 @@ app.UseHangfireDashboard("/hangfire");
 app.UseCors("AllowAll");
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
-app.Run();
+app.Run(); 

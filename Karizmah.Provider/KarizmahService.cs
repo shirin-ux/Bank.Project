@@ -30,7 +30,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     {
 
 
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = _options.Value.DirectEndpoint;
 
@@ -109,11 +109,12 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
     public async Task<BaseResponse<KarizmahTraceIdResponse>> GenerateTraceIdAsync(CancellationToken ct)
     {
-        var client = _http.CreateClient("KarizmahApi");
+        var client = _http.CreateClient();
 
         var token = await GetAccessTokenAsync(ct);
 
-        var url = _options.Value.TraceIdEndpoint;
+        var baseUri = new Uri(_options.Value.BaseUrlApi);
+        var url = new Uri(baseUri, _options.Value.TraceIdEndpoint);
 
         using var message = new HttpRequestMessage(HttpMethod.Get, url);
 
@@ -128,11 +129,15 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         using var response = await client.SendAsync(message, ct);
 
         var body = await response.Content.ReadAsStringAsync(ct);
-        var bankResponse = JsonSerializer.Deserialize<BaseResponse<KarizmahTraceIdResponse>>(body);
-
+        var jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+        var bankResponse = JsonSerializer.Deserialize<BaseResponse<long>>(body, jsonOptions);
         if (!response.IsSuccessStatusCode)
         {
-            throw new HttpRequestException($"Code={(int)response.StatusCode}, Message={body}");
+            throw new HttpRequestException(
+                $"Code={(int)response.StatusCode}, Message={body}");
         }
 
 
@@ -151,7 +156,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
         var dto = new KarizmahTraceIdResponse
         {
-            traceId = bankResponse.data.traceId
+            traceId = bankResponse.data
         };
         return new BaseResponse<KarizmahTraceIdResponse>
         {
@@ -219,7 +224,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahOrderBuyResponseDto>> BuyOrderAsync(KarizmahOrderBuyRequestDto req, CancellationToken ct)
     {
         var traceId = await GenerateTraceIdAsync(ct);
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = _options.Value.BuyEndpoint;
 
@@ -244,7 +249,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
             coverageAliasName = req.coverageAliasName,
             description = req.description,
             amount = req.amount,
-            callbackUrl = _options.Value.CallbackBaseUrl,
+            callbackUrl = req.callbackUrl,
             phoneNumber = req.phoneNumber,
             traceId = traceId.data.traceId
         };
@@ -284,7 +289,15 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
             };
         }
 
-        var dto = new KarizmahOrderBuyResponseDto { };
+        var dto = new KarizmahOrderBuyResponseDto
+        {
+
+            birthDate = req.birthDate,
+            traceId = traceId.data.traceId,
+            nationalCode = req.nationalCode,
+            amount = req.amount,
+
+        };
         return new BaseResponse<KarizmahOrderBuyResponseDto>
         {
             isSuccess = true,
@@ -296,7 +309,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahIncreaseCapitalDirectResponseDto>> IncreaseCapitalDirectAsync(KarizmahIncreaseCapitalDirectRequestDto req, CancellationToken ct)
     {
         var traceId = await GenerateTraceIdAsync(ct);
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = _options.Value.IncreaseCapitalDirectEndpoint;
 
@@ -372,7 +385,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahIncreaseResponseDto>> IncreaseAsync(KarizmahIncreaseRequestDto req, CancellationToken ct)
     {
         var traceId = await GenerateTraceIdAsync(ct);
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = _options.Value.IncreaseCapitalDirectEndpoint;
 
@@ -447,7 +460,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahDecreaseDirectResponseDto>> DecreaseDirectAsync(KarizmahDecreaseDirectRequestDto req, CancellationToken ct)
     {
         var traceId = await GenerateTraceIdAsync(ct);
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = _options.Value.DecreaseDirectEndpoint;
 
@@ -522,7 +535,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
     public async Task<BaseResponse<KarizmahDecreaseVerifyResponseDto>> DecreaseVerifyAsync(KarizmahDecreaseVerifyRequestDto req, CancellationToken ct)
     {
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = _options.Value.DecreaseVerifyEndpoint;
 
@@ -583,7 +596,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     {
         //orderId اینو از سرویس برداشت غیر مستقیم ذخیره کردیم در دیتابیس این تو قسمت اپ میخوتیم و ارسال میکتیم به اینجا
         var client = _http.CreateClient("KarizmahApi");
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = $"/api/order/decrease/{req.orderId}/resend-otp";
 
@@ -624,7 +637,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahSwapResponseDto>> SwapAsync(KarizmahSwapRequestDto req, CancellationToken ct)
     {
         var traceId = await GenerateTraceIdAsync(ct);
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var url = _options.Value.SwapEnspoint;
 
@@ -695,7 +708,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     {
         var client = _http.CreateClient("KarizmahApi");
 
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var query = new Dictionary<string, string>();
 
@@ -795,7 +808,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahOrderResponseDto>> GetOrder(KarizmahOrderRequestDto req, CancellationToken ct)
     {
         var client = _http.CreateClient("KarizmahApi");
-        var token = await GetAccessTokenAsync(ct);
+        var token = await GetAccessTokenChindxAsync(ct);
 
         var query = new Dictionary<string, string>();
 
@@ -903,7 +916,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahOrderRevokableAmountResponseDto>> GetOrderRevokableAmount(KarizmahOrderRevokableAmountRequestDto req, CancellationToken ct)
     {
         var client = _http.CreateClient("KarizmahApi");
-        var tokenRes = await GetAccessTokenAsync(ct);
+        var tokenRes = await GetAccessTokenChindxAsync(ct);
 
         var endpoint = _options.Value.RevokableAmountEndpoint;
         var url = QueryHelpers.AddQueryString(endpoint, "PolicyId", req.policyId.ToString());
@@ -960,7 +973,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
     public async Task<BaseResponse<KarizmahPolicyHistoryResponseDto>> GetPolicyHistory(KarizmahPolicyHistoryRequestDto req, CancellationToken ct)
     {
         var client = _http.CreateClient("KarizmahApi");
-        var tokenRes = await GetAccessTokenAsync(ct);
+        var tokenRes = await GetAccessTokenChindxAsync(ct);
 
         var endpoint = $"/api/policy/{req.policyId}/history";
 
@@ -1034,11 +1047,11 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         if (req is null)
             throw new ArgumentNullException(nameof(req));
         var queryString = BuildQueryString(req);
-        var url = _options.Value.BaseUrlApi + $"chindx/v2.0/indexValue{queryString}";
+        var url = _options.Value.BaseUrlApi + $"/chindx/v2.0/indexValue{queryString}";
         using var message = new HttpRequestMessage(HttpMethod.Get, url);
 
         message.Headers.Authorization =
-            new AuthenticationHeaderValue("Bearer",tokenRes.AccessToken);
+            new AuthenticationHeaderValue("Bearer", tokenRes.AccessToken);
 
         message.Headers.Add("x-agent-id", _options.Value.agentId);
         message.Headers.Accept.Clear();
@@ -1054,10 +1067,10 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         if (!response.IsSuccessStatusCode)
         {
             var code = (int)response.StatusCode;
-            _logger.LogError(
-                $"پاسخ ناموفق از سرویس کاریزما برای Index طلا. Code = {code}, Content = {body}",code, body);
+            _logger?.LogError(
+                $"در فراخوانی سرویس کاریزما خطا رخ داد Code = {code}, Content = {body}", code, body);
 
-            throw new ExternalServiceException( $"در فراخوانی سرویس Index طلا کاریزما خطا رخ داد.", (int)response.StatusCode, body);
+            throw new ExternalServiceException($"در فراخوانی سرویس کاریزما خطا رخ داد.", (int)response.StatusCode, body);
         }
 
         ChindxIndexValueResponseDto? result;
@@ -1067,15 +1080,15 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "خطا در Deserialize پاسخ سرویس Index طلا کاریزما. Content = {Content}", body);
+            _logger?.LogError(ex,
+                " در فراخوانی سرویس کاریزما خطا رخ دادContent = {Content}", body);
             throw;
         }
 
         if (result is null)
         {
-            _logger.LogError( "پاسخ سرویس Index طلا کاریزما خالی یا نامعتبر بود. Content = {Content}", body);
-            throw new ExternalServiceException( "پاسخ سرویس Index طلا کاریزما نامعتبر است.",(int)response.StatusCode,body);
+            _logger?.LogError("پاسخ سرویس کاریزما خالی یا نامعتبر بود. Content = {Content}", body);
+            throw new ExternalServiceException("در فراخوانی سرویس کاریزما خطا رخ داد.", (int)response.StatusCode, body);
         }
 
         return result;
@@ -1149,7 +1162,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
         if (!resp.IsSuccessStatusCode)
         {
-            _logger.LogError(
+            _logger?.LogError(
                 "Karizmah chindx token endpoint failed. Status={StatusCode}, Body={Body}",
                 (int)resp.StatusCode, json);
 

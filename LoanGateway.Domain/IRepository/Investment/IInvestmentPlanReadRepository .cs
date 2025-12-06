@@ -12,5 +12,25 @@ namespace LoanService.Domain.IRepository.Investment
         Task<bool> UpdateAsync(InvestmentPlans plan, CancellationToken ct);
         Task<bool> DeletAsync(InvestmentPlans plan, CancellationToken ct);
         Task<InvestmentPlans?> GetPlanWithMetaAsync(InvestmentPlanType planType, CancellationToken ct);
+
+        Task UpsertDailyHistoryAsync(InvestmentPlanType plan, IReadOnlyList<InvestmentIndexHistory> points, CancellationToken ct);
+
+        Task<IReadOnlyList<InvestmentIndexHistory>> GetRangeAsync(InvestmentPlanType plan, DateTime fromDateUtc, DateTime toDateUtc, CancellationToken ct);
+
+        Task<InvestmentAccount?> GetByNationalCodeAndPlanAsync(string nationalCode,InvestmentPlanType planType, CancellationToken ct);
+
+        Task AddAsync(InvestmentAccount account, CancellationToken ct);
+
+
+        Task<DateTime?> GetLastDateAsync(
+            InvestmentPlanType plan, CancellationToken ct);
+
+        Task DeleteOlderThanAsync(
+            InvestmentPlanType plan, DateTime cutoffUtc, CancellationToken ct);
+        Task<InvestmentPlans> GetPlanAsync(string title, CancellationToken ct);
+
+        Task<List<InvestmentIndexHistory>> GetLatestPointsAsync(InvestmentPlanType planType,int count, CancellationToken ct);
+
+
     }
 }
