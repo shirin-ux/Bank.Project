@@ -175,11 +175,10 @@ using (var scope = app.Services.CreateScope())
         "10 17 * * *");
 }
 // ?? Middleware
-if (app.Environment.IsDevelopment())
-{
+
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+
 
 app.UseHttpsRedirection();
 app.UseAuthorization();

@@ -3,7 +3,7 @@ using LoanService.Domain.Exceptions;
 
 namespace LoanService.Domain.Entities.Investment;
 
-//نماینده حساب سرمایه گذاری
+
 public class InvestmentAccount : BaseEntity
 {
 
@@ -11,20 +11,18 @@ public class InvestmentAccount : BaseEntity
 
     private InvestmentAccount() { }
 
-    private InvestmentAccount(long? policyId,string? nationalCode,string? birthDate, InvestmentPlanType? planCode, string? traceId)
+    private InvestmentAccount(Guid? policyId,string? nationalCode,string? birthDate, InvestmentPlanType? planCode, string? traceId)
     {
         NationalCode = nationalCode;
         BirthDate = birthDate;
         PlanCode = planCode;
         LastTraceId = traceId;
-        PolicyId = policyId;
-        // ثبت رویداد "ایجاد حساب" به‌عنوان یک Operation
+        ProviderPolicyId = policyId;
         var op = InvestmentOperation.CreateAccount(policyId, traceId, "ایجاد حساب سرمایه‌گذاری");
         _operations.Add(op);
     }
 
-
-    public long? PolicyId { get; private set; }
+    public Guid? ProviderPolicyId { get; private set; }
 
     public string? NationalCode { get; private set; } = default!;
     public string? BirthDate { get; private set; }
@@ -67,7 +65,7 @@ public class InvestmentAccount : BaseEntity
     /// </summary>
     public static InvestmentAccount CreateNew(
  
-        long? policyId,
+        Guid? policyId,
         string? nationalCode,
         string? birthDate,
         InvestmentPlanType? planCode,
@@ -76,7 +74,7 @@ public class InvestmentAccount : BaseEntity
     {
 
 
-        if (policyId <= 0)
+        if (string.IsNullOrEmpty(policyId.ToString()))
             throw new LogicException("PolicyId نامعتبر است.");
 
         if (string.IsNullOrWhiteSpace(nationalCode))
@@ -88,7 +86,7 @@ public class InvestmentAccount : BaseEntity
         if (string.IsNullOrWhiteSpace(traceId))
             throw new LogicException(" برای ایجاد حساب  شناسه رهگیری الزامی است.");
 
-        var acc = new InvestmentAccount( policyId,  nationalCode,  birthDate,  planCode,  traceId);
+        var acc = new InvestmentAccount(policyId,  nationalCode,  birthDate,  planCode,  traceId);
 
         return acc;
     }
@@ -115,7 +113,7 @@ public class InvestmentAccount : BaseEntity
             throw new LogicException("شماره مرجع پرداخت (receiptNumber) الزامی است.");
 
         var op = InvestmentOperation.CreateIncreaseDirect(
-            PolicyId,
+            ProviderPolicyId,
             amount,
             traceId,
             receiptDate,
@@ -148,7 +146,7 @@ public class InvestmentAccount : BaseEntity
         EnsureTraceIdIsUnique(traceId);
 
         var op = InvestmentOperation.CreateIncreaseOnlineRequested(
-            PolicyId,
+            ProviderPolicyId,
             amount,
             traceId,
             description);
@@ -210,7 +208,7 @@ public class InvestmentAccount : BaseEntity
         if (amount > RevokableAmount)
             throw new LogicException("مبلغ برداشت‌شده بیشتر از مبلغ قابل برداشت (revokableAmount) است.");
 
-        var op = InvestmentOperation.CreateDecreaseDirect(PolicyId, amount,traceId,receiptDate,description);
+        var op = InvestmentOperation.CreateDecreaseDirect(ProviderPolicyId, amount,traceId,receiptDate,description);
 
         _operations.Add(op);
         TotalWithdrawn += amount;

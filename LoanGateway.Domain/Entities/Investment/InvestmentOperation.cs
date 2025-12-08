@@ -6,7 +6,7 @@ namespace LoanService.Domain.Entities.Investment
     {
         private InvestmentOperation() { }
 
-        public long? PolicyId { get; private set; }
+        public Guid? PolicyId { get; private set; }
         public string? TraceId { get; private set; } = default!;
         public InvestmentOperationType Type { get; private set; }
         public InvestmentOrderState Status { get; private set; }
@@ -17,7 +17,7 @@ namespace LoanService.Domain.Entities.Investment
         public string? ReceiptNumber { get; private set; }
         public string? Description { get; private set; }
 
-        public static InvestmentOperation CreateIncreaseDirect(long? policyId, decimal amount,string traceId,DateTime receiptDate,string receiptNumber, string? description)
+        public static InvestmentOperation CreateIncreaseDirect(Guid? policyId, decimal amount,string traceId,DateTime receiptDate,string receiptNumber, string? description)
         {
             return new InvestmentOperation
             {
@@ -34,7 +34,7 @@ namespace LoanService.Domain.Entities.Investment
             };
         }
 
-        public static InvestmentOperation CreateIncreaseOnlineRequested( long? policyId, decimal amount,string traceId, string? description)
+        public static InvestmentOperation CreateIncreaseOnlineRequested( Guid? policyId, decimal amount,string traceId, string? description)
         {
             return new InvestmentOperation
             {
@@ -50,7 +50,7 @@ namespace LoanService.Domain.Entities.Investment
         }
 
 
-        public static InvestmentOperation CreateDecreaseDirect(long? policyId,decimal amount,string traceId,DateTime receiptDate,string? description)
+        public static InvestmentOperation CreateDecreaseDirect(Guid? policyId,decimal amount,string traceId,DateTime receiptDate,string? description)
         {
             return new InvestmentOperation
             {
@@ -66,7 +66,7 @@ namespace LoanService.Domain.Entities.Investment
             };
         }
 
-        public static InvestmentOperation CreateAccount( long? policyId, string? traceId,string? description = null)
+        public static InvestmentOperation CreateAccount( Guid? policyId, string? traceId,string? description = null)
         {
             return new InvestmentOperation
             {

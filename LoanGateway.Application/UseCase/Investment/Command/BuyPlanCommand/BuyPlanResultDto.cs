@@ -8,9 +8,7 @@ namespace LoanService.Application.UseCase.Investment.Command.BuyPlanCommand
         public string NationalCode { get; set; }
         public string BirthDate { get; set; }
 
-        public long PolicyId { get; set; }
-        public long KarizmahOrderId { get; set; }
-
+        public Guid ProviderPolicyId { get; set; }
 
         public decimal GramPrice { get; set; }
         public decimal EstimatedGrams { get; set; }
@@ -18,13 +16,14 @@ namespace LoanService.Application.UseCase.Investment.Command.BuyPlanCommand
 
         public InvestmentPlanType PlanType { get; set; }
 
-        public decimal Grams { get; set; }              // مقدار طلای خریداری شده
+        public decimal Grams { get; set; }             
 
-        public decimal DailyChangePercent { get; set; } // همانی که در کارت سبز نشان می‌دهی
+        public decimal DailyChangePercent { get; set; }
 
 
-        public long OrderId { get; set; }               // شناسه سفارش کاریزما (اگر در پاسخ داری)
-        public long TraceId { get; set; }               // TraceID یکتای سفارش
+        public long OrderId { get; set; }            
+        public long TraceId { get; set; }           
+        public bool IsRepeated { get; set; }  
         public string ProviderStatus { get; set; }
     }
 

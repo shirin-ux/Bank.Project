@@ -215,25 +215,27 @@ public class KarizmahInvestmentProvider(
     {
 
 
-        var req = new KarizmahOrderBuyRequestDto
+        var req = new KarizmahCreatePolicyWithoutInitialPaymentRequestDto
         {
-            amount = cmd.AmountRial,
             birthDate = cmd.BirthDate.ToKarizmahBirthDate(),
-            callbackUrl = cmd.CallbackUrl,
             planTypeAliasName = cmd.PlanType.ToString(),
             nationalCode = cmd.NationalCode,
             address=cmd.PaymentUrl
         };
-        var resKarizmah =await _client.BuyOrderAsync(req, ct);
+        var resKarizmah =await _client.CreatePolicyWithoutInitialPaymentAsync(req, ct);
         return new BuyPlanResultDto
         {
             AmountRial = cmd.AmountRial,
             TraceId = resKarizmah.data.traceId,
             PlanType = cmd.PlanType,
-            NationalCode = resKarizmah.data.nationalCode,
-            BirthDate=resKarizmah.data.birthDate
-           
+            ProviderPolicyId = resKarizmah.data.id,
+            IsRepeated=resKarizmah.data.isRepeated
         };
 
+    }
+
+    public Task<BuyPlanResultDto> GetRevokableAmountAsync(BuyPlanCommand cmd, CancellationToken ct)
+    {
+        throw new NotImplementedException();
     }
 }

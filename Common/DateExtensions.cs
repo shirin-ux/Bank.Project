@@ -1,9 +1,12 @@
-﻿using LoanService.Domain.Exceptions;
+﻿using LoanGateway.Auth.Domain.Enum;
+using LoanService.Domain.Exceptions;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Common
 {
- 
+
 
     public static class DateExtensions
     {
@@ -27,6 +30,41 @@ namespace Common
 
             return gregorian.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
+        public static string GenerateOtpCode(int length)
+        {
+            var random = RandomNumberGenerator.GetInt32((int)Math.Pow(10, length - 1),
+                                                        (int)Math.Pow(10, length));
+            return random.ToString(CultureInfo.InvariantCulture);
+        }
+
+        public static byte[] Hash(string code, string phoneNumber, OtpPurpose purpose)
+        {
+
+            var input = $"{code}|{phoneNumber}|{(byte)purpose}";
+            using var sha = SHA256.Create();
+            return sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+        }
+
+        public static bool Verify(string code, string phoneNumber, OtpPurpose purpose, byte[] storedHash)
+        {
+            var newHash = Hash(code, phoneNumber, purpose);
+            return ConstantTimeEquals(newHash, storedHash);
+        }
+
+        private static bool ConstantTimeEquals(byte[] a, byte[] b)
+        {
+            if (a.Length != b.Length) return false;
+
+            var diff = 0;
+            for (int i = 0; i < a.Length; i++)
+            {
+                diff |= a[i] ^ b[i];
+            }
+
+            return diff == 0;
+        }
+
+
     }
 
 }

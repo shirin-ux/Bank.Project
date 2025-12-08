@@ -65,7 +65,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
         message.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-        var client = _http.CreateClient("KarizmahApi");
+        var client = _http.CreateClient();
         using var response = await client.SendAsync(message, ct);
 
 
@@ -95,7 +95,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         var dto = new KarizmahCreatePolicyWithoutInitialPaymentResponseDto
         {
             traceId = bankResponse.data.traceId,
-            policyId = bankResponse.data.policyId,
+            id = bankResponse.data.id,
             isRepeated = bankResponse.data.isRepeated
         };
         return new BaseResponse<KarizmahCreatePolicyWithoutInitialPaymentResponseDto>
@@ -262,7 +262,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
 
         message.Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-        var client = _http.CreateClient("KarizmahApi");
+        var client = _http.CreateClient();
         using var response = await client.SendAsync(message, ct);
 
 
@@ -1047,7 +1047,7 @@ public class KarizmahService(IHttpClientFactory http, IOptions<KarizmahInvestmen
         if (req is null)
             throw new ArgumentNullException(nameof(req));
         var queryString = BuildQueryString(req);
-        var url = _options.Value.BaseUrlApi + $"/chindx/v2.0/indexValue{queryString}";
+        var url = _options.Value.BaseUrlApi + $"chindx/v2.0/indexValue{queryString}";
         using var message = new HttpRequestMessage(HttpMethod.Get, url);
 
         message.Headers.Authorization =

@@ -11,5 +11,6 @@ namespace LoanService.Application.Contracts
         Task<PlanPriceInfoDto> GetCurrentPriceAsync( InvestmentPlanType planType, CancellationToken ct);
 
         Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd, CancellationToken ct);
+        Task<BuyPlanResultDto> GetRevokableAmountAsync(BuyPlanCommand cmd, CancellationToken ct);
     }
 }

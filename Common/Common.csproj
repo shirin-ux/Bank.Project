@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LoanGateway.Auth.Domain\LoanGateway.Auth.Domain.csproj" />
     <ProjectReference Include="..\LoanGateway.Domain\LoanService.Domain.csproj" />
   </ItemGroup>
 

@@ -1234,6 +1234,16 @@
           "lib/netstandard1.3/System.Xml.XDocument.dll": {}
         }
       },
+      "LoanGateway.Auth.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/LoanGateway.Auth.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/LoanGateway.Auth.Domain.dll": {}
+        }
+      },
       "LoanService.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -4166,6 +4176,11 @@
         "system.xml.xdocument.nuspec"
       ]
     },
+    "LoanGateway.Auth.Domain/1.0.0": {
+      "type": "project",
+      "path": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj",
+      "msbuildProject": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj"
+    },
     "LoanService.Domain/1.0.0": {
       "type": "project",
       "path": "../LoanGateway.Domain/LoanService.Domain.csproj",
@@ -4174,6 +4189,7 @@
   },
   "projectFileDependencyGroups": {
     "net8.0": [
+      "LoanGateway.Auth.Domain >= 1.0.0",
       "LoanService.Domain >= 1.0.0",
       "Microsoft.AspNetCore.Mvc.Core >= 2.3.0"
     ]
@@ -4210,6 +4226,9 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
+            "D:\\ProjectBank\\src\\LoanGateway.Auth.Domain\\LoanGateway.Auth.Domain.csproj": {
+              "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Auth.Domain\\LoanGateway.Auth.Domain.csproj"
+            },
             "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj": {
               "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj"
             }

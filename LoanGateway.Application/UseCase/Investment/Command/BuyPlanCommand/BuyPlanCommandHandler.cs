@@ -60,7 +60,7 @@ public sealed class BuyPlanCommandHandler
  
         var account = InvestmentAccount.CreateNew(
            
-            policyId: orderRes.PolicyId,
+            policyId: orderRes.ProviderPolicyId,
             nationalCode: orderRes.NationalCode,
             birthDate:orderRes.BirthDate,  
             planCode: plan.PlanType,
@@ -76,7 +76,7 @@ public sealed class BuyPlanCommandHandler
             GramPrice = gramPrice,
             Grams = grams,
             DailyChangePercent = priceInfo.DailyChangePercent,
-            PolicyId = orderRes.PolicyId,
+            ProviderPolicyId = orderRes.ProviderPolicyId,
             OrderId = orderRes.OrderId,
             TraceId = orderRes.TraceId,
         };

@@ -1920,6 +1920,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "LoanGateway.Auth.Domain": "1.0.0",
           "LoanService.Domain": "1.0.0",
           "Microsoft.AspNetCore.Mvc.Core": "2.3.0"
         },
@@ -1945,6 +1946,16 @@
         },
         "runtime": {
           "bin/placeholder/Karizmah.Provider.dll": {}
+        }
+      },
+      "LoanGateway.Auth.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/LoanGateway.Auth.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/LoanGateway.Auth.Domain.dll": {}
         }
       },
       "LoanService.Application/1.0.0": {
@@ -5610,6 +5621,11 @@
       "type": "project",
       "path": "../Karizmah.Provider/Karizmah.Provider.csproj",
       "msbuildProject": "../Karizmah.Provider/Karizmah.Provider.csproj"
+    },
+    "LoanGateway.Auth.Domain/1.0.0": {
+      "type": "project",
+      "path": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj",
+      "msbuildProject": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj"
     },
     "LoanService.Application/1.0.0": {
       "type": "project",

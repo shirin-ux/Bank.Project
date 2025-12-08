@@ -1433,6 +1433,7 @@
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
+          "LoanGateway.Auth.Domain": "1.0.0",
           "LoanService.Domain": "1.0.0",
           "Microsoft.AspNetCore.Mvc.Core": "2.3.0"
         },
@@ -1441,6 +1442,16 @@
         },
         "runtime": {
           "bin/placeholder/Common.dll": {}
+        }
+      },
+      "LoanGateway.Auth.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/LoanGateway.Auth.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/LoanGateway.Auth.Domain.dll": {}
         }
       },
       "LoanService.Domain/1.0.0": {
@@ -4357,6 +4368,11 @@
       "type": "project",
       "path": "../Common/Common.csproj",
       "msbuildProject": "../Common/Common.csproj"
+    },
+    "LoanGateway.Auth.Domain/1.0.0": {
+      "type": "project",
+      "path": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj",
+      "msbuildProject": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj"
     },
     "LoanService.Domain/1.0.0": {
       "type": "project",
