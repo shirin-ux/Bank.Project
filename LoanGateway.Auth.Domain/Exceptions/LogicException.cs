@@ -1,15 +1,16 @@
-﻿namespace LoanGateway.Auth.Domain.Exceptions;
+﻿using System.Net;
 
-public class LogicException : Exception
+namespace LoanGateway.Auth.Domain.Exceptions;
+
+public class LogicException : BaseAppException
 {
-    public string? Code { get; }
-
-    public LogicException(string message):base(message)
+    public LogicException(string message, int? errorCode = AppErrorCodes.LogicError, object? details = null,Exception? innerException = null)
+           : base(
+               message,
+               HttpStatusCode.BadRequest,
+               errorCode,
+               details,
+               innerException)
     {
-
-    }
-    public LogicException(string code,string message):base(message)
-    {
-        Code = code;
     }
 }

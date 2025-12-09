@@ -10,21 +10,23 @@ public class User : AggregateRoot
     private User(Guid id, string mobile)
     {
         Id = id;
-        Mobile = mobile;
+        MobileNumber = mobile;
         IsMobileVerified = false;
+        IsProfileCompleted = false;
         IsKycCompleted = false;
         KycLevel = KycLevel.None;
         IsActive = true;
         CreatedAtUtc = DateTime.UtcNow;
     }
-    public string Mobile { get; private set; } = default!;
-    public string? NationalCode { get; private set; }
-    public string? FirstName { get; private set; }
-    public string? LastName { get; private set; }
-    public string? Email { get; private set; }
-    public bool IsMobileVerified { get; private set; }
+    public string MobileNumber { get; set; } = default!;
+    public string? NationalCode { get; set; }
+    public DateTime? BirthDate { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public bool IsMobileVerified { get; set; }
     public bool IsKycCompleted { get; private set; }
-    public bool IsActive { get; private set; }
+    public bool IsProfileCompleted { get; set; }
+    public bool IsActive { get;  set; }
     public KycLevel KycLevel { get; private set; }
     public string? UidUserId { get; private set; }
     public DateTime? LastLoginAtUtc { get; private set; }
@@ -42,13 +44,6 @@ public class User : AggregateRoot
     {
         FirstName = firstName;
         LastName = lastName;
-        Touch();
-    }
-
-
-    public void SetEmail(string? email)
-    {
-        Email = email;
         Touch();
     }
 

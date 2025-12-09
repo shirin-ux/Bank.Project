@@ -41,22 +41,33 @@ public sealed class UserOtpRepository : IUserOtpRepository
   
     }
 
-    public async Task<OtpCode> GetActiveAsync(string phoneNumber,OtpPurpose purpose,DateTime utcNow,CancellationToken ct = default)
+    public async Task<OtpCode> GetActiveAsync(string phoneNumber,OtpPurpose purpose,DateTime nowUtc,CancellationToken ct = default)
     {
-        const string sql = @"SELECT TOP(1) * FROM [dbo].[OtpCode] WHERE PhoneNumber = @PhoneNumber AND Purpose = @Purpose AND IsDeleted = 0 AND ConsumedAtUtc IS NULL
-                                                                                                                    AND ExpiresAtUtc > @NowUtc ORDER BY CreatedAtUtc DESC;";
+        try
+        {
+            const string sql = @"SELECT TOP(1) * FROM [dbo].[OtpCode] WHERE PhoneNumber = @phoneNumber AND Purpose = @purpose AND IsDeleted = 0 AND ConsumedAtUtc IS NULL
+                                                                                                                    AND ExpiresAtUtc > @nowUtc ORDER BY CreatedAtUtc DESC;";
 
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        return await conn.QueryFirstOrDefaultAsync<OtpCode>(
-            new CommandDefinition(
-                sql,
-                new
-                {
-                    PhoneNumber = phoneNumber,
-                    Purpose = (byte)purpose,
-                    NowUtc = utcNow
-                },
-                cancellationToken: ct));
+            await using var conn = _transactionDBUtility.GetSqlConnection();
+            var test= await conn.QueryFirstOrDefaultAsync<OtpCode>(
+                new CommandDefinition(
+                    sql,
+                    new
+                    {
+                        PhoneNumber = phoneNumber,
+                        Purpose = (byte)purpose,
+                        NowUtc = nowUtc
+                    },
+                    cancellationToken: ct));
+            return test;
+        }
+        catch (Exception ex)
+        {
+
+            throw new Exception(ex.Message) ;
+        }
+
+ 
     }
 
     public async Task InsertAsync(OtpCode otp, CancellationToken ct = default)
@@ -68,7 +79,7 @@ public sealed class UserOtpRepository : IUserOtpRepository
                        VALUES
                        (@Id, @UserId, @PhoneNumber, @Purpose, @CodeHash, @ExpiresAtUtc, @CreatedAtUtc,@ConsumedAtUtc,@FailedAttempts, @MaxAttempts, @RequestIp,@UserAgent,@IsDeleted);";
 
-
+  
         await using var conn = _transactionDBUtility.GetSqlConnection();
         await conn.ExecuteAsync(new CommandDefinition(sql, new
         {
@@ -87,6 +98,20 @@ public sealed class UserOtpRepository : IUserOtpRepository
             otp.IsDeleted
         }, cancellationToken: ct));
     }
+
+    public  async Task MarkConsumedAsync(Guid id, DateTime consumedAtUtc, CancellationToken ct)
+    {
+        const string sql = @"UPDATE dbo.OtpCode SET ConsumedAtUtc = @ConsumedAtUtc WHERE Id = @Id;";
+        await using var conn = _transactionDBUtility.GetSqlConnection();
+        await conn.OpenAsync(ct);
+
+        await conn.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                new { Id = id, ConsumedAtUtc = consumedAtUtc },
+                cancellationToken: ct));
+    }
+    
 
     public async Task UpdateAsync(OtpCode otp, CancellationToken ct = default)
     {
@@ -119,5 +144,25 @@ public sealed class UserOtpRepository : IUserOtpRepository
                 },
                 cancellationToken: ct));
     }
+
+    public async Task UpdateFailedAttemptsAsync(Guid id, int failedAttempts, CancellationToken ct)
+    {
+        const string sql = @"UPDATE dbo.OtpCode SET FailedAttempts = @FailedAttempts WHERE Id = @Id;";
+        await using var conn = _transactionDBUtility.GetSqlConnection();
+
+        await conn.OpenAsync(ct);
+
+        await conn.ExecuteAsync(
+            new CommandDefinition(
+                sql,
+                new { Id = id, FailedAttempts = failedAttempts },
+                cancellationToken: ct));
+    }
+
+    public bool Verify(string code, string phoneNumber, int purpose, byte[] storedHash)
+    {
+        throw new NotImplementedException();
+    }
 }
+
 

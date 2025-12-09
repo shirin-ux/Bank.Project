@@ -5,15 +5,16 @@ public sealed class VerifyOtpCommandValidator : AbstractValidator<VerifyOtpComma
 {
     public VerifyOtpCommandValidator()
     {
-        RuleFor(x => x.PhoneNumber)
-            .NotEmpty()
-            .MaximumLength(20);
+        RuleFor(x => x.MobileNumber)
+                   .NotEmpty().WithMessage("شماره موبایل الزامی است.")
+                   .MaximumLength(20)
+                   .Matches(@"^09\d{9}$").WithMessage("فرمت شماره موبایل نامعتبر است.");
 
         RuleFor(x => x.Code)
-            .NotEmpty()
-            .Length(4, 8) // بسته به طول کد
-            .Matches(@"^\d+$")
-            .WithMessage("کد باید فقط عدد باشد.");
+            .NotEmpty().WithMessage("کد تأیید الزامی است.")
+            .Length(4, 8).WithMessage("طول کد تأیید نامعتبر است.")
+            .Matches(@"^\d+$").WithMessage("کد تأیید باید عددی باشد.");
+
 
         RuleFor(x => x.Purpose)
             .IsInEnum();

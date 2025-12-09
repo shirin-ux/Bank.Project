@@ -1,7 +1,10 @@
 ﻿using Common;
+using LoanGateway.Auth.Application.UseCase.Command.CompleteProfile;
 using LoanGateway.Auth.Application.UseCase.Command.MobileOwner;
 using LoanGateway.Auth.Application.UseCase.Command.RequestOtp;
+using LoanGateway.Auth.Application.UseCase.Command.VerfiyOtp;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LoanGateway.Auth.Api.Controllers
@@ -14,7 +17,14 @@ namespace LoanGateway.Auth.Api.Controllers
         private readonly ILogger<AuthController> _logger = logger;
 
         [HttpPost("createOTP")]
-        public async Task<IActionResult> CreateOTP(RequestOtpCommandDto cmd, CancellationToken ct)
+        public async Task<IActionResult> CreateOTP([FromBody] RequestOtpCommandDto cmd, CancellationToken ct)
+        {
+            var result = await _mediator.Send(cmd, ct);
+
+            return ToHttp(result);
+        }
+        [HttpPost("verfiyOTP")]
+        public async Task<IActionResult> VerfiyOTP([FromBody] VerifyOtpCommandDto cmd, CancellationToken ct)
         {
             var result = await _mediator.Send(cmd, ct);
 
@@ -30,31 +40,14 @@ namespace LoanGateway.Auth.Api.Controllers
             return ToHttp(result);
         }
 
-        //[HttpGet("loginUser")]
-        //public async Task<IActionResult> LoginUser(CancellationToken ct)
-        //{
-        //    var result = await _mediator.Send(new(), ct);
+        [Authorize] // حتماً با JWT
+        [HttpPost("completeprofile")]
+        public async Task<IActionResult> CompleteProfile( [FromBody] CompleteProfileCommand cmd,CancellationToken ct)
+        {
+           var result= await _mediator.Send(cmd, ct);
 
-        //    return ToHttp(result);
-        //}
-
-        //[HttpGet("getToken")]
-        //public async Task<IActionResult> GetToken(CancellationToken ct)
-        //{
-        //    var result = await _mediator.Send(new(), ct);
-
-        //    return ToHttp(result);
-        //}
-
-
-        //[HttpGet("refreshToken")]
-        //public async Task<IActionResult> RefreshToken(CancellationToken ct)
-        //{
-        //    var result = await _mediator.Send(new(), ct);
-
-        //    return ToHttp(result);
-        //}
-
+            return ToHttp(result);
+        }
 
 
 

@@ -56,7 +56,7 @@ public sealed class RequestOtpCommandHandler : IRequestHandler<RequestOtpCommand
 
         var otp = new OtpCode
         {
-
+            Id= Guid.NewGuid(),
             UserId = null, 
             PhoneNumber = request.PhoneNumber,
             Purpose = request.Purpose,

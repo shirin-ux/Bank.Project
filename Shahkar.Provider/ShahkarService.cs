@@ -27,20 +27,20 @@ namespace Shahkar.Provider
             {
                 NationalId = nationalId,
                 MobileNumber = mobileNumber,
-                //RequestContext =RequestContext
-                //{
-                //    ApiInfo = new MobileOwnerApiInfoDto
-                //    {
-                //        BusinessId = _options.Value.BusinessId,
-                //        BusinessToken = _options.Value.BusinessToken
-                //    }
-                //}
+                RequestContext =new{
+                    ApiInfo=new
+                    {
+                        BusinessId = _options.Value.BusinessId,
+                        BusinessToken = _options.Value.BusinessToken
+                    }
+                }
+                
             };
-            var url = "/api/inquiry/mobile/owner/v2";
+            var url = _options.Value.BaseUrl+"/api/inquiry/mobile/owner/v2";
 
             using var message = new HttpRequestMessage(HttpMethod.Post, url);
 
-            var json = JsonSerializer.Serialize(message, new JsonSerializerOptions
+            var json = JsonSerializer.Serialize(req, new JsonSerializerOptions
             {
                 Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Arabic),
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase

@@ -2120,6 +2120,10 @@
       "LoanGateway.Auth.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Microsoft.AspNetCore.Http.Abstractions": "2.3.0",
+          "Microsoft.Data.SqlClient": "6.1.2"
+        },
         "compile": {
           "bin/placeholder/LoanGateway.Auth.Domain.dll": {}
         },
