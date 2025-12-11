@@ -15,8 +15,8 @@ public sealed class CompleteProfileCommandValidator : AbstractValidator<Complete
             .Length(10).WithMessage("طول کدملی باید 10 رقم باشد.")
             .Matches(@"^\d{10}$").WithMessage("کدملی باید فقط عدد باشد.");
 
-        RuleFor(x => x.BirthDate)
-            .LessThan(DateTime.Today).WithMessage("تاریخ تولد نامعتبر میباشد.");
+        //RuleFor(x => x.BirthDate)
+        //    .LessThan(DateTime.Today).WithMessage("تاریخ تولد نامعتبر میباشد.");
 
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("نام الزامی است.")

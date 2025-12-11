@@ -40,7 +40,7 @@ namespace LoanGateway.Auth.Api.Controllers
             return ToHttp(result);
         }
 
-        [Authorize] // حتماً با JWT
+        [Authorize] 
         [HttpPost("completeprofile")]
         public async Task<IActionResult> CompleteProfile( [FromBody] CompleteProfileCommand cmd,CancellationToken ct)
         {
@@ -48,9 +48,6 @@ namespace LoanGateway.Auth.Api.Controllers
 
             return ToHttp(result);
         }
-
-
-
 
 
         // -------------------- Helper: Result → IActionResult --------------------

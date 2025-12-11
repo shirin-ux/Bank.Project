@@ -17,70 +17,78 @@ namespace LoanGateway.Auth.Infrastructure.Communication;
 
 public sealed class JwtTokenService : IJwtTokenService
 {
-    private readonly JwtOptions _options;
+    private readonly IOptions<JwtOptions> _options;
     private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-    public JwtTokenService(
-        IOptions<JwtOptions> options,
-        IRefreshTokenRepository refreshTokenRepository)
+    public JwtTokenService(IOptions<JwtOptions> options,IRefreshTokenRepository refreshTokenRepository)
     {
-        _options = options.Value;
+        _options = options;
         _refreshTokenRepository = refreshTokenRepository;
     }
 
     public async Task<JwtTokenPair> GenerateTokensAsync(User user, CancellationToken ct)
     {
-        var now = DateTime.UtcNow;
-        var jwtId = Guid.NewGuid();
-
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
+        try
         {
+            var now = DateTime.UtcNow;
+            var jwtId = Guid.NewGuid();
+
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Value.SigningKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new[]
+            {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, jwtId.ToString()),
                 new Claim(JwtRegisteredClaimNames.PhoneNumber, user.MobileNumber),
                 new Claim("isActive", user.IsActive ? "true" : "false")
             };
 
-        var accessTokenExpires = now.AddMinutes(_options.AccessTokenMinutes);
+            var accessTokenExpires = now.AddMinutes(_options.Value.AccessTokenMinutes);
 
-        var token = new JwtSecurityToken(
-            issuer: _options.Issuer,
-            audience: _options.Audience,
-            claims: claims,
-            notBefore: now,
-            expires: accessTokenExpires,
-            signingCredentials: creds);
+            var token = new JwtSecurityToken(
+                issuer: _options.Value.Issuer,
+                audience: _options.Value.Audience,
+                claims: claims,
+                notBefore: now,
+                expires: accessTokenExpires,
+                signingCredentials: creds);
 
-        var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
-
-
-        var refreshToken = GenerateSecureRandomToken(64);
-        var refreshTokenExpires = now.AddDays(_options.RefreshTokenDays);
-        var refreshTokenHash = HashToken(refreshToken);
+            var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
 
 
-        var refreshEntity = new RefreshToken
+            var refreshToken = GenerateSecureRandomToken(64);
+            var refreshTokenExpires = now.AddDays(_options.Value.RefreshTokenDays);
+            var refreshTokenHash = HashToken(refreshToken);
+
+
+            var refreshEntity = new RefreshToken
+            {
+                UserId = user.Id,
+                JwtId = jwtId,
+                TokenHash = refreshTokenHash,
+                ExpiresAtUtc = refreshTokenExpires
+            };
+
+            await _refreshTokenRepository.InsertAsync(refreshEntity, ct);
+
+            return new JwtTokenPair
+            {
+                AccessToken = accessToken,
+                AccessTokenExpiresAtUtc = accessTokenExpires,
+                RefreshToken = refreshToken,
+                RefreshTokenExpiresAtUtc = refreshTokenExpires,
+                JwtId = jwtId
+            };
+
+        }
+        catch (Exception ex)
         {
-            UserId = user.Id,
-            JwtId = jwtId,
-            TokenHash = refreshTokenHash,
-            ExpiresAtUtc = refreshTokenExpires
-        };
 
-        await _refreshTokenRepository.InsertAsync(refreshEntity, ct);
-
-        return new JwtTokenPair
-        {
-            AccessToken = accessToken,
-            AccessTokenExpiresAtUtc = accessTokenExpires,
-            RefreshToken = refreshToken,
-            RefreshTokenExpiresAtUtc = refreshTokenExpires,
-            JwtId = jwtId
-        };
+            throw;
+        }
+      
     }
 
     private static string GenerateSecureRandomToken(int byteLength)

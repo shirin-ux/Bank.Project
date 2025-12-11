@@ -7,6 +7,12 @@ namespace LoanGateway.Auth.Infrastructure.Communication
     public class ShahkarProvider(IShahkarService client) : IShahkarProvider
     {
         private readonly IShahkarService _client = client;
+
+        public Task<VerifyMobileOwnerResultDto> GetPersonalInfoAsync(VerifyMobileOwnerCommand cmd, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<VerifyMobileOwnerResultDto> VerifyMobileOwnerAsync(VerifyMobileOwnerCommand cmd, CancellationToken cancellationToken = default)
         {
 

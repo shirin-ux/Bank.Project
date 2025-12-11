@@ -10,5 +10,9 @@ namespace Shahkar.Provider
     public interface IShahkarService
     {
         Task<ShahkarMatchResponseDto> VerifyMobileOwnerAsync( string nationalId, string mobileNumber,CancellationToken cancellationToken = default);
+
+        Task<ShahkarGetPersonInfoResponseDto> GetPersonalInfoAsync(string nationalId, string birthDate, CancellationToken cancellationToken = default);
+
+
     }
 }
