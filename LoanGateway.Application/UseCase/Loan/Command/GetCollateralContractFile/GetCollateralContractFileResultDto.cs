@@ -1,4 +1,6 @@
-﻿using Common;
+﻿
+
+using Common;
 
 namespace LoanService.Application.UseCase.Loan.Command.GetCollateralContractFile
 {

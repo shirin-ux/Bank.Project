@@ -6276,8 +6276,8 @@
     },
     "Common/1.0.0": {
       "type": "project",
-      "path": "../Common/Common.csproj",
-      "msbuildProject": "../Common/Common.csproj"
+      "path": "../../shared/Common/Common.csproj",
+      "msbuildProject": "../../shared/Common/Common.csproj"
     },
     "Karizmah.Provider/1.0.0": {
       "type": "project",

@@ -107,8 +107,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\ProjectBank\\src\\Common\\Common.csproj": {
-                "projectPath": "D:\\ProjectBank\\src\\Common\\Common.csproj"
+              "D:\\ProjectBank\\shared\\Common\\Common.csproj": {
+                "projectPath": "D:\\ProjectBank\\shared\\Common\\Common.csproj"
               }
             }
           }
@@ -132,6 +132,84 @@
             "Microsoft.Extensions.Http": {
               "target": "Package",
               "version": "[9.0.10, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\ProjectBank\\shared\\Common\\Common.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\ProjectBank\\shared\\Common\\Common.csproj",
+        "projectName": "Common",
+        "projectPath": "D:\\ProjectBank\\shared\\Common\\Common.csproj",
+        "packagesPath": "C:\\Users\\Shirin\\.nuget\\packages\\",
+        "outputPath": "D:\\ProjectBank\\shared\\Common\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\Shirin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "D:\\ProjectBank\\Auth\\LoanGateway.Auth.Domain\\LoanGateway.Auth.Domain.csproj": {
+                "projectPath": "D:\\ProjectBank\\Auth\\LoanGateway.Auth.Domain\\LoanGateway.Auth.Domain.csproj"
+              },
+              "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj": {
+                "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.AspNetCore.Mvc.Core": {
+              "target": "Package",
+              "version": "[2.3.0, )"
             }
           },
           "imports": [
@@ -262,6 +340,9 @@
             "projectReferences": {
               "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj": {
                 "projectPath": "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj"
+              },
+              "D:\\ProjectBank\\shared\\Common\\Common.csproj": {
+                "projectPath": "D:\\ProjectBank\\shared\\Common\\Common.csproj"
               },
               "D:\\ProjectBank\\src\\Common\\Common.csproj": {
                 "projectPath": "D:\\ProjectBank\\src\\Common\\Common.csproj"

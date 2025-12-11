@@ -5465,8 +5465,8 @@
     },
     "Common/1.0.0": {
       "type": "project",
-      "path": "../Common/Common.csproj",
-      "msbuildProject": "../Common/Common.csproj"
+      "path": "../../shared/Common/Common.csproj",
+      "msbuildProject": "../../shared/Common/Common.csproj"
     },
     "LoanGateway.Auth.Domain/1.0.0": {
       "type": "project",
@@ -5527,6 +5527,9 @@
           "projectReferences": {
             "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj": {
               "projectPath": "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj"
+            },
+            "D:\\ProjectBank\\shared\\Common\\Common.csproj": {
+              "projectPath": "D:\\ProjectBank\\shared\\Common\\Common.csproj"
             },
             "D:\\ProjectBank\\src\\Common\\Common.csproj": {
               "projectPath": "D:\\ProjectBank\\src\\Common\\Common.csproj"
