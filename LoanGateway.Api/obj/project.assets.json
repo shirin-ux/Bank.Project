@@ -6271,8 +6271,8 @@
     },
     "Bank.Mellat.Provider/1.0.0": {
       "type": "project",
-      "path": "../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj",
-      "msbuildProject": "../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj"
+      "path": "../../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj",
+      "msbuildProject": "../../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj"
     },
     "Common/1.0.0": {
       "type": "project",
@@ -6281,13 +6281,13 @@
     },
     "Karizmah.Provider/1.0.0": {
       "type": "project",
-      "path": "../Karizmah.Provider/Karizmah.Provider.csproj",
-      "msbuildProject": "../Karizmah.Provider/Karizmah.Provider.csproj"
+      "path": "../../providers/Karizmah.Provider/Karizmah.Provider.csproj",
+      "msbuildProject": "../../providers/Karizmah.Provider/Karizmah.Provider.csproj"
     },
     "LoanGateway.Auth.Domain/1.0.0": {
       "type": "project",
-      "path": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj",
-      "msbuildProject": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj"
+      "path": "../../Auth/LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj",
+      "msbuildProject": "../../Auth/LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj"
     },
     "LoanService.Application/1.0.0": {
       "type": "project",
@@ -6347,6 +6347,9 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
+            "D:\\ProjectBank\\providers\\Karizmah.Provider\\Karizmah.Provider.csproj": {
+              "projectPath": "D:\\ProjectBank\\providers\\Karizmah.Provider\\Karizmah.Provider.csproj"
+            },
             "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj": {
               "projectPath": "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj"
             },

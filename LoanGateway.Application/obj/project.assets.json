@@ -5460,8 +5460,8 @@
     },
     "Bank.Mellat.Provider/1.0.0": {
       "type": "project",
-      "path": "../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj",
-      "msbuildProject": "../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj"
+      "path": "../../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj",
+      "msbuildProject": "../../providers/Bank.Mellat.Provider/Bank.Mellat.Provider.csproj"
     },
     "Common/1.0.0": {
       "type": "project",
@@ -5470,8 +5470,8 @@
     },
     "LoanGateway.Auth.Domain/1.0.0": {
       "type": "project",
-      "path": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj",
-      "msbuildProject": "../LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj"
+      "path": "../../Auth/LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj",
+      "msbuildProject": "../../Auth/LoanGateway.Auth.Domain/LoanGateway.Auth.Domain.csproj"
     },
     "LoanService.Domain/1.0.0": {
       "type": "project",
@@ -5525,6 +5525,9 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
+            "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj": {
+              "projectPath": "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj"
+            },
             "D:\\ProjectBank\\src\\Common\\Common.csproj": {
               "projectPath": "D:\\ProjectBank\\src\\Common\\Common.csproj"
             },

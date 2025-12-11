@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\providers\Karizmah.Provider\Karizmah.Provider.csproj" />
     <ProjectReference Include="..\Karizmah.Provider\Karizmah.Provider.csproj" />
     <ProjectReference Include="..\LoanGateway.Application\LoanService.Application.csproj" />
   </ItemGroup>

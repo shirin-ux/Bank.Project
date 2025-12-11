@@ -1,9 +1,3 @@
-D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.csproj.AssemblyReference.cache
-D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.GeneratedMSBuildEditorConfig.editorconfig
-D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.AssemblyInfoInputs.cache
-D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.AssemblyInfo.cs
-D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.csproj.CoreCompileInputs.cache
-D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.sourcelink.json
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\LoanService.Application.deps.json
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\LoanService.Application.dll
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\LoanService.Application.pdb
@@ -11,10 +5,16 @@ D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\Bank.Mellat.Provider
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\Common.dll
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\LoanGateway.Auth.Domain.dll
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\LoanService.Domain.dll
+D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\Bank.Mellat.Provider.pdb
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\Common.pdb
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\LoanService.Domain.pdb
-D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\Bank.Mellat.Provider.pdb
 D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\LoanGateway.Auth.Domain.pdb
+D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.csproj.AssemblyReference.cache
+D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.AssemblyInfoInputs.cache
+D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.AssemblyInfo.cs
+D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.csproj.CoreCompileInputs.cache
+D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.sourcelink.json
 D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanServ.CEDB84A9.Up2Date
 D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.dll
 D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\refint\LoanService.Application.dll
