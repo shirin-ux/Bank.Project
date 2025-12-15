@@ -27,7 +27,8 @@ using static Bank.Mellat.Provider.Dtos.MellatPayResponseRes;
 
 namespace Bank.Mellat.Infrastructure.Services
 {
-    public class MellatBankProvider(IMellatBankService client, IMapper mapper, IContractFileStorage contractFileStorage) : IProvider
+    public class MellatBankProvider(IMellatBankService client,
+        IMapper mapper, IContractFileStorage contractFileStorage) : IProvider
     {
         private readonly IMellatBankService _client = client;
         private readonly IMapper _mapper = mapper;

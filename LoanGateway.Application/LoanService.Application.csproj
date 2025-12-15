@@ -18,10 +18,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\providers\Bank.Mellat.Provider\Bank.Mellat.Provider.csproj" />
-    <ProjectReference Include="..\..\shared\Common\Common.csproj" />
-    <ProjectReference Include="..\Common\Common.csproj" />
-    <ProjectReference Include="..\LoanGateway.Domain\LoanService.Domain.csproj" />
+    <ProjectReference Include="..\..\providers\Shahkar.Provider\Shahkar.Provider.csproj" />
     <ProjectReference Include="..\providers\Bank.Mellat.Provider\Bank.Mellat.Provider.csproj" />
+    <ProjectReference Include="..\SadadProvider\SadadProvider.csproj" />
   </ItemGroup>
 
 </Project>

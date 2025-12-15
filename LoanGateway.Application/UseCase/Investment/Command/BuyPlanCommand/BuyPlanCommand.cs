@@ -8,11 +8,8 @@ public sealed record BuyPlanCommand: IRequest<Result<BuyPlanResultDto>>
 
 {
    public InvestmentPlanType PlanType { get; set; }
-    public long AmountRial { get; set; }
+
     public string NationalCode { get; set; }
-    public string BirthDate { get; set; }
-    public string CallbackUrl { get; set; }
-    public bool AcceptTerms { get; set; }
-    public string  PaymentUrl { get; set; }
+
 
 }

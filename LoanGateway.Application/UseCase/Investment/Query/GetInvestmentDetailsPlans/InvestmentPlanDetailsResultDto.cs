@@ -27,7 +27,7 @@ namespace LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsP
 
     public class IndexPointDto
     {
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public decimal IndexValue { get; set; }       // مقدار شاخص، نه قیمت
     }
 

@@ -6,6 +6,7 @@ using LoanService.Domain.Exceptions;
 using LoanService.Domain.IRepository.Investment;
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Shahkar.Provider;
 
 namespace LoanService.Application.UseCase.Investment.Command.BuyPlanCommand;
 
@@ -13,49 +14,63 @@ public sealed class BuyPlanCommandHandler
     : IRequestHandler<BuyPlanCommand, Result<BuyPlanResultDto>>
 {
     private readonly IInvestmentPlanReadRepository _investmentPlanReadRepository;
-
+    private readonly IUserContext _userContext;
+    private readonly IUserApiClient _userApi;
     private readonly IInvestmentProvider _investmentProvider;
     private readonly ILogger<BuyPlanCommandHandler> _logger;
+
+    private readonly IShahkarService _shahkarService;
 
     public BuyPlanCommandHandler(
         IInvestmentPlanReadRepository readRepo,
         IInvestmentProvider investmentProvider,
-        ILogger<BuyPlanCommandHandler> logger)
+        ILogger<BuyPlanCommandHandler> logger,
+        IUserApiClient userApi,
+        IUserContext userContext,
+        IShahkarService shahkarService)
     {
-        _investmentPlanReadRepository =readRepo;
+        _investmentPlanReadRepository = readRepo;
         _investmentProvider = investmentProvider;
         _logger = logger;
+        _userContext = userContext;
+        _userApi = userApi;
+        _shahkarService = shahkarService;
     }
 
     public async Task<Result<BuyPlanResultDto>> Handle(BuyPlanCommand cmd,CancellationToken ct)
     {
+        if (!_userContext.IsAuthenticated)
+            throw new UnauthorizedAccessException("کاربر احراز هویت نشده");
+
         var plan = await _investmentPlanReadRepository.GetPlanAsync(cmd.PlanType.ToString(), ct);
         if (plan is null)
             throw new NotFoundException("طرح سرمایه‌گذاری مورد نظر یافت نشد.");
 
-        if (cmd.AmountRial < plan.MinAmount)
-            throw new LogicException(
-                $"حداقل مبلغ سرمایه‌گذاری در این طرح {plan.MinAmount:N0} ریال است.");
+        _logger.LogInformation("Starting GiftGoldCommand for NationalCode {NationalCode}", cmd.NationalCode);
 
 
-        var nationalCode = cmd.NationalCode;
-        if (string.IsNullOrWhiteSpace(nationalCode))
-            throw new LogicException("کد ملی کاربر نامشخص است.");
+        var user = await _userApi.GetUserByNationalCodeAsync(new UserRequest { nationalCode= cmd.NationalCode } , ct);
 
 
-        var priceInfo = await _investmentProvider.GetCurrentPriceAsync(cmd.PlanType, ct);
-
-        var gramPrice = priceInfo.CurrentPrice;
-
-
-        var gramsRaw = (decimal)cmd.AmountRial / gramPrice;
-        var grams = Math.Floor(gramsRaw * 1000m) / 1000m;
-
-        if (grams <= 0)
-            throw new LogicException("مبلغ وارد شده برای خرید طلا ناکافی است.");
+        if (user is null)
+            throw new NotFoundException($"کاربر با کد ملی {cmd.NationalCode} یافت نشد.");
 
 
-        var orderRes = await _investmentProvider.CreatePolicyAndBuyAsync(cmd, ct);
+        var personalAddres =await _shahkarService.GetAddressUserAsync(cmd.NationalCode);
+
+        //var priceInfo = await _investmentProvider.GetCurrentPriceAsync(cmd.PlanType, ct);
+
+        //var gramPrice = priceInfo.CurrentPrice;
+
+
+        //var gramsRaw = (decimal)cmd.AmountRial / gramPrice;
+        //var grams = Math.Floor(gramsRaw * 1000m) / 1000m;
+
+        //if (grams <= 0)
+        //    throw new LogicException("مبلغ وارد شده برای خرید طلا ناکافی است.");
+        var postalCode =;
+
+        var orderRes = await _investmentProvider.CreatePolicyAndBuyAsync(cmd, postalCode, user.BirthDate, ct);
 
  
         var account = InvestmentAccount.CreateNew(
@@ -73,9 +88,6 @@ public sealed class BuyPlanCommandHandler
         {
             PlanType = orderRes.PlanType,
             AmountRial = orderRes.AmountRial,
-            GramPrice = gramPrice,
-            Grams = grams,
-            DailyChangePercent = priceInfo.DailyChangePercent,
             ProviderPolicyId = orderRes.ProviderPolicyId,
             OrderId = orderRes.OrderId,
             TraceId = orderRes.TraceId,

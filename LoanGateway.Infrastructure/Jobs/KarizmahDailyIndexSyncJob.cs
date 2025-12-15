@@ -2,14 +2,10 @@
 using Karizmah.Provider;
 using Karizmah.Provider.Dtos;
 using LoanService.Application.Contracts;
-using LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsPlans;
 using LoanService.Domain.Entities.Investment;
 using LoanService.Domain.Enum.Investment;
 using LoanService.Domain.IRepository.Investment;
-using LoanService.Domain.IRepository.Loan;
-using LoanService.Infrastructure.Services;
 using MediatR;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 
@@ -28,64 +24,74 @@ public class KarizmahDailyIndexSyncJob(
     private readonly IInvestmentPlanReadRepository _repo = repo;
     private readonly IKarizmahService _investmentProvider = investmentProvider;
     private readonly ILogger<KarizmahDailyIndexSyncJob> _logger = logger;
-    private const int MaxChunkDays = 15;
-    private const int PageSize = 100000;
-    public async Task ExecuteAsync(CancellationToken cancellationToken = default)
+    private const int MaxChunkDays = 3;
+    private const int PageSize = 10;
+
+
+    private readonly TimeSpan IranOffset = TimeSpan.FromHours(3.5);
+    private DateTime IranTodayDate() => DateTime.UtcNow.Add(IranOffset).Date;
+    private DateTime IranYesterdayDate() => IranTodayDate().AddDays(-1);
+    private DateTime DbDayKey(DateTime iranDate) => iranDate.Date;
+
+    public async Task ExecuteAsync(CancellationToken ct = default)
     {
         var plans = new[]
                 {
             InvestmentPlanType.Gold,
             InvestmentPlanType.Silver
         };
-        var todayUtc = DateTime.UtcNow.Date;
-
+        var toIran = IranYesterdayDate();
+        var toKey = DbDayKey(toIran);
 
         foreach (var plan in plans)
         {
             try
-            {   
+            {
 
-                var lastDate = await _repo.GetLastDateAsync(plan, cancellationToken);
-                DateTime fromUtc;
-                if (lastDate is null)
+                var lastKey = await _repo.GetLastDateAsync(plan, ct);
+
+                DateTime fromKey;
+                if (lastKey is null)
                 {
-               
-                    fromUtc = todayUtc.AddDays(-364);
+
+                    const int BootstrapDays = 7;
+                    fromKey = DbDayKey(toIran.AddDays(-(BootstrapDays - 1)));
                 }
                 else
                 {
-                    fromUtc = lastDate.Value.AddDays(1);
+                    fromKey = DbDayKey(lastKey.Value).AddDays(1);
                 }
-                if (fromUtc > todayUtc)
+
+                if (fromKey > toKey)
                 {
-                    _logger.LogInformation("دیتای اپدیت شده نداریم {Plan}", plan);
+                    _logger.LogInformation("No new daily data for {Plan}", plan);
                     continue;
                 }
 
-                _logger.LogInformation("Syncing CHINDX for {Plan} from {From} to {To}", plan, fromUtc, todayUtc);
+                _logger.LogInformation("Sync daily CHINDX {Plan} from {From} to {To}", plan, fromKey, toKey);
 
-                var rawPoints = await FetchHistoryFromKarizmahAsync(plan, fromUtc, todayUtc, cancellationToken);
-
-             
+                var rawPoints = await FetchHistoryFromKarizmahAsync(plan, fromKey, toKey, ct);
                 var daily = rawPoints
-                    .OrderBy(p => p.Timestamp)
-                    .GroupBy(p => p.Timestamp.Date)
-                    .Select(g => new InvestmentIndexHistory
+                .Where(p => p.Value > 0m)
+                .OrderBy(p => p.Timestamp)
+                .GroupBy(p => p.Timestamp.ToOffset(IranOffset).Date)
+                .Select(g =>
+                {
+                    var last = g.Last();
+                    return new InvestmentIndexHistory
                     {
                         PlanType = plan,
-                        IndexDateTimeUtc = g.Key,
-                        IndexValue = g.Last().Value
-                    })
-                    .ToList();
+                        IndexDateTimeUtc = DbDayKey(g.Key),
+                        IndexValue = last.Value
+                    };
+                })
+                .ToList();
 
                 if (daily.Count > 0)
-                {
-                    await _repo.UpsertDailyHistoryAsync(plan, daily, cancellationToken);
-                }
+                    await _repo.UpsertDailyHistoryAsync(plan, daily, ct);
 
-       
-                var cutoff = todayUtc.AddDays(-364);
-                await _repo.DeleteOlderThanAsync(plan, cutoff, cancellationToken);
+                var cutoff = DbDayKey(toIran.AddDays(-364));
+                await _repo.DeleteOlderThanAsync(plan, cutoff, ct);
             }
             catch (Exception ex)
             {
@@ -93,32 +99,36 @@ public class KarizmahDailyIndexSyncJob(
             }
         }
     }
-    private async Task<List<ChindxIndexPointDto>> FetchHistoryFromKarizmahAsync(InvestmentPlanType plan, DateTime fromUtc, DateTime toUtc, CancellationToken ct)
+    private async Task<List<ChindxIndexPointDto>> FetchHistoryFromKarizmahAsync(InvestmentPlanType plan,
+    DateTime fromDayKey,
+    DateTime toDayKey,
+    CancellationToken ct)
     {
-        var iranOffset = TimeSpan.FromHours(3.5);
-        var fromLocal = new DateTimeOffset(fromUtc, TimeSpan.Zero).ToOffset(iranOffset);
-        var toLocal = new DateTimeOffset(toUtc, TimeSpan.Zero).ToOffset(iranOffset);
-
-        var allPoints = new List<ChindxIndexPointDto>();
         var instrumentId = InvestmentPlanTypeExtensions.ToInstrumentId(plan);
+        var all = new List<ChindxIndexPointDto>();
 
-        var cursorFrom = fromLocal;
-        while (cursorFrom <= toLocal)
+        var cursor = fromDayKey.Date;
+        var end = toDayKey.Date;
+
+        while (cursor <= end)
         {
-            var chunkTo = cursorFrom.AddDays(MaxChunkDays - 1);
-            if (chunkTo > toLocal)
-                chunkTo = toLocal;
+            var chunkEnd = cursor.AddDays(MaxChunkDays - 1);
+            if (chunkEnd > end) chunkEnd = end;
 
             var offset = 0;
             while (true)
             {
+
+                var fromLocal = new DateTimeOffset(cursor, IranOffset);
+                var toLocal = new DateTimeOffset(chunkEnd.AddDays(1).AddTicks(-1), IranOffset);
+
                 var req = new ChindxIndexValueRequestDto
                 {
                     InstrumentId = instrumentId,
-                    FromDateKey = cursorFrom.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
-                    ToDateKey = chunkTo.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
-                    FromDate = cursorFrom,
-                    ToDate = chunkTo,
+                    FromDateKey = cursor.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
+                    ToDateKey = chunkEnd.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
+                    FromDate = fromLocal,
+                    ToDate = toLocal,
                     Size = PageSize,
                     Offset = offset
                 };
@@ -126,23 +136,23 @@ public class KarizmahDailyIndexSyncJob(
                 var res = await _investmentProvider.GetGoldIndexAsync(req, ct);
                 var page = res.Data?.IndexValue;
 
-                if (page == null || page.Count == 0)
-                    break;
+                if (page == null || page.Count == 0) break;
 
-                allPoints.AddRange(page);
+                all.AddRange(page);
 
-                if (page.Count < PageSize)
-                    break;
+                if (page.Count < PageSize) break;
 
                 offset += PageSize;
                 await Task.Delay(200, ct);
             }
 
-            cursorFrom = chunkTo.AddDays(1);
+            cursor = chunkEnd.AddDays(1);
+            await Task.Delay(200, ct);
         }
 
-        return allPoints;
+        return all;
     }
 }
+
 
 

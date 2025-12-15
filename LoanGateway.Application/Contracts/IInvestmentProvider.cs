@@ -10,7 +10,7 @@ namespace LoanService.Application.Contracts
         Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan, InvestmentChartRange range,CancellationToken ct, bool forceRefresh);
         Task<PlanPriceInfoDto> GetCurrentPriceAsync( InvestmentPlanType planType, CancellationToken ct);
 
-        Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd, CancellationToken ct);
+        Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd,string birthDate,string postalCode, CancellationToken ct);
         Task<BuyPlanResultDto> GetRevokableAmountAsync(BuyPlanCommand cmd, CancellationToken ct);
     }
 }

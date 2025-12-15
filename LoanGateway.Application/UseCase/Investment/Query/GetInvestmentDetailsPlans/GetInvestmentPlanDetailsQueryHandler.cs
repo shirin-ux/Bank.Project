@@ -23,30 +23,31 @@ public class GetInvestmentPlanDetailsQueryHandler
         _karizmahProvider = karizmahProvider;
     }
 
-    public async Task<Result<InvestmentPlanDetailsResultDto>> Handle(
-     GetInvestmentPlanDetailsQuery request,
-     CancellationToken ct)
+    public async Task<Result<InvestmentPlanDetailsResultDto>> Handle(GetInvestmentPlanDetailsQuery request, CancellationToken ct)
     {
 
         var plan = await _planRepo.GetPlanWithMetaAsync(request.PlanType, ct);
         if (plan is null)
             throw new NotFoundException("طرح سرمایه‌گذاری مورد نظر یافت نشد.");
 
-        var historyRange = request.Range;
 
-        if (request.PlanType == InvestmentPlanType.FixedIncome && (historyRange is InvestmentChartRange.OneHour or InvestmentChartRange.OneDay))
+        InvestmentRangeRules.EnsureAllowed(request.PlanType, request.Range);
+        if (request.PlanType == InvestmentPlanType.FixedIncome && (request.Range is InvestmentChartRange.OneHour or InvestmentChartRange.OneDay))
         {
             throw new LogicException("برای طرح درآمد ثابت فقط بازه‌های ۳، ۶ و ۹ ماهه مجاز است.");
 
         }
         IReadOnlyList<IndexPointDto> history;
-        if (request.PlanType != InvestmentPlanType.FixedIncome)
+
+        if (request.PlanType == InvestmentPlanType.FixedIncome)
         {
-            history = await _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, historyRange, ct, false);
+            history = GenerateFixedIncomeSyntheticHistory(request.Range, plan);
+          
         }
         else
         {
-            history = GenerateFixedIncomeSyntheticHistory(historyRange, plan);
+            history = await _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct, false);
+
         }
         if (history is null || history.Count == 0)
             throw new InvalidOperationException("هیچ دیتای شاخصی برای این طرح یافت نشد.");
@@ -55,7 +56,7 @@ public class GetInvestmentPlanDetailsQueryHandler
         {
             InvestmentPlanType.FixedIncome => CalculateFixedIncomeSnapshot(request.PlanType, history),
 
-            InvestmentPlanType.Gold or InvestmentPlanType.Silver => CalculateGoldSilverSnapshot(request.PlanType, history, historyRange),
+            InvestmentPlanType.Gold or InvestmentPlanType.Silver => CalculateGoldSilverSnapshot(request.PlanType, history, request.Range),
 
             _ => throw new NotSupportedException($"نوع طرح '{request.PlanType}' پشتیبانی نمی‌شود.")
         };

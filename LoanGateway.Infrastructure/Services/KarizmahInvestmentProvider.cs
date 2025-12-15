@@ -1,24 +1,17 @@
-﻿using Azure.Core;
-using Common;
+﻿using Common;
 using Karizmah.Provider;
 using Karizmah.Provider.Dtos;
 using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Investment.Command.BuyPlanCommand;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsPlans;
 using LoanService.Application.UseCase.Investment.Query.PlanBuyInfo;
-using LoanService.Domain.Entities.Investment;
 using LoanService.Domain.Enum;
 using LoanService.Domain.Enum.Investment;
 using LoanService.Domain.Exceptions;
 using LoanService.Domain.IRepository.Investment;
-using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
-using System.Numerics;
-using System.Security.Cryptography.Pkcs;
-using System.Threading;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace LoanService.Infrastructure.Services;
 
@@ -33,9 +26,17 @@ public class KarizmahInvestmentProvider(
     private readonly IKarizmahService _client = client;
     private readonly IMemoryCache _cache = cache;
     private readonly ILogger<KarizmahInvestmentProvider> _logger = logger;
-    private static readonly TimeSpan LiveTtl = TimeSpan.FromMinutes(1);
-    private const int MaxChunkDays = 15;
-    private const int PageSize = 10;
+
+    private const int PageSize = 100;
+
+    private readonly TimeSpan IranOffset = TimeSpan.FromHours(3.5);
+
+    private DateTimeOffset IranNow() =>
+        new DateTimeOffset(DateTime.UtcNow, TimeSpan.Zero).ToOffset(IranOffset);
+
+    private DateTime IranYesterdayKey() =>
+        IranNow().Date.AddDays(-1);
+
 
     public async Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan, InvestmentChartRange range, CancellationToken ct, bool forceRefresh = false)
     {
@@ -43,15 +44,31 @@ public class KarizmahInvestmentProvider(
         var (fromUtc, toUtc) = range.ToDateRange(nowUtc);
         var cacheKey = $"chindx:{plan}:{range}";
 
+        InvestmentRangeRules.EnsureAllowed(plan, range);
 
         if (range is InvestmentChartRange.OneDay or InvestmentChartRange.OneHour)
         {
             if (!forceRefresh && _cache.TryGetValue(cacheKey, out IReadOnlyList<IndexPointDto> cachedShort))
                 return cachedShort;
 
-            var raw = await FetchHistoryFromKarizmahAsync(plan, range, ct); // ورژن قبلی که بر اساس range کار می‌کرد
+            var nowIran = IranNow();
+            DateTimeOffset fromLocal, toLocal;
+
+            if (range == InvestmentChartRange.OneHour)
+            {
+                fromLocal = nowIran.AddHours(-1);
+                toLocal = nowIran;
+            }
+            else
+            {
+
+                fromLocal = new DateTimeOffset(nowIran.Date, IranOffset);
+                toLocal = nowIran;
+            }
+            var raw = await FetchHistoryFromKarizmahAsync(plan, fromLocal, toLocal, ct);
 
             var result = raw
+                 .Where(p => p.Value > 0m)
                 .OrderBy(p => p.Timestamp)
                 .Select(p => new IndexPointDto
                 {
@@ -68,7 +85,15 @@ public class KarizmahInvestmentProvider(
 
         if (!forceRefresh && _cache.TryGetValue(cacheKey, out IReadOnlyList<IndexPointDto> cachedLong))
             return cachedLong;
+        var toKey = IranYesterdayKey();
+        var fromKey = range switch
+        {
 
+            InvestmentChartRange.ThreeMonths => toKey.AddDays(-89),
+            InvestmentChartRange.SixMonths => toKey.AddDays(-179),
+            InvestmentChartRange.OneYear => toKey.AddDays(-364),
+            _ => throw new NotSupportedException($"Range '{range}' پشتیبانی نمی‌شود.")
+        };
         var dbHistory = await _investmentPlanReadRepository.GetRangeAsync(plan, fromUtc, toUtc, ct);
 
         if (dbHistory == null || dbHistory.Count == 0)
@@ -78,7 +103,7 @@ public class KarizmahInvestmentProvider(
             .OrderBy(x => x.IndexDateTimeUtc)
             .Select(x => new IndexPointDto
             {
-                Date = x.IndexDateTimeUtc,
+                Date = new DateTimeOffset(x.IndexDateTimeUtc.Date, IranOffset),
                 IndexValue = x.IndexValue
             })
             .ToList()
@@ -87,149 +112,125 @@ public class KarizmahInvestmentProvider(
         _cache.Set(cacheKey, resultFromDb, TimeSpan.FromHours(1));
         return resultFromDb;
     }
-    private async Task<List<ChindxIndexPointDto>> FetchHistoryFromKarizmahAsync(InvestmentPlanType plan, InvestmentChartRange range, CancellationToken ct)
+    private async Task<List<ChindxIndexPointDto>> FetchHistoryFromKarizmahAsync(
+        InvestmentPlanType plan,
+         DateTimeOffset fromLocal,
+         DateTimeOffset toLocal,
+        CancellationToken ct)
     {
-        var nowUtc = DateTime.UtcNow;
-        var (fromUtc, toUtc) = range.ToDateRange(nowUtc);
-
-        var iranOffset = TimeSpan.FromHours(3.5);
-        var fromLocal = new DateTimeOffset(fromUtc, TimeSpan.Zero).ToOffset(iranOffset);
-        var toLocal = new DateTimeOffset(toUtc, TimeSpan.Zero).ToOffset(iranOffset);
 
         var allPoints = new List<ChindxIndexPointDto>();
+
+
         var instrumentId = InvestmentPlanTypeExtensions.ToInstrumentId(plan);
+        var offset = 0;
 
-        var cursorFrom = fromLocal;
-        while (cursorFrom < toLocal)
+
+        while (true)
         {
-            var chunkTo = cursorFrom.AddDays(MaxChunkDays - 1);
-            if (chunkTo > toLocal)
-                chunkTo = toLocal;
-
-            var offset = 0;
-
-            while (true)
+            var req = new ChindxIndexValueRequestDto
             {
-                var req = new ChindxIndexValueRequestDto
-                {
-                    InstrumentId = instrumentId,
-                    FromDateKey = cursorFrom.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
-                    ToDateKey = chunkTo.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
-                    FromDate = cursorFrom,
-                    ToDate = chunkTo,
-                    Size = PageSize,
-                    Offset = offset
-                };
+                InstrumentId = instrumentId,
 
-                var res = await _client.GetGoldIndexAsync(req, ct);
-                var page = res.Data?.IndexValue;
+          
+                FromDateKey = fromLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
+                ToDateKey = toLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
 
-                if (page == null || page.Count == 0)
-                    break;
+                FromDate = fromLocal,
+                ToDate = toLocal,
 
-                allPoints.AddRange(page);
+                Size = PageSize,
+                Offset = offset
+            };
+            var res = await _client.GetGoldIndexAsync(req, ct);
+            var page = res.Data?.IndexValue;
 
-                if (page.Count < PageSize)
-                    break;
+            if (page == null || page.Count == 0)
+                break;
 
-                offset += PageSize;
+            allPoints.AddRange(page);
 
-            }
+            if (page.Count < PageSize)
+                break;
 
-            cursorFrom = chunkTo.AddSeconds(1);
+            offset += PageSize;
+            await Task.Delay(150, ct);
+
         }
+
+
 
         return allPoints;
     }
 
     public async Task<PlanPriceInfoDto> GetCurrentPriceAsync(InvestmentPlanType planType, CancellationToken ct)
     {
+        var cacheKey = $"chindx:price:{planType}";
 
-        var instrumentId = planType switch
-        {
-            InvestmentPlanType.Gold => "IRTICHGOLD01",
-            InvestmentPlanType.Silver => "IRTICHSILV01",
-            _ => throw new NotSupportedException($"Plan '{planType}' برای این طرح پشتیبانی نمی‌شود.")
-        };
+        if (_cache.TryGetValue(cacheKey, out PlanPriceInfoDto cached))
+            return cached;
+
+        var instrumentId = InvestmentPlanTypeExtensions.ToInstrumentId(planType);
 
         if (planType is not InvestmentPlanType.Gold and not InvestmentPlanType.Silver)
             throw new NotSupportedException($"Plan '{planType}' برای این طرح  پشتیبانی نمی‌شود.");
+        var nowIran = IranNow();
+        var fromLocal = new DateTimeOffset(nowIran.Date, IranOffset);
+        var toLocal = nowIran;
 
-        var nowUtc = DateTime.UtcNow;
-        var fromUtc = nowUtc.AddDays(-1);
-
-
-        var iranOffset = TimeSpan.FromHours(3.5);
-        var fromLocal = new DateTimeOffset(fromUtc, TimeSpan.Zero).ToOffset(iranOffset);
-        var toLocal = new DateTimeOffset(nowUtc, TimeSpan.Zero).ToOffset(iranOffset);
-
-        var resKarizmah = await _client.GetGoldIndexAsync(new ChindxIndexValueRequestDto
+        var latest = await FetchLatestPointAsync(instrumentId, fromLocal, toLocal, ct);
+        if (latest == null)
         {
+            fromLocal = nowIran.AddHours(-24);
+            latest = await FetchLatestPointAsync(instrumentId, fromLocal, toLocal, ct);
+        }
 
-            FromDate = fromLocal,
-            ToDate = toLocal,
-            InstrumentId = instrumentId,
-            FromDateKey = fromLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
-            ToDateKey = toLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
-            Offset = 0,
-            Size = 10
-        });
+        if (latest == null || latest.Value <= 0m)
+            throw new LogicException("لیست شاخص کاریزما خالی یا نامعتبر است.");
+        var currentIndex = latest.Value;
+        var pricePerGram = currentIndex * 10m;
+        var yesterdayKey = IranYesterdayKey();
 
-        var lastTwoDays = await _investmentPlanReadRepository.GetLatestPointsAsync(planType, 2, ct);
-        var points = resKarizmah.Data?.IndexValue;
-
-
-        var ordered = points.Where(p => p.Value > 0m).OrderBy(p => p.Timestamp).ToList();
-        if (ordered.Count == 0)
-            throw new ExternalServiceException("لیست شاخص کاریزما خالی یا نامعتبر است.", 0, null);
-
-        var lastPoint = ordered[^1];
-
-        var pricePerGram = lastPoint.Value * 10m;
-
+        var lastTwo = await _investmentPlanReadRepository.GetLatestPointsAsync(planType, 2, ct);
         decimal dailyChangePercent = 0m;
-        if (lastTwoDays.Count >= 2)
-        {
-            var todayRow = lastTwoDays[0]; // آخرین تاریخ
-            var previousRow = lastTwoDays[1]; // روز قبل
 
-            if (previousRow.IndexValue > 0m)
-            {
-                var diff = todayRow.IndexValue - previousRow.IndexValue;
-                dailyChangePercent = diff / previousRow.IndexValue * 100m;
-            }
+
+        var yesterday = lastTwo.FirstOrDefault();
+        if (yesterday != null && yesterday.IndexValue > 0m)
+        {
+            dailyChangePercent = (currentIndex - yesterday.IndexValue) / yesterday.IndexValue * 100m;
         }
 
         var res = new PlanPriceInfoDto
         {
             CurrentPrice = pricePerGram,
             DailyChangePercent = dailyChangePercent,
-            LastUpdateUtc = lastPoint.Timestamp
+            LastUpdateUtc = latest.Timestamp
         };
         return res;
 
 
     }
 
-    public async Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd, CancellationToken ct)
+    public async Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd, string birthDate, string postalCode, CancellationToken ct)
     {
 
 
         var req = new KarizmahCreatePolicyWithoutInitialPaymentRequestDto
         {
-            birthDate = cmd.BirthDate.ToKarizmahBirthDate(),
-            planTypeAliasName = cmd.PlanType.ToString(),
+            birthDate = postalCode,
+            planTypeAliasName = "IRTICHGOLD01",// cmd.PlanType.ToString(),
             nationalCode = cmd.NationalCode,
-            address=cmd.PaymentUrl
+            postalCode= "1371714378"
+
         };
-        var resKarizmah =await _client.CreatePolicyWithoutInitialPaymentAsync(req, ct);
+        var resKarizmah = await _client.CreatePolicyWithoutInitialPaymentAsync(req, ct);
         return new BuyPlanResultDto
         {
-            AmountRial = cmd.AmountRial,
             TraceId = resKarizmah.data.traceId,
             PlanType = cmd.PlanType,
             ProviderPolicyId = resKarizmah.data.id,
-            IsRepeated=resKarizmah.data.isRepeated
+            IsRepeated = resKarizmah.data.isRepeated
         };
 
     }
@@ -238,4 +239,65 @@ public class KarizmahInvestmentProvider(
     {
         throw new NotImplementedException();
     }
+
+    private async Task<ChindxIndexPointDto?> FetchLatestPointAsync(
+    string instrumentId,
+    DateTimeOffset fromLocal,
+    DateTimeOffset toLocal,
+    CancellationToken ct)
+    {
+        var offset = 0;
+        ChindxIndexPointDto? best = null;
+
+        DateTimeOffset? firstTs = null;
+        DateTimeOffset? lastTs = null;
+        bool? isAscending = null;
+
+        while (true)
+        {
+            var req = new ChindxIndexValueRequestDto
+            {
+                InstrumentId = instrumentId,
+                FromDateKey = fromLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
+                ToDateKey = toLocal.ToString("yyyyMMdd", CultureInfo.InvariantCulture),
+                FromDate = fromLocal,
+                ToDate = toLocal,
+                Size = PageSize,
+                Offset = offset
+            };
+
+            var res = await _client.GetGoldIndexAsync(req, ct);
+            var page = res.Data?.IndexValue;
+
+            if (page == null || page.Count == 0)
+                break;
+
+            var ordered = page.Where(x => x.Value > 0m).OrderBy(x => x.Timestamp).ToList();
+            if (ordered.Count > 0)
+            {
+                best = best == null
+                    ? ordered[^1]
+                    : (ordered[^1].Timestamp > best.Timestamp ? ordered[^1] : best);
+
+                firstTs ??= ordered[0].Timestamp;
+                lastTs = ordered[^1].Timestamp;
+
+                if (isAscending == null && firstTs != null && lastTs != null)
+                    isAscending = lastTs > firstTs;
+            }
+
+
+            if (isAscending == false)
+                break;
+
+            if (page.Count < PageSize)
+                break;
+
+            offset += PageSize;
+            await Task.Delay(120, ct);
+        }
+
+        return best;
+    }
+
 }

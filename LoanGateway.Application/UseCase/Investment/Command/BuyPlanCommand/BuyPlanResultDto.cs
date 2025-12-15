@@ -11,7 +11,6 @@ namespace LoanService.Application.UseCase.Investment.Command.BuyPlanCommand
         public Guid ProviderPolicyId { get; set; }
 
         public decimal GramPrice { get; set; }
-        public decimal EstimatedGrams { get; set; }
 
 
         public InvestmentPlanType PlanType { get; set; }

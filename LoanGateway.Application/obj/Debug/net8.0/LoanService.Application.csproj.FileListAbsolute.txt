@@ -20,3 +20,7 @@ D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Applicat
 D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\refint\LoanService.Application.dll
 D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\LoanService.Application.pdb
 D:\ProjectBank\src\LoanGateway.Application\obj\Debug\net8.0\ref\LoanService.Application.dll
+D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\SadadProvider.dll
+D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\SadadProvider.pdb
+D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\Shahkar.Provider.dll
+D:\ProjectBank\src\LoanGateway.Application\bin\Debug\net8.0\Shahkar.Provider.pdb

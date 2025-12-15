@@ -18,6 +18,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "providers", "providers", "{18060485-BF61-48C7-9C23-477EB8B71118}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Auth", "Auth", "{5F22D26C-684F-440E-8657-DB892CEF1DD5}"
+	ProjectSection(SolutionItems) = preProject
+		..\Auth\README.md.txt = ..\Auth\README.md.txt
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LoanGateway.Auth.Api", "..\Auth\LoanGateway.Auth.Api\LoanGateway.Auth.Api.csproj", "{DF6B5A4C-F7BB-82D6-C81B-0C2245B0FB3B}"
 EndProject
@@ -38,6 +41,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sms.Provider", "..\providers\Sms.Provider\Sms.Provider.csproj", "{B7B8DC2F-A847-3E89-1805-0CD7064C198A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common", "..\shared\Common\Common.csproj", "{3D215F0E-5700-9FBB-5AA6-05E14D779289}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SadadProvider", "SadadProvider\SadadProvider.csproj", "{E4A9AFE1-CCA3-42B6-AD8D-68B3E8E0D107}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -101,6 +106,10 @@ Global
 		{3D215F0E-5700-9FBB-5AA6-05E14D779289}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D215F0E-5700-9FBB-5AA6-05E14D779289}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D215F0E-5700-9FBB-5AA6-05E14D779289}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4A9AFE1-CCA3-42B6-AD8D-68B3E8E0D107}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4A9AFE1-CCA3-42B6-AD8D-68B3E8E0D107}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4A9AFE1-CCA3-42B6-AD8D-68B3E8E0D107}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4A9AFE1-CCA3-42B6-AD8D-68B3E8E0D107}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -120,6 +129,7 @@ Global
 		{425856AF-613C-FB38-2E7E-CAEC3AE9B10A} = {18060485-BF61-48C7-9C23-477EB8B71118}
 		{B7B8DC2F-A847-3E89-1805-0CD7064C198A} = {18060485-BF61-48C7-9C23-477EB8B71118}
 		{3D215F0E-5700-9FBB-5AA6-05E14D779289} = {8AA19BDD-1A12-41AB-ABED-C7829C6A41A1}
+		{E4A9AFE1-CCA3-42B6-AD8D-68B3E8E0D107} = {18060485-BF61-48C7-9C23-477EB8B71118}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7C237D96-5429-4C6B-88A9-778AD724856A}

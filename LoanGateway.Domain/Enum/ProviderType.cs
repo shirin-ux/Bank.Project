@@ -4,6 +4,7 @@
     {
         Mellat = 101,
         Saman = 102,
-        Karizmah=103
+        Karizmah=103,
+        Payment=104
     }
 }

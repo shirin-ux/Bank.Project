@@ -18,19 +18,19 @@ public sealed class BuyGoldPlanCommandValidator : AbstractValidator<BuyPlanComma
             .Must(p => p == InvestmentPlanType.Gold || p == InvestmentPlanType.Silver)
             .WithMessage("در حال حاضر فقط طرح‌های طلا و نقره قابل خرید هستند.");
 
-        RuleFor(x => x.AmountRial)
-            .GreaterThanOrEqualTo(MinAmountRial)
-            .WithMessage($"حداقل مبلغ سرمایه‌گذاری {MinAmountRial:N0} ریال است.");
+        //RuleFor(x => x.AmountRial)
+        //    .GreaterThanOrEqualTo(MinAmountRial)
+        //    .WithMessage($"حداقل مبلغ سرمایه‌گذاری {MinAmountRial:N0} ریال است.");
 
-        RuleFor(x => x.PlanType)
-        .IsInEnum()
-        .WithMessage("نوع طرح سرمایه‌گذاری نامعتبر است.");
+        //RuleFor(x => x.PlanType)
+        //.IsInEnum()
+        //.WithMessage("نوع طرح سرمایه‌گذاری نامعتبر است.");
 
 
 
-        RuleFor(x => x.AcceptTerms)
-            .Equal(true)
-            .WithMessage("برای ادامه، باید شرایط خرید طرح را بپذیرید.");
+        //RuleFor(x => x.AcceptTerms)
+        //    .Equal(true)
+        //    .WithMessage("برای ادامه، باید شرایط خرید طرح را بپذیرید.");
 
         RuleFor(x => x.NationalCode)
             .NotEmpty()

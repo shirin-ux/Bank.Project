@@ -3,9 +3,9 @@ using Bank.Mellat.Provider;
 using Common;
 using FluentValidation;
 using Hangfire;
-using Hangfire.Common;
 using Karizmah.Provider;
 using LoanGateway.Infrastructure.Utility;
+using LoanService.Api;
 using LoanService.Api.Middlewares;
 using LoanService.Application.Contracts;
 using LoanService.Application.Mapping;
@@ -17,16 +17,25 @@ using LoanService.Domain.IRepository.Investment;
 using LoanService.Domain.IRepository.Loan;
 using LoanService.Infrastructure;
 using LoanService.Infrastructure.Configurations;
+using LoanService.Infrastructure.Contracts;
 using LoanService.Infrastructure.Jobs;
 using LoanService.Infrastructure.Repositories.Investment;
 using LoanService.Infrastructure.Repositories.Loan;
 using LoanService.Infrastructure.Services;
 using Mapster;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using SadadProvider;
+using Shahkar.Provider;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json.Serialization;
 
 
@@ -77,9 +86,13 @@ builder.Services.Configure<MellatApiOptions>(
 builder.Services.Configure<RabbitMqOptions>(
     builder.Configuration.GetSection("RabbitMqOptions"));
 
-
-
-builder.Services.AddSingleton<ILoanNotificationBus,RabbitMqLoanNotificationBus>();
+builder.Services.Configure<JwtOptions>(
+    builder.Configuration.GetSection("Jwt")
+);
+var jwtOptions = builder.Configuration
+    .GetSection("Jwt")
+    .Get<JwtOptions>();
+builder.Services.AddSingleton<ILoanNotificationBus, RabbitMqLoanNotificationBus>();
 builder.Services.AddSingleton<TransactionDBUtility>();
 builder.Services.AddScoped<MellatBankProvider>();
 
@@ -92,20 +105,50 @@ builder.Services.RegisterMapster();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+
+var swaggerSettings = new SwaggerSettings();
+builder.Configuration.GetSection("Swagger").Bind(swaggerSettings);
+
+builder.Services.AddSingleton(swaggerSettings);
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+
+    c.SwaggerDoc(swaggerSettings.Version, new OpenApiInfo
     {
-        Title = "LoanService API",
-        Version = "v1",
-        Description = "API documentation for LoanService",
-        Contact = new OpenApiContact
+        Title = swaggerSettings.Title,
+        Version = swaggerSettings.Version
+    });
+
+
+
+
+    var jwtSecurityScheme = new OpenApiSecurityScheme
+    {
+        Scheme = JwtBearerDefaults.AuthenticationScheme,
+        BearerFormat = "JWT",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Description = " Auth JWT  Bearer ",
+
+        Reference = new OpenApiReference
         {
-            Name = "Your Team Name",
-            Email = "support@yourcompany.com"
+            Id = "Bearer",
+            Type = ReferenceType.SecurityScheme
         }
+    };
+
+    c.AddSecurityDefinition("Bearer", jwtSecurityScheme);
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        { jwtSecurityScheme, Array.Empty<string>() }
     });
 });
+
+
 builder.Services
     .AddControllers()
     .AddJsonOptions(o =>
@@ -119,9 +162,29 @@ builder.Services.AddHttpClient<MellatBankService>()
         c.BaseAddress = new Uri("https://gw4t.chub.behsazan.com/api/fs-contract-management");
         c.Timeout = TimeSpan.FromSeconds(60);
     });
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+
+            ValidIssuer = "LoanGateway.Auth.Api",
+            ValidAudience = "LoanService.Api",
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtOptions.SigningKey)
+            ),
+
+            ClockSkew = TimeSpan.Zero
+        };
+    });
 
 builder.Services.AddScoped<LoanRequestOrchestrator>();
-
+builder.Services.AddHttpContextAccessor();
 
 BankMellatMappingConfig.RegisterMappings();
 builder.Services.AddScoped<IBankPolicyFactory, BankPolicyFactory>();
@@ -134,6 +197,8 @@ builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IInstallmentRepository, InstallmentRepository>();
 builder.Services.AddScoped<IPayResponseInfoRepository, PayResponseInfoRepository>();
 builder.Services.AddScoped<IContractFileStorage, FileSystemContractFileStorage>();
+builder.Services.AddScoped<ISadadService, SadadService>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 
 builder.Services.AddScoped<IProviderFactory, ProviderFactory>();
 
@@ -144,7 +209,7 @@ builder.Services.AddHangfire(config =>
         .UseSimpleAssemblyNameTypeSerializer()
         .UseRecommendedSerializerSettings()
         .UseSqlServerStorage(builder.Configuration.GetConnectionString("HangfireConnection"));
-   
+
 });
 
 
@@ -162,8 +227,25 @@ builder.Services.AddScoped<IInvestmentPlanReadRepository, InvestmentPlanReadRepo
 builder.Services.AddScoped(typeof(IBankPolicy<>), typeof(MellatPolicy<>));
 builder.Services.AddScoped<ILoanOrchestratorJobRunner, LoanOrchestratorJobs>();
 builder.Services.AddScoped<IInvestmenJobRunner, KarizmahDailyIndexSyncJob>();
-builder.Services.AddCors(o => o.AddPolicy("AllowAll",
-    p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
+builder.Services.AddScoped<IUserContext, UserContext>();
+builder.Services.AddScoped<IUserApiClient, UserApiClient>();
+builder.Services.AddScoped<IShahkarService, ShahkarService>();
+
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
@@ -172,12 +254,34 @@ using (var scope = app.Services.CreateScope())
     recurringJobManager.AddOrUpdate<IInvestmenJobRunner>(
         "karizmah-index-history-warmup",
         job => job.ExecuteAsync(CancellationToken.None),
-        "10 17 * * *");
+        "15 20 * * *");
 }
+
+
+
+if (swaggerSettings.Enabled)
+{
+    app.UseSwagger(c =>
+    {
+
+        c.RouteTemplate = $"{swaggerSettings.RoutePrefix}/{{documentName}}/swagger.json";
+    });
+
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint(
+            $"/{swaggerSettings.RoutePrefix}/{swaggerSettings.Version}/swagger.json",
+            $"{swaggerSettings.Title} {swaggerSettings.Version}");
+
+
+        c.RoutePrefix = swaggerSettings.RoutePrefix;
+    });
+}
+
 // ?? Middleware
 
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 
 app.UseHttpsRedirection();
@@ -186,7 +290,7 @@ app.UseAuthorization();
 app.UseHangfireDashboard("/hangfire");
 
 
-app.UseCors("AllowAll");
+app.UseCors("Frontend");
 app.UseMiddleware<GlobalExceptionMiddleware>();
 app.MapControllers();
-app.Run(); 
+app.Run();

@@ -44,6 +44,6 @@ namespace LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsP
         /// <summary>
         /// زمان آخرین به‌روزرسانی این داده‌ها (برای نمایش "آخرین بروزرسانی")
         /// </summary>
-        public DateTime LastUpdateUtc { get; set; }
+        public DateTimeOffset LastUpdateUtc { get; set; }
     }
 }

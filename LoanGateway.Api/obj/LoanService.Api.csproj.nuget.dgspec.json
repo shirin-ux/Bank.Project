@@ -182,6 +182,9 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
+              "D:\\ProjectBank\\shared\\Common\\Common.csproj": {
+                "projectPath": "D:\\ProjectBank\\shared\\Common\\Common.csproj"
+              },
               "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj": {
                 "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj"
               }
@@ -217,6 +220,81 @@
               "version": "[9.0.10, )"
             },
             "Microsoft.Extensions.Options": {
+              "target": "Package",
+              "version": "[9.0.10, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\ProjectBank\\providers\\Shahkar.Provider\\Shahkar.Provider.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\ProjectBank\\providers\\Shahkar.Provider\\Shahkar.Provider.csproj",
+        "projectName": "Shahkar.Provider",
+        "projectPath": "D:\\ProjectBank\\providers\\Shahkar.Provider\\Shahkar.Provider.csproj",
+        "packagesPath": "C:\\Users\\Shirin\\.nuget\\packages\\",
+        "outputPath": "D:\\ProjectBank\\providers\\Shahkar.Provider\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\Shirin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "D:\\ProjectBank\\Auth\\LoanGateway.Auth.Domain\\LoanGateway.Auth.Domain.csproj": {
+                "projectPath": "D:\\ProjectBank\\Auth\\LoanGateway.Auth.Domain\\LoanGateway.Auth.Domain.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "Microsoft.Extensions.Http": {
               "target": "Package",
               "version": "[9.0.10, )"
             }
@@ -518,6 +596,9 @@
               "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj": {
                 "projectPath": "D:\\ProjectBank\\src\\Karizmah.Provider\\Karizmah.Provider.csproj"
               },
+              "D:\\ProjectBank\\src\\LoanGateway.Application\\LoanService.Application.csproj": {
+                "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Application\\LoanService.Application.csproj"
+              },
               "D:\\ProjectBank\\src\\LoanGateway.Infrastructure\\LoanService.Infrastructure.csproj": {
                 "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Infrastructure\\LoanService.Infrastructure.csproj"
               }
@@ -547,6 +628,14 @@
             "Hangfire": {
               "target": "Package",
               "version": "[1.8.21, )"
+            },
+            "MediatR": {
+              "target": "Package",
+              "version": "[13.1.0, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.0, )"
             },
             "Microsoft.Extensions.Configuration.Binder": {
               "target": "Package",
@@ -611,17 +700,14 @@
               "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj": {
                 "projectPath": "D:\\ProjectBank\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj"
               },
-              "D:\\ProjectBank\\shared\\Common\\Common.csproj": {
-                "projectPath": "D:\\ProjectBank\\shared\\Common\\Common.csproj"
-              },
-              "D:\\ProjectBank\\src\\Common\\Common.csproj": {
-                "projectPath": "D:\\ProjectBank\\src\\Common\\Common.csproj"
-              },
-              "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj": {
-                "projectPath": "D:\\ProjectBank\\src\\LoanGateway.Domain\\LoanService.Domain.csproj"
+              "D:\\ProjectBank\\providers\\Shahkar.Provider\\Shahkar.Provider.csproj": {
+                "projectPath": "D:\\ProjectBank\\providers\\Shahkar.Provider\\Shahkar.Provider.csproj"
               },
               "D:\\ProjectBank\\src\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj": {
                 "projectPath": "D:\\ProjectBank\\src\\providers\\Bank.Mellat.Provider\\Bank.Mellat.Provider.csproj"
+              },
+              "D:\\ProjectBank\\src\\SadadProvider\\SadadProvider.csproj": {
+                "projectPath": "D:\\ProjectBank\\src\\SadadProvider\\SadadProvider.csproj"
               }
             }
           }
@@ -916,6 +1002,71 @@
               "version": "[9.0.10, )"
             }
           },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "D:\\ProjectBank\\src\\SadadProvider\\SadadProvider.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\ProjectBank\\src\\SadadProvider\\SadadProvider.csproj",
+        "projectName": "SadadProvider",
+        "projectPath": "D:\\ProjectBank\\src\\SadadProvider\\SadadProvider.csproj",
+        "packagesPath": "C:\\Users\\Shirin\\.nuget\\packages\\",
+        "outputPath": "D:\\ProjectBank\\src\\SadadProvider\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\Shirin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
           "imports": [
             "net461",
             "net462",
