@@ -25,18 +25,20 @@ public class GetInvestmentPlanDetailsQueryHandler
 
     public async Task<Result<InvestmentPlanDetailsResultDto>> Handle(GetInvestmentPlanDetailsQuery request, CancellationToken ct)
     {
-
+  
         var plan = await _planRepo.GetPlanWithMetaAsync(request.PlanType, ct);
         if (plan is null)
             throw new NotFoundException("طرح سرمایه‌گذاری مورد نظر یافت نشد.");
 
+        var isMinute = request.BoxStatus == InvestmentBoxStatus.Minute;
+        var (fromUtc, toUtc) = request.BoxStatus.ToDateRange(request.PlanType, request.Range, DateTime.UtcNow);
 
-        InvestmentRangeRules.EnsureAllowed(request.PlanType, request.Range);
-        if (request.PlanType == InvestmentPlanType.FixedIncome && (request.Range is InvestmentChartRange.OneHour or InvestmentChartRange.OneDay))
-        {
-            throw new LogicException("برای طرح درآمد ثابت فقط بازه‌های ۳، ۶ و ۹ ماهه مجاز است.");
+        //InvestmentRangeRules.EnsureAllowed(request.PlanType, request.Range);
+        //if (request.PlanType == InvestmentPlanType.FixedIncome && (request.Range is InvestmentChartRange.OneHour or InvestmentChartRange.OneDay))
+        //{
+        //    throw new LogicException("برای طرح درآمد ثابت فقط بازه‌های ۳، ۶ و ۹ ماهه مجاز است.");
 
-        }
+        //}
         IReadOnlyList<IndexPointDto> history;
 
         if (request.PlanType == InvestmentPlanType.FixedIncome)
@@ -46,7 +48,7 @@ public class GetInvestmentPlanDetailsQueryHandler
         }
         else
         {
-            history = await _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct, false);
+            history = await _karizmahProvider.GetPlanIndexHistoryAsync(request.PlanType, request.Range, ct, false,isMinute);
 
         }
         if (history is null || history.Count == 0)

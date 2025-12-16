@@ -242,13 +242,13 @@ namespace LoanService.Infrastructure.Repositories.Investment
                 commandType: CommandType.StoredProcedure);
         }
 
-        public async Task<InvestmentPlans> GetPlanAsync(string title, CancellationToken ct)
+        public async Task<InvestmentPlans> GetPlanAsync(string planStatus, CancellationToken ct)
         {
-            const string sql = @"SELECT * FROM InvestmentPlans where IsActive=1 And IsDelete=0 AND Title=@title ORDER BY Id DESC;";
+            const string sql = @"SELECT * FROM InvestmentPlans where IsActive=1 And IsDelete=0 AND PlanStatus=@planStatus ORDER BY Id DESC;";
             await using var conn = _transactionDBUtility.GetSqlConnection();
             await conn.OpenAsync(ct);
 
-            return await conn.QueryFirstOrDefaultAsync<InvestmentPlans>(new CommandDefinition(sql, new { Title = title }, cancellationToken: ct));
+            return await conn.QueryFirstOrDefaultAsync<InvestmentPlans>(new CommandDefinition(sql, new { PlanStatus = planStatus }, cancellationToken: ct));
         }
 
         public async Task<List<InvestmentIndexHistory>> GetLatestPointsAsync(InvestmentPlanType planType, int count, CancellationToken ct)

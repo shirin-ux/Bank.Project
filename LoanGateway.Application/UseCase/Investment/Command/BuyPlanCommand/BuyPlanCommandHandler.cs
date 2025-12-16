@@ -2,7 +2,6 @@
 using LoanService.Application.Contracts;
 using LoanService.Application.Exceptions;
 using LoanService.Domain.Entities.Investment;
-using LoanService.Domain.Exceptions;
 using LoanService.Domain.IRepository.Investment;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -37,7 +36,7 @@ public sealed class BuyPlanCommandHandler
         _shahkarService = shahkarService;
     }
 
-    public async Task<Result<BuyPlanResultDto>> Handle(BuyPlanCommand cmd,CancellationToken ct)
+    public async Task<Result<BuyPlanResultDto>> Handle(BuyPlanCommand cmd, CancellationToken ct)
     {
         if (!_userContext.IsAuthenticated)
             throw new UnauthorizedAccessException("کاربر احراز هویت نشده");
@@ -49,15 +48,15 @@ public sealed class BuyPlanCommandHandler
         _logger.LogInformation("Starting GiftGoldCommand for NationalCode {NationalCode}", cmd.NationalCode);
 
 
-        var user = await _userApi.GetUserByNationalCodeAsync(new UserRequest { nationalCode= cmd.NationalCode } , ct);
-
+        var user = await _userApi.GetUserByNationalCodeAsync(new UserRequest { nationalCode = cmd.NationalCode }, ct);
+        
 
         if (user is null)
             throw new NotFoundException($"کاربر با کد ملی {cmd.NationalCode} یافت نشد.");
 
 
-        var personalAddres =await _shahkarService.GetAddressUserAsync(cmd.NationalCode);
 
+        //var update = await _userApi.UpdateUserAsync(new UserIdRequest { PostalCode = user.PostalCode,UserId=user.UserId}, ct);
         //var priceInfo = await _investmentProvider.GetCurrentPriceAsync(cmd.PlanType, ct);
 
         //var gramPrice = priceInfo.CurrentPrice;
@@ -68,16 +67,16 @@ public sealed class BuyPlanCommandHandler
 
         //if (grams <= 0)
         //    throw new LogicException("مبلغ وارد شده برای خرید طلا ناکافی است.");
-        var postalCode =;
 
-        var orderRes = await _investmentProvider.CreatePolicyAndBuyAsync(cmd, postalCode, user.BirthDate, ct);
 
- 
+        var orderRes = await _investmentProvider.CreatePolicyAndBuyAsync(cmd, user.PostalCode, user.BirthDate, ct);
+
+
         var account = InvestmentAccount.CreateNew(
-           
+
             policyId: orderRes.ProviderPolicyId,
             nationalCode: orderRes.NationalCode,
-            birthDate:orderRes.BirthDate,  
+            birthDate: orderRes.BirthDate,
             planCode: plan.PlanType,
             traceId: orderRes.TraceId.ToString()
         );

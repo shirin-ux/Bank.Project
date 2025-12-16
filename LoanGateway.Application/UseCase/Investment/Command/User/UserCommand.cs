@@ -7,4 +7,5 @@ public class UserCommand
     public string? PostalCode { get; init; }
     public string? MobileNumber { get; init; }
     public string? Address { get; init; }
+    public Guid UserId { get; init; }
 }

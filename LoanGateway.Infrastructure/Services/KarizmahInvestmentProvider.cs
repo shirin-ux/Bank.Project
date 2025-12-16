@@ -38,15 +38,25 @@ public class KarizmahInvestmentProvider(
         IranNow().Date.AddDays(-1);
 
 
-    public async Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan, InvestmentChartRange range, CancellationToken ct, bool forceRefresh = false)
+    public async Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan,
+        InvestmentChartRange range, 
+        CancellationToken ct, 
+        bool forceRefresh = false,
+         bool isMinute = false)
     {
         var nowUtc = DateTime.UtcNow;
-        var (fromUtc, toUtc) = range.ToDateRange(nowUtc);
-        var cacheKey = $"chindx:{plan}:{range}";
+        //var (fromUtc, toUtc) = range.ToDateRange(nowUtc);
 
-        InvestmentRangeRules.EnsureAllowed(plan, range);
+        var (fromUtc, toUtc) = isMinute
+      ?  BoxStatusExtensions.ToDateRange(InvestmentBoxStatus.Minute, plan, range, nowUtc)
+      : BoxStatusExtensions.ToDateRange(InvestmentBoxStatus.Daily, plan, range, nowUtc);
 
-        if (range is InvestmentChartRange.OneDay or InvestmentChartRange.OneHour)
+
+        var cacheKey = $"chindx:{plan}:{range}:{(isMinute ? "min" : "day")}";
+
+       // InvestmentRangeRules.EnsureAllowed(plan, range);
+
+        if (range is InvestmentChartRange.OneDay or InvestmentChartRange.OneHour || isMinute)
         {
             if (!forceRefresh && _cache.TryGetValue(cacheKey, out IReadOnlyList<IndexPointDto> cachedShort))
                 return cachedShort;
@@ -54,17 +64,30 @@ public class KarizmahInvestmentProvider(
             var nowIran = IranNow();
             DateTimeOffset fromLocal, toLocal;
 
-            if (range == InvestmentChartRange.OneHour)
+            if (isMinute /*|| range == InvestmentChartRange.OneHour*/)
             {
-                fromLocal = nowIran.AddHours(-1);
+                fromLocal =   nowIran.AddMinutes(-60);
                 toLocal = nowIran;
             }
-            else
+            else // OneDay
             {
-
                 fromLocal = new DateTimeOffset(nowIran.Date, IranOffset);
                 toLocal = nowIran;
             }
+
+
+
+            //if (range == InvestmentChartRange.OneHour)
+            //{
+            //    fromLocal = nowIran.AddHours(-1);
+            //    toLocal = nowIran;
+            //}
+            //else
+            //{
+
+            //    fromLocal = new DateTimeOffset(nowIran.Date, IranOffset);
+            //    toLocal = nowIran;
+            //}
             var raw = await FetchHistoryFromKarizmahAsync(plan, fromLocal, toLocal, ct);
 
             var result = raw
@@ -212,16 +235,16 @@ public class KarizmahInvestmentProvider(
 
     }
 
-    public async Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd, string birthDate, string postalCode, CancellationToken ct)
+    public async Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd, string postalCode, string birthDate, CancellationToken ct)
     {
 
 
         var req = new KarizmahCreatePolicyWithoutInitialPaymentRequestDto
         {
-            birthDate = postalCode,
-            planTypeAliasName = "IRTICHGOLD01",// cmd.PlanType.ToString(),
+            birthDate = birthDate,
+            planTypeAliasName =  cmd.PlanType.ToString(),
             nationalCode = cmd.NationalCode,
-            postalCode= "1371714378"
+            postalCode= postalCode
 
         };
         var resKarizmah = await _client.CreatePolicyWithoutInitialPaymentAsync(req, ct);

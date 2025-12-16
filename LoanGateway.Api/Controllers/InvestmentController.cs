@@ -19,6 +19,8 @@ namespace LoanGateway.Api.Controllers
     {
         private readonly IMediator _mediator = mediator;
         private readonly ILogger<InvestmentController> _logger = logger;
+
+
         [Authorize]
         [HttpGet("get-investment-plan")]
         public async Task<IActionResult> GetInvestmentPlan(CancellationToken ct)
@@ -33,14 +35,14 @@ namespace LoanGateway.Api.Controllers
         /// جزئیات طرح سرمایه‌گذاری 
         /// </summary>
 
-        [Authorize]
+
         [HttpGet("{planType}/details")]
 
-        public async Task<IActionResult> GetPlanDetails([FromRoute] InvestmentPlanType planType, [FromQuery] InvestmentChartRange range, CancellationToken ct = default)
+        public async Task<IActionResult> GetPlanDetails([FromRoute] InvestmentPlanType planType, [FromQuery] InvestmentChartRange range, [FromQuery]InvestmentBoxStatus boxStatus, CancellationToken ct = default)
         {
             _logger.LogInformation("GetPlanDetails called. planType={PlanType}, range={Range}", planType, range);
 
-            var result = await _mediator.Send(new GetInvestmentPlanDetailsQuery(planType, range), ct);
+            var result = await _mediator.Send(new GetInvestmentPlanDetailsQuery(planType, range, boxStatus), ct);
             return ToHttp(result);
         }
 
@@ -60,9 +62,6 @@ namespace LoanGateway.Api.Controllers
             var result = await _mediator.Send(command, ct);
             return ToHttp(result);
         }
-
-
-
 
 
         [Authorize]
@@ -86,23 +85,15 @@ namespace LoanGateway.Api.Controllers
         }
 
 
-
-        [HttpGet("redirect-to-realestate")]
-        public IActionResult RedirectToRealEstate()
-        {
-            var url = "https://amlak.mrud.ir/"; 
-            return Redirect(url);
-        }
-
         [HttpPost("receive")]
-        public IActionResult ReceiveZipCode([FromBody] ZipCodeRequest request)
+        public async Task<IActionResult> ReceiveZipCode([FromBody] ReceiveZipCodeCommand cmd,CancellationToken ct)
         {
-            if (string.IsNullOrWhiteSpace(request.PostalCode))
+            if (string.IsNullOrWhiteSpace(cmd.PostalCode))
             {
                 return BadRequest("کدپستی وارد نشده است.");
             }
-   
-            return Ok(new { ReceivedZipCode = request.PostalCode, Message = "کدپستی دریافت شد" });
+            var result = await _mediator.Send(cmd, ct);
+            return ToHttp(result);
         }
 
 

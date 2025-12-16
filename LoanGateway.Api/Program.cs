@@ -82,6 +82,17 @@ builder.Services.Configure<MellatPolicyOptions>(options =>
 builder.Services.Configure<MellatApiOptions>(
     builder.Configuration.GetSection("MellatApiOptions"));
 
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<ITokenProvider, TokenProvider>();
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ServicePolicy", policy =>
+    {
+        policy.RequireClaim("scope", "auth.internal");
+    });
+});
+
 
 builder.Services.Configure<RabbitMqOptions>(
     builder.Configuration.GetSection("RabbitMqOptions"));
@@ -246,7 +257,13 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
+builder.Services
+    .AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+
 var app = builder.Build();
+app.MapReverseProxy();
 using (var scope = app.Services.CreateScope())
 {
     var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();

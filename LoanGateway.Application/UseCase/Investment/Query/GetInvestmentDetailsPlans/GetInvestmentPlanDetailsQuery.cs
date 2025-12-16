@@ -6,7 +6,8 @@ namespace LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsP
 {
     public record GetInvestmentPlanDetailsQuery(
             InvestmentPlanType PlanType,
-            InvestmentChartRange Range
+            InvestmentChartRange Range,
+            InvestmentBoxStatus BoxStatus
         ) : IRequest<Result<InvestmentPlanDetailsResultDto>>;
 
 }

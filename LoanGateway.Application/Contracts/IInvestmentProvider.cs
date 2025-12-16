@@ -7,7 +7,7 @@ namespace LoanService.Application.Contracts
 {
     public interface IInvestmentProvider
     {
-        Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan, InvestmentChartRange range,CancellationToken ct, bool forceRefresh);
+        Task<IReadOnlyList<IndexPointDto>> GetPlanIndexHistoryAsync(InvestmentPlanType plan, InvestmentChartRange range,CancellationToken ct,  bool forceRefresh, bool isMinute = false);
         Task<PlanPriceInfoDto> GetCurrentPriceAsync( InvestmentPlanType planType, CancellationToken ct);
 
         Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd,string birthDate,string postalCode, CancellationToken ct);
