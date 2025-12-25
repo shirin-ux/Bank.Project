@@ -20,7 +20,7 @@ namespace LoanService.Domain.IRepository.Investment
         Task<InvestmentAccount?> GetByNationalCodeAndPlanAsync(string nationalCode,InvestmentPlanType planType, CancellationToken ct);
 
         Task AddAsync(InvestmentAccount account, CancellationToken ct);
-
+        Task<bool> UpdateAsync(InvestmentAccount plan, CancellationToken ct);
 
         Task<DateTime?> GetLastDateAsync(
             InvestmentPlanType plan, CancellationToken ct);
@@ -31,6 +31,10 @@ namespace LoanService.Domain.IRepository.Investment
 
         Task<List<InvestmentIndexHistory>> GetLatestPointsAsync(InvestmentPlanType planType,int count, CancellationToken ct);
 
+        /// <summary>
+        /// بررسی می‌کند که آیا operation با receiptNumber مشخص برای PolicyId مشخص وجود دارد یا نه
+        /// </summary>
+        Task<bool> CheckReceiptNumberExistsAsync(Guid? policyId, string receiptNumber, CancellationToken ct);
 
     }
 }

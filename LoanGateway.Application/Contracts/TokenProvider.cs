@@ -31,31 +31,21 @@ namespace LoanService.Application.Contracts
 
         public async Task<string> GetTokenAsync(CancellationToken ct = default)
         {
-            if (_cachedToken != null && _expiresAtUtc > DateTime.UtcNow.AddMinutes(1))
-                return  _cachedToken;
-
-
             var client = _http.CreateClient();
-
-            var response = await client.PostAsync(
-            _config["Auth:TokenUrl"],
-            new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                ["grant_type"] = "client_credentials",
-                ["client_id"] = _config["Auth:ClientId"],
-                ["client_secret"] = _config["Auth:ClientSecret"],
-                ["scope"] = "auth.api"
-            }),
-            ct);
+            var response = await client.PostAsync("https://gateway.local/connect/token",
+                new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    ["grant_type"] = "client_credentials",
+                    ["client_id"] = "investment-service",
+                    ["client_secret"] = "***",
+                    ["scope"] = "auth.internal"
+                }),
+                ct
+            );
 
             response.EnsureSuccessStatusCode();
-
-            var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(ct);
-
-            _cachedToken = tokenResponse!.access_token;
-            _expiresAtUtc = DateTime.UtcNow.AddSeconds(tokenResponse.expires_in);
-
-            return _cachedToken;
+            var token = await response.Content.ReadFromJsonAsync<TokenResponse>(ct);
+            return token!.access_token;
         }
 
         public sealed class TokenResponse

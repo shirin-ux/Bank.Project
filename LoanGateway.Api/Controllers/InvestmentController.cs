@@ -1,10 +1,16 @@
 ﻿using Common;
-using LoanService.Application.UseCase.Investment.Command.BuyPlanCommand;
+using LoanService.Application.Contracts;
+using LoanService.Application.UseCase.Investment.Command.BuyPlan;
+using LoanService.Application.UseCase.Investment.Command.CompleteBuy;
+using LoanService.Application.UseCase.Investment.Command.CompleteGiftCard;
 using LoanService.Application.UseCase.Investment.Command.CompletePayment;
+using LoanService.Application.UseCase.Investment.Command.GiftCard;
 using LoanService.Application.UseCase.Investment.Command.PaymentGateway;
 using LoanService.Application.UseCase.Investment.Command.User;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsPlans;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentPlans;
+using LoanService.Application.UseCase.Investment.Query.GiftCard;
+using LoanService.Application.UseCase.Investment.Query.OrderBuy;
 using LoanService.Application.UseCase.Investment.Query.PlanBuyInfo;
 using LoanService.Domain.Enum.Investment;
 using MediatR;
@@ -15,10 +21,11 @@ namespace LoanGateway.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class InvestmentController(IMediator mediator, ILogger<InvestmentController> logger) : ControllerBase
+    public class InvestmentController(IMediator mediator, ILogger<InvestmentController> logger, IUserContext userContext) : ControllerBase
     {
         private readonly IMediator _mediator = mediator;
         private readonly ILogger<InvestmentController> _logger = logger;
+        private readonly IUserContext _userContext = userContext;
 
 
         [Authorize]
@@ -29,12 +36,6 @@ namespace LoanGateway.Api.Controllers
 
             return ToHttp(result);
         }
-
-
-        /// <summary>
-        /// جزئیات طرح سرمایه‌گذاری 
-        /// </summary>
-
 
         [HttpGet("{planType}/details")]
 
@@ -51,6 +52,16 @@ namespace LoanGateway.Api.Controllers
         public async Task<IActionResult> GetPlanBuyInfo([FromRoute] InvestmentPlanType planType, CancellationToken ct = default)
         {
             var result = await _mediator.Send(new PlanBuyInfoQueryDto(planType), ct);
+            return ToHttp(result);
+        }
+
+
+
+        [Authorize]
+        [HttpGet("getOrder-buy-ByOrder")]
+        public async Task<IActionResult> GetOrderBuyByOrder(Guid id, CancellationToken ct = default)
+        {
+            var result = await _mediator.Send(new GetOrderStatusQuery { Id=id}, ct);
             return ToHttp(result);
         }
 
@@ -96,16 +107,62 @@ namespace LoanGateway.Api.Controllers
             return ToHttp(result);
         }
 
+  
+        [Authorize]
+        [HttpGet("gift-card/can-see")]
+        public async Task<IActionResult> CanSeeGiftCard(CancellationToken ct)
+        {
+            var query = new CanSeeGiftCardQuery
+            {
+                UserId = _userContext.UserId
+            };
+            var result = await _mediator.Send(query, ct);
+            return ToHttp(result);
+        }
+
+
+        [Authorize]
+        [HttpPost("gift-card/receive")]
+        public async Task<IActionResult> ReceiveGiftCard(CancellationToken ct)
+        {
+            var command = new ReceiveGiftCardCommand
+            {
+                UserId = _userContext.UserId
+            };
+            var result = await _mediator.Send(command, ct);
+            return ToHttp(result);
+        }
+
+        [Authorize]
+        [HttpPost("complete-buy")]
+        public async Task<IActionResult> CompleteBuy([FromBody] CompleteBuyCommand command, CancellationToken ct)
+        {
+            command.UserId = _userContext.UserId; 
+            var result = await _mediator.Send(command, ct);
+            return ToHttp(result);
+        }
+
+
 
         // -------------------- Helper: Result → IActionResult --------------------
         private IActionResult ToHttp<T>(Result<T> result)
         {
             if (result.IsSuccess) return Ok(result.Value);
 
-            var statusCode = result.Error!.Code == 404
+            // برای خطاهای کسب‌وکار از سرویس خارجی (مثل کاریزما) کد 200 استفاده می‌شود
+            if (result.Error!.Code == 200)
+            {
+                return Ok(new
+                {
+                    error = result.Error.Message,
+                    code = result.Error.Code,
+                    details = result.Error.Details
+                });
+            }
+
+            var statusCode = result.Error.Code == 404
                 ? StatusCodes.Status404NotFound
                 : StatusCodes.Status400BadRequest;
-
 
             return StatusCode(statusCode, new
             {
@@ -115,31 +172,6 @@ namespace LoanGateway.Api.Controllers
             });
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }
 

@@ -85,6 +85,21 @@ namespace LoanGateway.Api.Controllers
         /// <returns></returns>
 
 
+
+
+
+
+        [HttpGet("request/{requestId}")]
+        public async Task<IActionResult> GetContractFile(string requestId)
+        {
+            //var result = await _service.GetContractFileAsync(requestId);
+
+            //if (result == null)
+            //    return NotFound();
+
+            return Ok();
+        }
+
         [HttpPost("Installments")]
         public async Task<IActionResult> GetInstallments(Guid loanId, CancellationToken ct)
         {
@@ -228,6 +243,9 @@ namespace LoanGateway.Api.Controllers
             var result = await _orchestrator.GetPurchasesAsync(loanId, cmd, ct);
             return ToHttp(result);
         }
+
+
+
 
         /// <summary>
         ///  صورتحساب

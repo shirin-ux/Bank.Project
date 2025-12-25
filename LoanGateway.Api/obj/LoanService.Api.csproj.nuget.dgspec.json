@@ -644,10 +644,6 @@
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.6.2, )"
-            },
-            "Yarp.ReverseProxy": {
-              "target": "Package",
-              "version": "[2.3.0, )"
             }
           },
           "imports": [

@@ -1,9 +1,11 @@
 ﻿using Dapper;
+using LoanGateway.Auth.Domain.Entities;
 using LoanGateway.Infrastructure.Utility;
 using LoanService.Domain.Entities.Investment;
 using LoanService.Domain.Enum.Investment;
 using LoanService.Domain.IRepository.Investment;
 using System.Data;
+using System.Reflection;
 
 namespace LoanService.Infrastructure.Repositories.Investment
 {
@@ -208,14 +210,194 @@ namespace LoanService.Infrastructure.Repositories.Investment
 
         }
 
-        public Task<InvestmentAccount?> GetByNationalCodeAndPlanAsync(string nationalCode, InvestmentPlanType planType, CancellationToken ct)
+        public async Task<InvestmentAccount?> GetByNationalCodeAndPlanAsync(string nationalCode, InvestmentPlanType planType, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            const string sql = @"
+                SELECT TOP 1 
+                    Id, ProviderPolicyId, NationalCode, BirthDate, PlanCode,
+                    PostalCode, Address, State,
+                    TotalInvested, TotalWithdrawn, CurrentValue,
+                    RevokableAmount, CollateralAmount, LastTraceId,
+                    CreatedAtUtc, UpdatedAtUtc
+                FROM dbo.InvestmentAccount
+                WHERE NationalCode = @NationalCode 
+                    AND PlanCode = @PlanCode
+                ORDER BY CreatedAtUtc DESC;";
+
+            await using var conn = _transactionDBUtility.GetSqlConnection();
+            await conn.OpenAsync(ct);
+
+            var flat = await conn.QueryFirstOrDefaultAsync<InvestmentAccountFlat>(
+                new CommandDefinition(sql, new { NationalCode = nationalCode, PlanCode = (int)planType }, cancellationToken: ct));
+
+            if (flat == null)
+                return null;
+
+            // استفاده از reflection برای ساخت InvestmentAccount (چون constructor private است)
+            var account = Activator.CreateInstance(typeof(InvestmentAccount), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance, null, null, null) as InvestmentAccount;
+            if (account == null) return null;
+
+            // استفاده از reflection برای set کردن properties (با private setters)
+            var props = typeof(InvestmentAccount).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            var baseProps = typeof(BaseEntity).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            
+            foreach (var prop in props.Concat(baseProps))
+            {
+                var setter = prop.GetSetMethod(true); // true برای گرفتن private setter
+                if (setter != null)
+                {
+                    object? value = null;
+                    if (prop.Name == "PlanCode" && flat.PlanCode > 0)
+                    {
+                        value = (InvestmentPlanType)flat.PlanCode;
+                    }
+                    else
+                    {
+                        var flatProp = flat.GetType().GetProperty(prop.Name);
+                        value = flatProp?.GetValue(flat);
+                    }
+                    
+                    if (value != null || (prop.PropertyType.IsValueType ))
+                    {
+                        setter.Invoke(account, new[] { value });
+                    }
+                }
+            }
+
+            // تبدیل State
+            var stateProp = typeof(InvestmentAccount).GetProperty("State", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (stateProp != null)
+            {
+                var stateSetter = stateProp.GetSetMethod(true);
+                stateSetter?.Invoke(account, new object[] { (InvestmentState)flat.State });
+            }
+
+            return account;
         }
 
-        public Task AddAsync(InvestmentAccount account, CancellationToken ct)
+        private class InvestmentAccountFlat
         {
-            throw new NotImplementedException();
+            public Guid Id { get; set; }
+            public Guid? ProviderPolicyId { get; set; }
+            public string? NationalCode { get; set; }
+            public string? BirthDate { get; set; }
+            public int PlanCode { get; set; }
+            public string? PostalCode { get; set; }
+            public string? Address { get; set; }
+            public int State { get; set; }
+            public decimal TotalInvested { get; set; }
+            public decimal TotalWithdrawn { get; set; }
+            public decimal CurrentValue { get; set; }
+            public decimal RevokableAmount { get; set; }
+            public decimal CollateralAmount { get; set; }
+            public string? LastTraceId { get; set; }
+            public DateTime CreatedAtUtc { get; set; }
+            public DateTime UpdatedAtUtc { get; set; }
+        }
+
+        public async Task AddAsync(InvestmentAccount account, CancellationToken ct)
+        {
+            const string sql = @"
+                INSERT INTO dbo.InvestmentAccount 
+                    (Id, ProviderPolicyId, NationalCode, BirthDate, PlanCode,
+                     PostalCode, Address, State,
+                     TotalInvested, TotalWithdrawn, CurrentValue,
+                     RevokableAmount, CollateralAmount, LastTraceId,
+                     CreatedAtUtc, UpdatedAtUtc)
+                VALUES 
+                    (@Id, @ProviderPolicyId, @NationalCode, @BirthDate, @PlanCode,
+                     @PostalCode, @Address, @State,
+                     @TotalInvested, @TotalWithdrawn, @CurrentValue,
+                     @RevokableAmount, @CollateralAmount, @LastTraceId,
+                     @CreatedAtUtc, @UpdatedAtUtc);";
+
+            await using var conn = _transactionDBUtility.GetSqlConnection();
+            await conn.OpenAsync(ct);
+
+            await conn.ExecuteAsync(
+                new CommandDefinition(sql, new
+                {
+                    account.Id,
+                    ProviderPolicyId = account.ProviderPolicyId,
+                    NationalCode = account.NationalCode,
+                    BirthDate = account.BirthDate,
+                    PlanCode = account.PlanCode.HasValue ? (int)account.PlanCode.Value : (int?)null,
+                    PostalCode = account.PostalCode,
+                    Address = account.Address,
+                    State = (int)account.State,
+                    TotalInvested = account.TotalInvested,
+                    TotalWithdrawn = account.TotalWithdrawn,
+                    CurrentValue = account.CurrentValue,
+                    RevokableAmount = account.RevokableAmount,
+                    CollateralAmount = account.CollateralAmount,
+                    LastTraceId = account.LastTraceId,
+                    CreatedAtUtc = account.CreatedAtUtc,
+                    UpdatedAtUtc = account.UpdatedAtUtc
+                }, cancellationToken: ct));
+
+            // TODO: باید Operations را هم insert کنیم، اما فعلاً فقط Account را insert می‌کنیم
+            // Operations باید در یک جدول جداگانه insert شوند
+        }
+
+        /// <summary>
+        /// بررسی می‌کند که آیا operation با receiptNumber مشخص برای PolicyId مشخص وجود دارد یا نه
+        /// </summary>
+        public async Task<bool> CheckReceiptNumberExistsAsync(Guid? policyId, string receiptNumber, CancellationToken ct)
+        {
+            if (policyId == null || string.IsNullOrWhiteSpace(receiptNumber))
+                return false;
+
+            const string sql = @"
+                SELECT COUNT(1)
+                FROM dbo.InvestmentOperation
+                WHERE PolicyId = @PolicyId 
+                    AND ReceiptNumber = @ReceiptNumber;";
+
+            await using var conn = _transactionDBUtility.GetSqlConnection();
+            await conn.OpenAsync(ct);
+
+            var count = await conn.QueryFirstOrDefaultAsync<int>(
+                new CommandDefinition(sql, new { PolicyId = policyId, ReceiptNumber = receiptNumber }, cancellationToken: ct));
+
+            return count > 0;
+        }
+
+        public async Task<bool> UpdateAsync(InvestmentAccount account, CancellationToken ct)
+        {
+            const string sql = @"
+                UPDATE dbo.InvestmentAccount
+                SET State = @State,
+                    TotalInvested = @TotalInvested,
+                    TotalWithdrawn = @TotalWithdrawn,
+                    CurrentValue = @CurrentValue,
+                    RevokableAmount = @RevokableAmount,
+                    CollateralAmount = @CollateralAmount,
+                    LastTraceId = @LastTraceId,
+                    PostalCode = @PostalCode,
+                    Address = @Address,
+                    UpdatedAtUtc = @UpdatedAtUtc
+                WHERE Id = @Id;";
+
+            await using var conn = _transactionDBUtility.GetSqlConnection();
+            await conn.OpenAsync(ct);
+
+            var affected = await conn.ExecuteAsync(
+                new CommandDefinition(sql, new
+                {
+                    account.Id,
+                    State = (int)account.State,
+                    account.TotalInvested,
+                    account.TotalWithdrawn,
+                    account.CurrentValue,
+                    account.RevokableAmount,
+                    account.CollateralAmount,
+                    account.LastTraceId,
+                    account.PostalCode,
+                    account.Address,
+                    account.UpdatedAtUtc
+                }, cancellationToken: ct));
+
+            return affected > 0;
         }
 
         public async Task<DateTime?> GetLastDateAsync(InvestmentPlanType plan, CancellationToken ct)

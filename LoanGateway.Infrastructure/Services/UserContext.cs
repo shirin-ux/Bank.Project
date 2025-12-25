@@ -9,22 +9,33 @@ using System.Threading.Tasks;
 
 namespace LoanService.Infrastructure.Contracts;
 
-public sealed class UserContext : IUserContext
-{
-    public Guid UserId { get; }
-    public string? NationalCode { get; }
-    public bool IsAuthenticated { get; }
 
-    public UserContext(IHttpContextAccessor accessor)
+    public sealed class UserContext : IUserContext
     {
-        var user = accessor.HttpContext?.User;
+        public Guid UserId { get; }
+        public string? NationalCode { get; }
+        public bool IsAuthenticated { get; }
 
-        IsAuthenticated = user?.Identity?.IsAuthenticated == true;
+        public UserContext(IHttpContextAccessor accessor)
+        {
+            var user = accessor.HttpContext?.User;
 
-        if (!IsAuthenticated)
-            return;
+            IsAuthenticated = user?.Identity?.IsAuthenticated == true;
 
-        UserId = Guid.Parse(user!.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-        NationalCode = user.FindFirst("national_code")?.Value;
+            if (!IsAuthenticated)
+                return;
+
+            // گرفتن UserId
+            var userIdClaim = user!.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                             ?? user.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+
+            if (userIdClaim != null && Guid.TryParse(userIdClaim, out var userId))
+            {
+                UserId = userId;
+            }
+
+            // گرفتن کد ملی از token
+            NationalCode = user.FindFirst("national_code")?.Value;
+        }
     }
-}
+

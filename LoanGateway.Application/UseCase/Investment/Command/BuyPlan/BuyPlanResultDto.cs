@@ -1,12 +1,13 @@
 ﻿using LoanService.Domain.Enum.Investment;
 
-namespace LoanService.Application.UseCase.Investment.Command.BuyPlanCommand
+namespace LoanService.Application.UseCase.Investment.Command.BuyPlan
 {
     public sealed class BuyPlanResultDto
     {
         public decimal AmountRial { get; set; }
         public string NationalCode { get; set; }
         public string BirthDate { get; set; }
+        public string PostalCode { get; set; }
 
         public Guid ProviderPolicyId { get; set; }
 
@@ -20,9 +21,9 @@ namespace LoanService.Application.UseCase.Investment.Command.BuyPlanCommand
         public decimal DailyChangePercent { get; set; }
 
 
-        public long OrderId { get; set; }            
-        public long TraceId { get; set; }           
-        public bool IsRepeated { get; set; }  
+        public Guid? OrderId { get; set; }            
+        public long? TraceId { get; set; }           
+        public bool? IsRepeated { get; set; }  
         public string ProviderStatus { get; set; }
     }
 

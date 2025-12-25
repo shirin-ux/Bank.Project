@@ -5,12 +5,13 @@ using MediatR;
 namespace LoanService.Application.UseCase.Investment.Command.User;
 
 
-public class ReceiveZipCodeCommandHandler(IUserApiClient userApi) : IRequestHandler<ReceiveZipCodeCommand, Result<ReceiveZipCodeResult>>
+public class ReceiveZipCodeCommandHandler( IUserReadService userReadService) : IRequestHandler<ReceiveZipCodeCommand, Result<ReceiveZipCodeResult>>
 {
-    private readonly IUserApiClient _userApi= userApi;
+
+    private readonly IUserReadService _userReadService = userReadService;
     public async Task<Result<ReceiveZipCodeResult>> Handle(ReceiveZipCodeCommand request, CancellationToken cancellationToken)
     {
-       var res=await _userApi.UpdateUserAsync(new UserIdRequest { PostalCode = request.PostalCode, UserId = request.UserId }, cancellationToken);
+       var res=await _userReadService.UpdateUserAsync(request.UserId,request.PostalCode, cancellationToken);
 
         var result = new ReceiveZipCodeResult
         {

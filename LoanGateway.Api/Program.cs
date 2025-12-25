@@ -85,14 +85,28 @@ builder.Services.Configure<MellatApiOptions>(
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 
+//builder.Services.AddAuthentication("Bearer")
+//.AddJwtBearer(options =>
+//{
+//    //options.Authority = "https://auth.yourdomain.com";
+//    options.Authority = "https://192.168.87.12:3000";
+//    options.TokenValidationParameters = new()
+//    {
+//        ValidateAudience = true,
+//        ValidAudience = "internal-services"
+//    };
+//});
+
+
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("ServicePolicy", policy =>
+    options.AddPolicy("InternalServicePolicy", policy =>
     {
+        policy.AddAuthenticationSchemes("Service");
+        policy.RequireClaim("client_id", "investment-service");
         policy.RequireClaim("scope", "auth.internal");
     });
 });
-
 
 builder.Services.Configure<RabbitMqOptions>(
     builder.Configuration.GetSection("RabbitMqOptions"));
@@ -210,6 +224,7 @@ builder.Services.AddScoped<IPayResponseInfoRepository, PayResponseInfoRepository
 builder.Services.AddScoped<IContractFileStorage, FileSystemContractFileStorage>();
 builder.Services.AddScoped<ISadadService, SadadService>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IGiftCardRepository, GiftCardRepository>();
 
 builder.Services.AddScoped<IProviderFactory, ProviderFactory>();
 
@@ -239,7 +254,8 @@ builder.Services.AddScoped(typeof(IBankPolicy<>), typeof(MellatPolicy<>));
 builder.Services.AddScoped<ILoanOrchestratorJobRunner, LoanOrchestratorJobs>();
 builder.Services.AddScoped<IInvestmenJobRunner, KarizmahDailyIndexSyncJob>();
 builder.Services.AddScoped<IUserContext, UserContext>();
-builder.Services.AddScoped<IUserApiClient, UserApiClient>();
+
+builder.Services.AddScoped<IUserReadService, UserReadService>();
 builder.Services.AddScoped<IShahkarService, ShahkarService>();
 
 var allowedOrigins = builder.Configuration
@@ -257,13 +273,13 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
-builder.Services
-    .AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+//builder.Services
+//    .AddReverseProxy()
+//    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 
 var app = builder.Build();
-app.MapReverseProxy();
+//app.MapReverseProxy();
 using (var scope = app.Services.CreateScope())
 {
     var recurringJobManager = scope.ServiceProvider.GetRequiredService<IRecurringJobManager>();

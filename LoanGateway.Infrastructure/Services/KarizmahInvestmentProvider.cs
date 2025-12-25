@@ -2,8 +2,9 @@
 using Karizmah.Provider;
 using Karizmah.Provider.Dtos;
 using LoanService.Application.Contracts;
-using LoanService.Application.UseCase.Investment.Command.BuyPlanCommand;
+using LoanService.Application.UseCase.Investment.Command.BuyPlan;
 using LoanService.Application.UseCase.Investment.Query.GetInvestmentDetailsPlans;
+using LoanService.Application.UseCase.Investment.Query.OrderBuy;
 using LoanService.Application.UseCase.Investment.Query.PlanBuyInfo;
 using LoanService.Domain.Enum;
 using LoanService.Domain.Enum.Investment;
@@ -11,6 +12,7 @@ using LoanService.Domain.Exceptions;
 using LoanService.Domain.IRepository.Investment;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using System.Globalization;
 
 namespace LoanService.Infrastructure.Services;
@@ -230,32 +232,73 @@ public class KarizmahInvestmentProvider(
             DailyChangePercent = dailyChangePercent,
             LastUpdateUtc = latest.Timestamp
         };
+        
+        // ذخیره در cache برای 1 دقیقه
+        _cache.Set(cacheKey, res, TimeSpan.FromMinutes(1));
+        
         return res;
-
-
     }
 
-    public async Task<BuyPlanResultDto> CreatePolicyAndBuyAsync(BuyPlanCommand cmd, string postalCode, string birthDate, CancellationToken ct)
+    public async Task<Result<BuyPlanResultDto>> CreatePolicyAndBuyAsync(BuyPlanCommand cmd,  string birthDate, string postalCode, string nationalCode, CancellationToken ct)
     {
-
+        _logger.LogInformation("در حال ایجاد Policy برای کاربر با کد ملی {NationalCode}, PlanType: {PlanType}", 
+            nationalCode, cmd.PlanType);
 
         var req = new KarizmahCreatePolicyWithoutInitialPaymentRequestDto
         {
             birthDate = birthDate,
             planTypeAliasName =  cmd.PlanType.ToString(),
-            nationalCode = cmd.NationalCode,
-            postalCode= postalCode
-
+            nationalCode = nationalCode,
+            postalCode= postalCode,
+            age=null,
+            coefficient=null,
+            coverageAliasName=null,
+            address=null,
+            description = null
         };
+        
         var resKarizmah = await _client.CreatePolicyWithoutInitialPaymentAsync(req, ct);
-        return new BuyPlanResultDto
+
+        if (resKarizmah is null)
+        {
+            _logger.LogError("پاسخی از سرویس کاریزما دریافت نشد برای کاربر {NationalCode}", nationalCode);
+            throw new InvalidOperationException("پاسخی از سرویس دریافت نشد.");
+        }
+
+        if (!resKarizmah.isSuccess || resKarizmah.data is null)
+        {
+            var errorMessage = resKarizmah.errorMessages != null && resKarizmah.errorMessages.Any()
+                ? string.Join(". ", resKarizmah.errorMessages.Select(e => e.message?.Trim()).Where(m => !string.IsNullOrWhiteSpace(m)))
+                : "خطا در ایجاد صدور بیمه‌نامه.";
+            
+            // اطمینان از اینکه پیام با نقطه تمام می‌شود
+            if (!string.IsNullOrWhiteSpace(errorMessage) && !errorMessage.EndsWith(".") && !errorMessage.EndsWith("!") && !errorMessage.EndsWith("?"))
+            {
+                errorMessage += ".";
+            }
+            
+            _logger.LogWarning("خطا در ایجاد Policy از سرویس کاریزما برای کاربر {NationalCode}. خطا: {ErrorMessage}", 
+                nationalCode, errorMessage);
+
+            return Result<BuyPlanResultDto>.Failure(
+                new Error(
+                    Code: 200,
+                    Message: errorMessage
+                ));
+        }
+
+        var result = new BuyPlanResultDto
         {
             TraceId = resKarizmah.data.traceId,
             PlanType = cmd.PlanType,
-            ProviderPolicyId = resKarizmah.data.id,
+            OrderId = resKarizmah.data.id,
+            ProviderPolicyId = resKarizmah.data.id, // id همان PolicyId است
+            NationalCode = nationalCode,
+            BirthDate = birthDate,
             IsRepeated = resKarizmah.data.isRepeated
         };
 
+        return Result<BuyPlanResultDto>.Success(result);
     }
 
     public Task<BuyPlanResultDto> GetRevokableAmountAsync(BuyPlanCommand cmd, CancellationToken ct)
@@ -323,4 +366,99 @@ public class KarizmahInvestmentProvider(
         return best;
     }
 
+    public async Task<GetOrderStatusResultDto> GetOrderBuyByIdAsync(Guid Id, CancellationToken ct)
+    {
+
+ 
+        var resKarizmah = await _client.GetOrderBuyByIdAsync(Id, ct);
+
+        if (resKarizmah is null)
+            throw new InvalidOperationException("پاسخی از سرویس دریافت نشد.");
+
+        if (!resKarizmah.isSuccess || resKarizmah.data is null)
+        {
+
+            var msg = resKarizmah.errorMessages != null && resKarizmah.errorMessages.Any()
+                ? string.Join(" | ", resKarizmah.errorMessages.Select(e => e.message))
+                : "خطا در استعلام صدور بیمه‌نامه .";
+
+            throw new InvalidOperationException(msg);
+        }
+        if (!Enum.TryParse<statusType>(resKarizmah.data.status.ToString(), ignoreCase: true, out var statusEnum))
+        {
+            throw new InvalidOperationException($"وضعیت نامعتبر از سرویس دریافت شد: {resKarizmah.data.status}");
+        }
+    
+
+        return new GetOrderStatusResultDto
+        {
+             Status = statusEnum,
+             UliStatus=resKarizmah.data.uliStatus,
+             WealthPolicyId = resKarizmah.data.wealthPolicyId
+        };
+    }
+
+    public async Task<Result<IncreaseCapitalDirectResultDto>> IncreaseCapitalDirectAsync(
+        long wealthPolicyId, 
+        decimal amount, 
+        string receiptNumber, 
+        DateTime receiptDate, 
+        string? description, 
+        CancellationToken ct)
+    {
+        _logger.LogInformation("در حال افزایش سرمایه برای wealthPolicyId: {WealthPolicyId}, Amount: {Amount}", 
+            wealthPolicyId, amount);
+
+        var req = new KarizmahIncreaseCapitalDirectRequestDto
+        {
+            policyId = wealthPolicyId,
+            amount = amount,
+            receiptNumber = receiptNumber,
+            rceiptDate = receiptDate,
+            description = description
+        };
+
+        var resKarizmah = await _client.IncreaseCapitalDirectAsync(req, ct);
+
+        if (resKarizmah is null)
+        {
+            _logger.LogError("پاسخی از سرویس کاریزما دریافت نشد برای افزایش سرمایه wealthPolicyId: {WealthPolicyId}", 
+                wealthPolicyId);
+            throw new InvalidOperationException("پاسخی از سرویس دریافت نشد.");
+        }
+
+        if (!resKarizmah.isSuccess || resKarizmah.data is null)
+        {
+            var errorMessage = resKarizmah.errorMessages != null && resKarizmah.errorMessages.Any()
+                ? string.Join(". ", resKarizmah.errorMessages.Select(e => e.message?.Trim()).Where(m => !string.IsNullOrWhiteSpace(m)))
+                : "خطا در افزایش سرمایه.";
+            
+            // اطمینان از اینکه پیام با نقطه تمام می‌شود
+            if (!string.IsNullOrWhiteSpace(errorMessage) && !errorMessage.EndsWith(".") && !errorMessage.EndsWith("!") && !errorMessage.EndsWith("?"))
+            {
+                errorMessage += ".";
+            }
+            
+            _logger.LogWarning("خطا در افزایش سرمایه از سرویس کاریزما برای wealthPolicyId: {WealthPolicyId}. خطا: {ErrorMessage}", 
+                wealthPolicyId, errorMessage);
+
+            return Result<IncreaseCapitalDirectResultDto>.Failure(
+                new Error(
+                    Code: 200,
+                    Message: errorMessage
+                ));
+        }
+
+        var result = new IncreaseCapitalDirectResultDto
+        {
+            TraceId = resKarizmah.data.traceId,
+            OrderId = resKarizmah.data.Id,
+            IsRepeated = resKarizmah.data.isRepeated
+        };
+
+        _logger.LogInformation("افزایش سرمایه با موفقیت انجام شد. wealthPolicyId: {WealthPolicyId}, TraceId: {TraceId}, OrderId: {OrderId}",
+            wealthPolicyId, result.TraceId, result.OrderId);
+
+        return Result<IncreaseCapitalDirectResultDto>.Success(result);
+    }
 }

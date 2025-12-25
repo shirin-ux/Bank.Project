@@ -16,7 +16,7 @@ namespace LoanService.Api.Middlewares
             {
                 await _next(context);
             }
-            catch (Exception ex)
+             catch (Exception ex)
             {
 
                 await HandleExceptionAsync(context, ex);
