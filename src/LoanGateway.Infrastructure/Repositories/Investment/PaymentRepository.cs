@@ -1,9 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using LoanService.Domain;
 using LoanService.Domain.Entities.Investment;
-using LoanService.Domain.Enum.Investment;
 using LoanService.Domain.IRepository.Investment;
 using LoanService.Infrastructure.Persistence;
-using LoanGateway.Auth.Domain;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace LoanService.Infrastructure.Repositories.Investment;
 
@@ -40,7 +40,7 @@ public sealed class PaymentRepository : IPaymentRepository
         // Note: You'll need to add these properties to InvestmentPayment entity
         // For now, using reflection or adding properties
         payment.MarkTokenIssued();
-       // payment.UpdatedAtUtc = DateTime.UtcNow;
+        // payment.UpdatedAtUtc = DateTime.UtcNow;
 
         var result = await _unitOfWork.SaveChangesAsync(ct);
         return result > 0;
@@ -49,8 +49,8 @@ public sealed class PaymentRepository : IPaymentRepository
     public async Task<bool> SetCallbackAsync(Guid paymentId, int callbackResCode, byte[] rowVersion, CancellationToken ct)
     {
         var payment = await _context.InvestmentPayments
-            .FirstOrDefaultAsync(x => x.Id == paymentId && 
-                                      x.RowVersion.SequenceEqual(rowVersion) && 
+            .FirstOrDefaultAsync(x => x.Id == paymentId &&
+                                      x.RowVersion.SequenceEqual(rowVersion) &&
                                       !x.IsFinal, ct);
 
         if (payment == null) return false;
@@ -65,8 +65,8 @@ public sealed class PaymentRepository : IPaymentRepository
     public async Task<bool> SetVerifiedAsync(Guid paymentId, VerifyPayment verify, byte[] rowVersion, CancellationToken ct)
     {
         var payment = await _context.InvestmentPayments
-            .FirstOrDefaultAsync(x => x.Id == paymentId && 
-                                      x.RowVersion.SequenceEqual(rowVersion) && 
+            .FirstOrDefaultAsync(x => x.Id == paymentId &&
+                                      x.RowVersion.SequenceEqual(rowVersion) &&
                                       !x.IsFinal, ct);
 
         if (payment == null) return false;
@@ -84,8 +84,8 @@ public sealed class PaymentRepository : IPaymentRepository
     public async Task<bool> SetFailedAsync(Guid paymentId, int? verifyResCode, byte[] rowVersion, CancellationToken ct)
     {
         var payment = await _context.InvestmentPayments
-            .FirstOrDefaultAsync(x => x.Id == paymentId && 
-                                      x.RowVersion.SequenceEqual(rowVersion) && 
+            .FirstOrDefaultAsync(x => x.Id == paymentId &&
+                                      x.RowVersion.SequenceEqual(rowVersion) &&
                                       !x.IsFinal, ct);
 
         if (payment == null) return false;

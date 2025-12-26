@@ -15,7 +15,9 @@ using LoanService.Application.UseCase.Investment.Query.PlanBuyInfo;
 using LoanService.Domain.Enum.Investment;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
 namespace LoanGateway.Api.Controllers
 {

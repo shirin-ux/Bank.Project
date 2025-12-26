@@ -21,7 +21,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     public async Task<RefreshTokens?> GetActiveByHashAsync(byte[] tokenHash, CancellationToken ct)
     {
         return await _context.RefreshTokens
-            .Where(x => x.TokenHash == tokenHash)
+           
             .OrderByDescending(x => x.CreatedAtUtc)
             .FirstOrDefaultAsync(ct);
     }
@@ -29,7 +29,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
     public async Task<RefreshTokens?> GetByHashIncludingRevokedAsync(byte[] tokenHash, CancellationToken ct)
     {
         return await _context.RefreshTokens
-            .Where(x => x.TokenHash == tokenHash)
+
             .OrderByDescending(x => x.CreatedAtUtc)
             .FirstOrDefaultAsync(ct);
     }
@@ -61,10 +61,10 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         }
     }
 
-    public async Task RevokeByHashAsync(byte[] tokenHash, DateTime revokedAtUtc, string? reason, CancellationToken ct)
+    public async Task RevokeByHashAsync(byte[]? tokenHash, DateTime revokedAtUtc, string? reason, CancellationToken ct)
     {
         var token = await _context.RefreshTokens
-            .Where(x => x.TokenHash == tokenHash && x.RevokedAtUtc == null)
+            .Where(x => x.RevokedAtUtc == null)
             .FirstOrDefaultAsync(ct);
 
         if (token != null)

@@ -41,7 +41,7 @@ public class User : AggregateRoot
   
     public KycVerification? KycVerification { get; private set; }
     public bool? GiftStatus { get; set; } = false; // true = واجد کارت هدیه
-    public object? IsDeleted { get; set; }
+    public bool? IsDeleted { get; set; }
 
     public static User CreateNew(string mobile)
         => new User(Guid.NewGuid(), mobile);

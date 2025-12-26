@@ -1,4 +1,6 @@
-﻿namespace LoanService.Api.Middlewares
+﻿using Microsoft.AspNetCore.Http;
+
+namespace LoanService.Api.Middlewares
 {
     public class TokenAuthenticationMiddleware
     {

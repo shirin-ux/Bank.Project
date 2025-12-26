@@ -15,7 +15,7 @@ namespace LoanGateway.Auth.Domain.IRepository
 
         Task RevokeAsync(Guid id, DateTime revokedAtUtc, string? reason, Guid? replacedByTokenId, CancellationToken ct);
 
-        Task RevokeByHashAsync(byte[] tokenHash, DateTime revokedAtUtc, string? reason, CancellationToken ct);
+        Task RevokeByHashAsync(byte[]? tokenHash, DateTime revokedAtUtc, string? reason, CancellationToken ct);
 
 
         Task<RefreshTokens?> GetByIdAsync(Guid id, CancellationToken ct = default);

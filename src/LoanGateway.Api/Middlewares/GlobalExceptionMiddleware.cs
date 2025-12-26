@@ -1,6 +1,8 @@
 ﻿using FluentValidation;
 using LoanGateway.Auth.Domain.Exceptions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
 using System.Text.Json;
 
 namespace LoanService.Api.Middlewares
