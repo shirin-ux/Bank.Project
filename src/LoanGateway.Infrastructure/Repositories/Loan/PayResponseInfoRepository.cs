@@ -1,74 +1,58 @@
-﻿using Dapper;
-using LoanGateway.Infrastructure.Utility;
+﻿using Microsoft.EntityFrameworkCore;
 using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.IRepository.Loan;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using LoanService.Infrastructure.Persistence;
+using LoanService.Domain;
 
-namespace LoanService.Infrastructure.Repositories.Loan
+namespace LoanService.Infrastructure.Repositories.Loan;
+
+public class PayResponseInfoRepository : IPayResponseInfoRepository
 {
-    public class PayResponseInfoRepository(TransactionDBUtility transactionDBUtility) : IPayResponseInfoRepository
+    private readonly LoanDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public PayResponseInfoRepository(LoanDbContext context, IUnitOfWork unitOfWork)
     {
-        private readonly TransactionDBUtility _transactionDBUtility = transactionDBUtility;
-        public async Task<int> InsertAsync(PayResponseInfo entity,CancellationToken ct)
+        _context = context;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<int> InsertAsync(PayResponseInfo entity, CancellationToken ct)
+    {
+        _context.Set<PayResponseInfo>().Add(entity);
+        return await _unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task<int> UpdateAsync(PayResponseInfo entity, CancellationToken ct)
+    {
+        _context.Set<PayResponseInfo>().Update(entity);
+        return await _unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task<PayResponseInfo?> GetByIdAsync(Guid id, CancellationToken ct)
+    {
+        return await _context.Set<PayResponseInfo>()
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+    }
+
+    public async Task<IEnumerable<PayResponseInfo>> GetAllAsync(CancellationToken ct)
+    {
+        return await _context.Set<PayResponseInfo>()
+            .OrderByDescending(x => x.ReceivedAtUtc)
+            .ToListAsync(ct);
+    }
+
+    public async Task<int> DeleteAsync(Guid id, CancellationToken ct)
+    {
+        var entity = await _context.Set<PayResponseInfo>()
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+        
+        if (entity != null)
         {
-            const string sql = @"
-            INSERT INTO Contracts
-            (Id, RequestId, ApprovalCode, WithCollateral, ContractNumber, [Desc], SignedContractBase64)
-            VALUES (@Id, @RequestId, @ApprovalCode, @WithCollateral, @ContractNumber, @Desc, @SignedContractBase64)";
-
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-           return await conn.ExecuteAsync(sql, entity);
-
+            _context.Set<PayResponseInfo>().Remove(entity);
+            return await _unitOfWork.SaveChangesAsync(ct);
         }
-
-        public async Task<int> UpdateAsync(PayResponseInfo entity, CancellationToken ct)
-        {
-            const string sql = @"
-            UPDATE Contracts
-            SET RequestId = @RequestId,
-                ApprovalCode = @ApprovalCode,
-                WithCollateral = @WithCollateral,
-                ContractNumber = @ContractNumber,
-                [Desc] = @Desc,
-                SignedContractBase64 = @SignedContractBase64
-            WHERE Id = @Id";
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-            return await conn.ExecuteAsync(sql, entity);
-      
-        }
-
-        public async Task<PayResponseInfo?> GetByIdAsync(Guid id, CancellationToken ct)
-        {
-            const string sql = "SELECT * FROM Contracts WHERE Id = @Id";
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-            return await conn.QuerySingleOrDefaultAsync<PayResponseInfo>(sql, new { Id = id });
-        }
-
-        public async Task<IEnumerable<PayResponseInfo>> GetAllAsync(CancellationToken ct)
-        {
-            const string sql = "SELECT * FROM Contracts ORDER BY ContractNumber DESC";
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            return await conn.QueryAsync<PayResponseInfo>(sql);
-        }
-
-        public async Task<int> DeleteAsync(Guid id, CancellationToken ct)
-        {
-            const string sql = "DELETE FROM Contracts WHERE Id = @Id";
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-            return await conn.ExecuteAsync(sql, new { Id = id });
-        }
-
-
+        
+        return 0;
     }
 }

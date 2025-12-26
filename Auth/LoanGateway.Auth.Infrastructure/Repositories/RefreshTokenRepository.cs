@@ -1,188 +1,123 @@
-﻿using Dapper;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Data;
 using LoanGateway.Auth.Domain.Entities;
 using LoanGateway.Auth.Domain.IRepository;
 using LoanGateway.Auth.Infrastructure.Persistence;
-using System.Data;
+using LoanGateway.Auth.Domain;
 
-namespace LoanGateway.Auth.Infrastructure.Repositories
+namespace LoanGateway.Auth.Infrastructure.Repositories;
+
+public class RefreshTokenRepository : IRefreshTokenRepository
 {
-    public class RefreshTokenRepository : IRefreshTokenRepository
+    private readonly AuthDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public RefreshTokenRepository(AuthDbContext context, IUnitOfWork unitOfWork)
     {
-        private readonly TransactionDBUtility _transactionDBUtility;
+        _context = context;
+        _unitOfWork = unitOfWork;
+    }
 
-        public RefreshTokenRepository(TransactionDBUtility transactionDBUtility)
+    public async Task<RefreshTokens?> GetActiveByHashAsync(byte[] tokenHash, CancellationToken ct)
+    {
+        return await _context.RefreshTokens
+            .Where(x => x.TokenHash == tokenHash)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<RefreshTokens?> GetByHashIncludingRevokedAsync(byte[] tokenHash, CancellationToken ct)
+    {
+        return await _context.RefreshTokens
+            .Where(x => x.TokenHash == tokenHash)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<RefreshTokens?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        return await _context.RefreshTokens
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+    }
+
+    public async Task InsertAsync(RefreshTokens token, CancellationToken ct)
+    {
+        if (token.Id == Guid.Empty)
+            token.Id = Guid.NewGuid();
+
+        _context.RefreshTokens.Add(token);
+        await _unitOfWork.SaveChangesAsync(ct);
+    }
+
+    public async Task RevokeAsync(Guid id, DateTime revokedAtUtc, string? reason, Guid? replacedByTokenId, CancellationToken ct)
+    {
+        var token = await _context.RefreshTokens.FindAsync(new object[] { id }, ct);
+        if (token != null && token.RevokedAtUtc == null)
         {
-            _transactionDBUtility = transactionDBUtility;
+            token.RevokedAtUtc = revokedAtUtc;
+            token.RevokedReason = reason;
+            token.ReplacedByTokenId = replacedByTokenId;
+            await _unitOfWork.SaveChangesAsync(ct);
         }
+    }
 
+    public async Task RevokeByHashAsync(byte[] tokenHash, DateTime revokedAtUtc, string? reason, CancellationToken ct)
+    {
+        var token = await _context.RefreshTokens
+            .Where(x => x.TokenHash == tokenHash && x.RevokedAtUtc == null)
+            .FirstOrDefaultAsync(ct);
 
-        public async Task<RefreshTokens?> GetActiveByHashAsync(
-         byte[] tokenHash,CancellationToken ct)
+        if (token != null)
         {
-            const string sql = """
-        SELECT TOP (1) *
-        FROM [dbo].[RefreshTokens]
-        WHERE TokenHash = @TokenHash
-        ORDER BY CreatedAtUtc DESC;
-        """;
-
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            return await conn.QueryFirstOrDefaultAsync<RefreshTokens>(
-                new CommandDefinition(sql, new { TokenHash = tokenHash }, cancellationToken: ct));
+            token.RevokedAtUtc = revokedAtUtc;
+            token.RevokedReason = reason;
+            await _unitOfWork.SaveChangesAsync(ct);
         }
-        public async Task<RefreshTokens?> GetByHashIncludingRevokedAsync(byte[] tokenHash, CancellationToken ct)
+    }
+
+    public async Task UpdateAsync(RefreshTokens entity, CancellationToken ct = default)
+    {
+        var existing = await _context.RefreshTokens.FindAsync(new object[] { entity.Id }, ct);
+        if (existing != null)
         {
-            const string sql = """
-        SELECT TOP (1) *
-        FROM [dbo].[RefreshTokens]
-        WHERE TokenHash = @TokenHash
-        ORDER BY CreatedAtUtc DESC;
-        """;
-
-            var parameters = new DynamicParameters();
-            parameters.Add("@TokenHash", tokenHash, DbType.Binary, size: tokenHash.Length);
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            return await conn.QueryFirstOrDefaultAsync<RefreshTokens>(
-                new CommandDefinition(sql, parameters, cancellationToken: ct));
+            existing.RefreshToken = entity.RefreshToken;
+            existing.AccessToken = entity.AccessToken;
+            existing.JwtId = entity.JwtId;
+            existing.ExpiresAtUtc = entity.ExpiresAtUtc;
+            //existing.CreatedAtUtc = entity.CreatedAtUtc;
+            existing.RevokedAtUtc = entity.RevokedAtUtc;
+            existing.RotatedAtUtc = entity.RotatedAtUtc;
+            existing.RevokedReason = entity.RevokedReason;
+            existing.ReplacedByTokenId = entity.ReplacedByTokenId;
+            await _unitOfWork.SaveChangesAsync(ct);
         }
-        public async Task<RefreshTokens?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        {
+    }
 
-            const string sql = @"SELECT *
-                         FROM [dbo].[RefreshTokens]
-                         WHERE Id = @Id;";
+    public async Task<RefreshTokens> GetTokenPairAsync(Guid refreshTokenId, CancellationToken ct)
+    {
+        return await _context.RefreshTokens
+            .Where(x => x.Id == refreshTokenId)
+            .Select(x => new RefreshTokens
+            {
+                Id = x.Id,
+                AccessToken = x.AccessToken,
+                RefreshToken = x.RefreshToken,
+                AccessTokenExpiresAtUtc = x.AccessTokenExpiresAtUtc,
+                ExpiresAtUtc = x.ExpiresAtUtc
+            })
+            .FirstOrDefaultAsync(ct);
+    }
 
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
+    public async Task<RefreshTokens?> GetByPlainRefreshTokenAsync(string refreshToken, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return null;
 
-            var result = await conn.QueryFirstOrDefaultAsync<RefreshTokens>(
-                new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        refreshToken = refreshToken.Trim();
 
-            return result;
-        }
-
-        public async Task InsertAsync(RefreshTokens token, CancellationToken ct)
-        {
-            const string sql = @"INSERT INTO [dbo].[RefreshTokens]
-                                (Id, UserId,AccessToken,RefreshToken,JwtId, ExpiresAtUtc,CreatedAtUtc,RevokedAtUtc, RevokedReason)
-                                VALUES
-                                (@Id, @UserId, @AccessToken,@RefreshToken, @JwtId, @ExpiresAtUtc,  @CreatedAtUtc, @RevokedAtUtc, @RevokedReason);";
-
-            if (token.Id == Guid.Empty)
-                token.Id = Guid.NewGuid();
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-
-            await conn.OpenAsync(ct);
-
-            await conn.ExecuteAsync(
-                new CommandDefinition(sql, token, cancellationToken: ct));
-        }
-
-        public async Task RevokeAsync(Guid id, DateTime revokedAtUtc, string? reason, Guid? replacedByTokenId, CancellationToken ct)
-        {
-            const string sql = @"UPDATE [dbo].[RefreshTokens]
-                             SET RevokedAtUtc = @RevokedAtUtc,
-                                 RevokedReason = @RevokedReason,
-                                 ReplacedByTokenId = @ReplacedByTokenId
-                             WHERE Id = @Id AND RevokedAtUtc IS NULL;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            await conn.ExecuteAsync(
-                new CommandDefinition(sql, new { Id = id, RevokedAtUtc = revokedAtUtc, RevokedReason = reason, ReplacedByTokenId = replacedByTokenId }, cancellationToken: ct));
-
-        }
-
-        public async Task RevokeByHashAsync(byte[] tokenHash, DateTime revokedAtUtc, string? reason, CancellationToken ct)
-        {
-            const string sql = @"UPDATE [dbo].[RefreshTokens]
-                             SET RevokedAtUtc = @RevokedAtUtc,
-                                 RevokedReason = @RevokedReason
-                             WHERE TokenHash = @TokenHash AND RevokedAtUtc IS NULL;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            await conn.ExecuteAsync(
-                new CommandDefinition(sql, new { TokenHash = tokenHash, RevokedAtUtc = revokedAtUtc, RevokedReason = reason }, cancellationToken: ct));
-
-        }
-
-        public async Task UpdateAsync(RefreshTokens entity, CancellationToken ct = default)
-        {
-            const string sql = @"UPDATE [dbo].[RefreshTokens]
-                             SET RefreshToken = @RefreshToken,
-                                 AccessToken = @AccessToken,
-                                 JwtId = @JwtId,
-                                 ExpiresAtUtc = @ExpiresAtUtc,
-                                 CreatedAtUtc = @CreatedAtUtc,
-                                 RevokedAtUtc = @RevokedAtUtc,
-                                 RotatedAtUtc = @RotatedAtUtc,
-                                 RevokedReason = @RevokedReason,
-                                 ReplacedByTokenId = @ReplacedByTokenId
-                             WHERE Id = @Id;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            await conn.ExecuteAsync(
-                new CommandDefinition(sql, new
-                {
-                    entity.Id,
-                    entity.AccessToken,
-                    entity.RefreshToken,
-                    entity.JwtId,
-                    entity.ExpiresAtUtc,
-                    entity.CreatedAtUtc,
-                    entity.RevokedAtUtc,
-                    entity.RotatedAtUtc,
-                    entity.RevokedReason,
-                    entity.ReplacedByTokenId
-                }, cancellationToken: ct));
-        }
-
-        public async Task<RefreshTokens> GetTokenPairAsync(Guid refreshTokenId, CancellationToken ct)
-        {
-            const string sql = @"
-        SELECT AccessToken, RefreshToken, AccessTokenExpiresAtUtc, ExpiresAtUtc
-        FROM [dbo].[RefreshTokens]
-        WHERE Id = @Id;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            return await conn.QueryFirstOrDefaultAsync(sql, new { Id = refreshTokenId });
-
-        }
-
-        public async Task<RefreshTokens?> GetByPlainRefreshTokenAsync(string refreshToken, CancellationToken ct)
-        {
-            if (string.IsNullOrWhiteSpace(refreshToken))
-                return null;
-
-            // Trim کردن whitespace ها برای اطمینان از تطابق دقیق
-            refreshToken = refreshToken.Trim();
-
-            const string sql = @"
-        SELECT TOP 1 *
-        FROM [dbo].[RefreshTokens]
-        WHERE RefreshToken = @RefreshToken
-        ORDER BY CreatedAtUtc DESC;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            var result = await conn.QueryFirstOrDefaultAsync<RefreshTokens>(
-                new CommandDefinition(sql, new { RefreshToken = refreshToken }, cancellationToken: ct));
-
-            return result;
-        }
+        return await _context.RefreshTokens
+            .Where(x => x.RefreshToken == refreshToken)
+            .OrderByDescending(x => x.CreatedAtUtc)
+            .FirstOrDefaultAsync(ct);
     }
 }

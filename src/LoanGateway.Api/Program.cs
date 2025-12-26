@@ -25,6 +25,7 @@ using LoanService.Infrastructure.Services;
 using Mapster;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -40,7 +41,7 @@ using System.Text.Json.Serialization;
 
 
 var builder = WebApplication.CreateBuilder(args);
-var conn = builder.Configuration.GetConnectionString("TransactionDB");
+var conn = builder.Configuration.GetConnectionString("KhanuomiDB");
 
 
 builder.Services.AddHttpClient("MellatApi", client =>
@@ -85,17 +86,6 @@ builder.Services.Configure<MellatApiOptions>(
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 
-//builder.Services.AddAuthentication("Bearer")
-//.AddJwtBearer(options =>
-//{
-//    //options.Authority = "https://auth.yourdomain.com";
-//    options.Authority = "https://192.168.87.12:3000";
-//    options.TokenValidationParameters = new()
-//    {
-//        ValidateAudience = true,
-//        ValidAudience = "internal-services"
-//    };
-//});
 
 
 builder.Services.AddAuthorization(options =>
@@ -118,7 +108,22 @@ var jwtOptions = builder.Configuration
     .GetSection("Jwt")
     .Get<JwtOptions>();
 builder.Services.AddSingleton<ILoanNotificationBus, RabbitMqLoanNotificationBus>();
-builder.Services.AddSingleton<TransactionDBUtility>();
+
+// EF Core Configuration
+var transactionDbConnection = builder.Configuration.GetConnectionString("KhanuomiDB")
+    ?? throw new InvalidOperationException("Connection string 'KhanuomiDB' not found.");
+var transactionDb1Connection = builder.Configuration.GetConnectionString("AuthConnection")
+    ?? throw new InvalidOperationException("Connection string 'AuthConnection' not found.");
+
+builder.Services.AddDbContext<LoanService.Infrastructure.Persistence.LoanDbContext>(options =>
+    options.UseSqlServer(transactionDbConnection));
+
+builder.Services.AddDbContext<LoanService.Infrastructure.Persistence.AuthDbContext>(options =>
+    options.UseSqlServer(transactionDb1Connection));
+
+// Unit of Work
+builder.Services.AddScoped<LoanService.Domain.IUnitOfWork, LoanService.Infrastructure.Persistence.UnitOfWork>();
+builder.Services.AddScoped<LoanService.Infrastructure.Persistence.AuthUnitOfWork>();
 builder.Services.AddScoped<MellatBankProvider>();
 
 var config = TypeAdapterConfig.GlobalSettings;

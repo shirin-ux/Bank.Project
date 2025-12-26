@@ -1,23 +1,21 @@
-﻿// src/LoanGateway.Infrastructure/Services/UserReadService.cs
-
-using Dapper;
-using LoanGateway.Infrastructure.Utility;
-using LoanService.Application.Contracts;
+﻿using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Investment.Command.User;
+using LoanService.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace LoanService.Infrastructure.Services;
 
 public sealed class UserReadService : IUserReadService
 {
-    private readonly TransactionDBUtility _transactionDBUtility;
+    private readonly AuthDbContext _context;
     private readonly ILogger<UserReadService> _logger;
 
     public UserReadService(
-        TransactionDBUtility transactionDBUtility,
+        AuthDbContext context,
         ILogger<UserReadService> logger)
     {
-        _transactionDBUtility = transactionDBUtility;
+        _context = context;
         _logger = logger;
     }
 
@@ -25,25 +23,19 @@ public sealed class UserReadService : IUserReadService
     {
         try
         {
-            // استفاده از TransactionDB1 که به KhanoumiCore اشاره می‌کند (همان دیتابیس Auth)
-            const string sql = @"
-                SELECT TOP(1) 
-                    Id as UserId,
-                    NationalCode,
-                    PostalCode,
-                    BirthDate,
-                    MobileNumber,
-                    IsActive,
-                    GiftStatus
-                FROM [dbo].[User] 
-                WHERE Id = @UserId 
-                    AND (IsDeleted = 0 OR IsDeleted IS NULL)";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection1();
-            await conn.OpenAsync(ct);
-
-            var user = await conn.QueryFirstOrDefaultAsync<UserInfoDto>(
-                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
+            var user = await _context.Users
+                .Where(u => u.Id == userId)
+                .Select(u => new UserInfoDto
+                {
+                    UserId = u.Id,
+                    NationalCode = u.NationalCode,
+                    PostalCode = u.PostalCode,
+                    BirthDate = u.BirthDate,
+                    MobileNumber = u.MobileNumber,
+                    IsActive = u.IsActive,
+                    GiftStatus = u.GiftStatus ?? false
+                })
+                .FirstOrDefaultAsync(ct);
 
             return user;
         }
@@ -67,41 +59,16 @@ public sealed class UserReadService : IUserReadService
             }
 
             // آپدیت کد پستی
-            const string updateSql = @"
-                UPDATE [dbo].[User]
-                SET PostalCode = @PostalCode,
-                    UpdatedAtUtc = SYSUTCDATETIME()
-                WHERE Id = @UserId 
-                    AND (IsDeleted = 0 OR IsDeleted IS NULL)";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection1();
-            await conn.OpenAsync(ct);
-
-            var rowsAffected = await conn.ExecuteAsync(
-                new CommandDefinition(updateSql, new { PostalCode = PostalCode, UserId = UserId }, cancellationToken: ct));
-
-            if (rowsAffected == 0)
+            var existingUser = await _context.Users.FindAsync(new object[] { UserId }, ct);
+            if (existingUser != null)
             {
-                _logger.LogWarning("No rows updated for user {UserId}", UserId);
-                return null;
+                existingUser.PostalCode = PostalCode;
+               // existingUser.UpdatedAtUtc = DateTime.UtcNow;
+                await _context.SaveChangesAsync(ct);
             }
 
             // خواندن اطلاعات به‌روز شده کاربر
-            const string selectSql = @"
-                SELECT TOP(1) 
-                    Id as UserId,
-                    NationalCode,
-                    PostalCode,
-                    BirthDate,
-                    MobileNumber,
-                    IsActive,
-                    GiftStatus
-                FROM [dbo].[User] 
-                WHERE Id = @UserId 
-                    AND (IsDeleted = 0 OR IsDeleted IS NULL)";
-
-            var updatedUser = await conn.QueryFirstOrDefaultAsync<UserInfoDto>(
-                new CommandDefinition(selectSql, new { UserId = UserId }, cancellationToken: ct));
+            var updatedUser = await GetUserByIdAsync(UserId, ct);
 
             if (updatedUser == null)
             {
@@ -126,11 +93,3 @@ public sealed class UserReadService : IUserReadService
         }
     }
 }
-
-
-
-
-
-
-
-

@@ -1,505 +1,348 @@
-﻿using Dapper;
-using LoanGateway.Infrastructure.Utility;
+﻿using Microsoft.EntityFrameworkCore;
 using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.IRepository.Loan;
 using LoanService.Domain.ValueObjects;
-using LoanService.Infrastructure.RequestFlat;
-using System.Data;
+using LoanService.Infrastructure.Persistence;
+using LoanService.Domain;
 
+namespace LoanService.Infrastructure.Repositories.Loan;
 
-namespace LoanService.Infrastructure.Repositories.Loan
+public class LoanRequestRepository : ILoanRequestRepository
 {
-    public class LoanRequestRepository(TransactionDBUtility transactionDBUtility) : ILoanRequestRepository
+    private readonly LoanDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public LoanRequestRepository(LoanDbContext context, IUnitOfWork unitOfWork)
     {
-        private readonly TransactionDBUtility _transactionDBUtility = transactionDBUtility;
-        public async Task<LoanRequest?> FindByIdempotencyKeyAsync(string idempotencyKey, CancellationToken ct)
+        _context = context;
+        _unitOfWork = unitOfWork;
+    }
+
+    public async Task<LoanRequest?> FindByIdempotencyKeyAsync(string idempotencyKey, CancellationToken ct)
+    {
+        var loan = await _context.LoanRequests
+            .Include(x => x.Contract)
+            .Include(x => x.Inquiry)
+            .Include(x => x.PayResponse)
+            .Include(x => x.LastRepayment)
+            .Include(x => x.Transfer)
+            .Include(x => x.InstallmentStatus)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.IdempotencyKey == idempotencyKey, ct);
+
+        if (loan != null)
         {
-            const string sql = @"SELECT TOP(1) Id, Provider, ProductCode, Amount, NationalId, Mobile, WithCollateral, MerchantId,
-                                 State, CreatedAtUtc, UpdatedAtUtc, ContractId, LastErrorCode, LastErrorMessage, CorrelationId, IdempotencyKey
-                                 FROM dbo.LoanRequests
-                                 WHERE IdempotencyKey = @IdempotencyKey;";
-
-            var args = new { IdempotencyKey = idempotencyKey };
-
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-
-            await conn.OpenAsync(ct);
-            return await conn.QueryFirstOrDefaultAsync<LoanRequest>(
-                new CommandDefinition(sql, args, cancellationToken: ct));
+            MapValueObjects(loan);
         }
 
-        //public async Task<LoanRequest?> GetByIdAsync(Guid id, CancellationToken ct)
-        //{
-        //    var sql = @"
-        //               SELECT  *, InquiryRequest_Id FROM LoanRequest WHERE Id = @Id;
-        //               SELECT * FROM ContractInfo WHERE LoanRequestId = @Id;
-        //               SELECT * FROM InquiryInfo WHERE LoanRequestId = @Id;
-        //               SELECT * FROM PayResponseInfo WHERE LoanRequestId = @Id;
-        //               SELECT * FROM RepaymentSnapshot WHERE LoanRequestId = @Id;
-        //               SELECT * FROM TransferInfo WHERE LoanRequestId = @Id;
-        //               SELECT * FROM InstallmentStatus WHERE LoanRequestId = @Id;";
+        return loan;
+    }
 
-        //    using var conn = _transactionDBUtility.GetSqlConnection();
-        //    await conn.OpenAsync(ct);
+    public async Task<LoanRequest?> GetByIdAsync(Guid id, CancellationToken ct)
+    {
+        var loan = await _context.LoanRequests
+            .Include(x => x.Contract)
+            .Include(x => x.Inquiry)
+            .Include(x => x.PayResponse)
+            .Include(x => x.LastRepayment)
+            .Include(x => x.Transfer)
+            .Include(x => x.InstallmentStatus)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
 
-        //    using var multi = await conn.QueryMultipleAsync(sql, new { Id = id });
+        if (loan == null) return null;
 
+        // Map value objects from database columns
+        MapValueObjects(loan);
 
-        //    var row = await conn.QuerySingleOrDefaultAsync<LoanRequest>("SELECT * FROM LoanRequest WHERE Id = @Id", new { Id = id });
-        //    if (row is null) return null;
+        return loan;
+    }
 
-        //    // Map Aggregate Roots
-        //    row.Contract = await multi.ReadSingleOrDefaultAsync<ContractInfo>();
-        //    row.Inquiry = await multi.ReadSingleOrDefaultAsync<InquiryInfo>();
-        //    row.PayResponse = await multi.ReadSingleOrDefaultAsync<PayResponseInfo>();
-        //    row.LastRepayment = await multi.ReadSingleOrDefaultAsync<RepaymentSnapshot>();
-        //    row.Transfer = await multi.ReadSingleOrDefaultAsync<TransferInfo>();
-        //    row.InstallmentStatus = await multi.ReadSingleOrDefaultAsync<InstallmentStatus>();
-
-        //    if (row.Customer != null)
-        //    {
-        //        row.Customer = new CustomerInfo(
-        //            row.Customer.NationalCode,
-        //            row.Customer.BirthDate,
-        //            row.Customer.Mobile,
-        //            row.Customer.PostalCode,
-        //            row.Customer.Gender
-        //        );
-
-        //    }
-
-        //    if (row.Provider != null)
-        //    {
-
-        //        row.Provider = new ProviderInfo(
-        //            (BankProviderType)row.Provider.ProviderType,
-        //            row.Provider.ApprovalCode,
-        //            row.Provider.RequiresOtp
-        //        );
-        //    }
-
-        //    if (row.LastDecision != null)
-        //    {
-        //        row.LastDecision = new DecisionStamp(
-        //            row.LastDecision.ErrorCode,
-        //            row.LastDecision.ErrorMessage,
-        //            row.LastDecision.ReasonCode,
-        //            row.LastDecision.ReasonMessage
-        //        );
-        //    }
-
-        //    if (row.GrantRequest != null)
-        //    {
-        //        row.GrantRequest = new GrantRequest(
-        //            row.GrantRequest.ContractId,
-        //            row.GrantRequest.Status,
-        //            row.GrantRequest.PayRequestId,
-        //            row.GrantRequest.RequestedAmount,
-        //            row.GrantRequest.SignedContractBase64
-        //        );
-        //    }
-        //    //if (loan.InqueryRequest!=null)
-        //    //{
-        //        row.InqueryRequest = new InqueryRequest(row.InquiryRequest_Id);
-        //   // }
-        //    if (row.PayRequest != null)
-        //    {
-
-        //        row.PayRequest = new PayRequestInfo(row.PayRequest.PayRequestId, row.PayRequest.RequestedAmount);
-        //    }
-        //    return row;
-
-        //}
-        public async Task<LoanRequest?> GetByIdAsync(Guid id, CancellationToken ct)
+    public async Task InsertAsync(LoanRequest loan, CancellationToken ct)
+    {
+        await _unitOfWork.BeginTransactionAsync(ct);
+        try
         {
-            var sql = @"
-        SELECT State, * FROM LoanRequest WHERE Id = @Id;
-        SELECT * FROM ContractInfo WHERE LoanRequestId = @Id;
-        SELECT * FROM InquiryInfo WHERE LoanRequestId = @Id;
-        SELECT * FROM PayResponseInfo WHERE LoanRequestId = @Id;
-        SELECT * FROM RepaymentSnapshot WHERE LoanRequestId = @Id;
-        SELECT * FROM TransferInfo WHERE LoanRequestId = @Id;
-        SELECT * FROM InstallmentStatus WHERE LoanRequestId = @Id;";
+            // Map value objects to database columns before saving
+            MapValueObjectsToColumns(loan);
 
-            using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
+            _context.LoanRequests.Add(loan);
 
-            using var multi = await conn.QueryMultipleAsync(sql, new { Id = id });
+            if (loan.Contract != null)
+                _context.Set<ContractInfo>().Add(loan.Contract);
 
-            // داده‌ی اصلی LoanRequest رو فلت بخون
-            var flat = await multi.ReadSingleOrDefaultAsync<LoanRequestFlat>();
+            if (loan.Inquiry != null)
+                _context.Set<InquiryInfo>().Add(loan.Inquiry);
 
-            if (flat is null)
-                return null;
+            if (loan.PayResponse != null)
+                _context.Set<PayResponseInfo>().Add(loan.PayResponse);
 
-            // حالا Domain Model رو بساز و ValueObjectها رو تزریق کن
-            var loan = new LoanRequest()
+            if (loan.LastRepayment != null)
+                _context.Set<RepaymentSnapshot>().Add(loan.LastRepayment);
+
+            if (loan.Transfer != null)
+                _context.Set<TransferInfo>().Add(loan.Transfer);
+
+            if (loan.InstallmentStatus != null)
+                _context.Set<InstallmentStatus>().Add(loan.InstallmentStatus);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+            await _unitOfWork.CommitTransactionAsync(ct);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
+    }
+
+    public async Task UpdateAsync(LoanRequest loan, CancellationToken ct)
+    {
+        await _unitOfWork.BeginTransactionAsync(ct);
+        try
+        {
+            // Map value objects to database columns
+            MapValueObjectsToColumns(loan);
+
+            _context.LoanRequests.Update(loan);
+
+            // Handle related entities
+            if (loan.Contract != null)
             {
-                State = flat.State,
-                Id = id,
-                RetryCount = flat.RetryCount,
-                Customer = new CustomerInfo(
-                    flat.Customer_NationalCode,
-                    flat.Customer_BirthDate,
-                    flat.Customer_Mobile,
-                    flat.Customer_PostalCode,
-                    flat.Customer_Gender
-                ),
+                var existing = await _context.Set<ContractInfo>()
+                    .FirstOrDefaultAsync(x => x.LoanRequestId == loan.Id, ct);
+                if (existing != null)
+                {
+                    _context.Entry(existing).CurrentValues.SetValues(loan.Contract);
+                }
+                else
+                {
+                    _context.Set<ContractInfo>().Add(loan.Contract);
+                }
+            }
 
-                Provider = new ProviderInfo(
-                    (ProviderType)flat.Provider_Type,
-                    flat.Provider_ApprovalCode,
-                    flat.Provider_RequiresOtp
-                ),
+            if (loan.Inquiry != null)
+            {
+                var existing = await _context.Set<InquiryInfo>()
+                    .FirstOrDefaultAsync(x => x.LoanRequestId == loan.Id, ct);
+                if (existing != null)
+                {
+                    _context.Entry(existing).CurrentValues.SetValues(loan.Inquiry);
+                }
+                else
+                {
+                    _context.Set<InquiryInfo>().Add(loan.Inquiry);
+                }
+            }
 
-                InqueryRequest = new InqueryRequest(flat.InquiryRequest_Id),
-                PayRequest = flat.PayRequest_Id != null ? new PayRequestInfo(flat.PayRequest_Id, flat.PayRequest_RequestedAmount) : null,
-                LastDecision = new DecisionStamp(flat.Decision_ErrorCode, flat.Decision_ErrorMessage, flat.Decision_ReasonCode, flat.Decision_ReasonMessage),
-                GrantRequest = new GrantRequest(flat.Grant_ContractId ?? 0, flat.Grant_Status, flat.PayRequest_Id, flat.Grant_RequestedAmount, flat.Grant_SignedContractBase64),
+            if (loan.PayResponse != null)
+            {
+                var existing = await _context.Set<PayResponseInfo>()
+                    .FirstOrDefaultAsync(x => x.LoanRequestId == loan.Id, ct);
+                if (existing != null)
+                {
+                    _context.Entry(existing).CurrentValues.SetValues(loan.PayResponse);
+                }
+                else
+                {
+                    _context.Set<PayResponseInfo>().Add(loan.PayResponse);
+                }
+            }
 
-            };
+            if (loan.LastRepayment != null)
+            {
+                var existing = await _context.Set<RepaymentSnapshot>()
+                    .FirstOrDefaultAsync(x => x.LoanRequestId == loan.Id, ct);
+                if (existing != null)
+                {
+                    _context.Entry(existing).CurrentValues.SetValues(loan.LastRepayment);
+                }
+                else
+                {
+                    _context.Set<RepaymentSnapshot>().Add(loan.LastRepayment);
+                }
+            }
 
+            if (loan.Transfer != null)
+            {
+                var existing = await _context.Set<TransferInfo>()
+                    .FirstOrDefaultAsync(x => x.LoanRequestId == loan.Id, ct);
+                if (existing != null)
+                {
+                    _context.Entry(existing).CurrentValues.SetValues(loan.Transfer);
+                }
+                else
+                {
+                    _context.Set<TransferInfo>().Add(loan.Transfer);
+                }
+            }
 
-            loan.Contract = await multi.ReadSingleOrDefaultAsync<ContractInfo>();
-            loan.Inquiry = await multi.ReadSingleOrDefaultAsync<InquiryInfo>();
-            loan.PayResponse = await multi.ReadSingleOrDefaultAsync<PayResponseInfo>();
-            loan.LastRepayment = await multi.ReadSingleOrDefaultAsync<RepaymentSnapshot>();
-            loan.Transfer = await multi.ReadSingleOrDefaultAsync<TransferInfo>();
-            loan.InstallmentStatus = await multi.ReadSingleOrDefaultAsync<InstallmentStatus>();
+            if (loan.InstallmentStatus != null)
+            {
+                var existing = await _context.Set<InstallmentStatus>()
+                    .FirstOrDefaultAsync(x => x.LoanRequestId == loan.Id, ct);
+                if (existing != null)
+                {
+                    _context.Entry(existing).CurrentValues.SetValues(loan.InstallmentStatus);
+                }
+                else
+                {
+                    _context.Set<InstallmentStatus>().Add(loan.InstallmentStatus);
+                }
+            }
 
-            return loan;
+            await _unitOfWork.SaveChangesAsync(ct);
+            await _unitOfWork.CommitTransactionAsync(ct);
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync(ct);
+            throw;
+        }
+    }
+
+    public async Task InsertInstallmentAsync(List<InstallmentStatus> installmentStatus, Guid loanId, CancellationToken ct)
+    {
+        // Delete existing installments
+        var existing = await _context.Set<InstallmentStatus>()
+            .Where(x => x.LoanRequestId == loanId)
+            .ToListAsync(ct);
+        
+        _context.Set<InstallmentStatus>().RemoveRange(existing);
+
+        // Add new installments
+        foreach (var item in installmentStatus)
+        {
+            item.Id = Guid.NewGuid();
+            item.LoanRequestId = loanId;
+            _context.Set<InstallmentStatus>().Add(item);
         }
 
-        public async Task InsertAsync(LoanRequest loan, CancellationToken ct)
+        await _unitOfWork.SaveChangesAsync(ct);
+    }
+
+    private void MapValueObjects(LoanRequest loan)
+    {
+        var entry = _context.Entry(loan);
+
+        // Map Customer
+        var customerNationalCode = entry.Property("Customer_NationalCode").CurrentValue as string;
+        var customerBirthDate = entry.Property("Customer_BirthDate").CurrentValue as DateTime?;
+        var customerMobile = entry.Property("Customer_Mobile").CurrentValue as string;
+        var customerPostalCode = entry.Property("Customer_PostalCode").CurrentValue as string;
+        var customerGender = entry.Property("Customer_Gender").CurrentValue as string;
+
+        if (customerNationalCode != null)
         {
-            var loanSql = @"
-        INSERT INTO LoanRequest (
-            Id, CreatedAtUtc, UpdatedAtUtc, State, RequiresOtp, CorrelationId,
-            Customer_NationalCode, Customer_BirthDate, Customer_Mobile, Customer_PostalCode, Customer_Gender,
-            Provider_Type, Provider_ApprovalCode, Provider_RequiresOtp,
-            Decision_ErrorCode, Decision_ErrorMessage, Decision_ReasonCode, Decision_ReasonMessage,
-            Grant_ContractId, InquiryRequest_Id, PayRequest_Id,
-            LastReasonCode, LastReasonMessage, LastErrorCode, LastErrorMessage,RetryCount
-        ) VALUES (
-            @Id, @CreatedAtUtc, @UpdatedAtUtc, @State, @RequiresOtp, @CorrelationId,
-            @Customer_NationalCode, @Customer_BirthDate, @Customer_Mobile, @Customer_PostalCode, @Customer_Gender,
-            @Provider_Type, @Provider_ApprovalCode, @Provider_RequiresOtp,
-            @Decision_ErrorCode, @Decision_ErrorMessage, @Decision_ReasonCode, @Decision_ReasonMessage,
-            @Grant_ContractId, @InquiryRequest_Id, @PayRequest_Id,
-            @LastReasonCode, @LastReasonMessage, @LastErrorCode, @LastErrorMessage,@RetryCount
-        )";
-
-            using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            using var tran = conn.BeginTransaction();
-
-            try
-            {
-                // Insert LoanRequest
-                await conn.ExecuteAsync(loanSql, new
-                {
-                    loan.Id,
-                    loan.CreatedAtUtc,
-                    loan.UpdatedAtUtc,
-                    State = (int)loan.State,
-                    loan.RequiresOtp,
-
-                    loan.CorrelationId,
-
-                    Customer_NationalCode = loan.Customer.NationalCode,
-                    Customer_BirthDate = loan.Customer.BirthDate,
-                    Customer_Mobile = loan.Customer.Mobile,
-                    Customer_PostalCode = loan.Customer.PostalCode,
-                    Customer_Gender = loan.Customer.Gender,
-
-                    Provider_Type = (int)loan.Provider.ProviderType,
-                    Provider_ApprovalCode = loan.Provider.ApprovalCode,
-                    Provider_RequiresOtp = loan.Provider.RequiresOtp,
-
-                    Decision_ErrorCode = loan.LastDecision.ErrorCode,
-                    Decision_ErrorMessage = loan.LastDecision.ErrorMessage,
-                    Decision_ReasonCode = loan.LastDecision.ReasonCode,
-                    Decision_ReasonMessage = loan.LastDecision.ReasonMessage,
-
-                    Grant_ContractId = loan.GrantRequest.ContractId,
-                    InquiryRequest_Id = loan.InqueryRequest.RequestId,
-                    PayRequest_Id = loan.PayRequest.PayRequestId,
-                    loan.RetryCount,
-                    loan.LastReasonCode,
-                    loan.LastReasonMessage,
-                    loan.LastErrorCode,
-                    loan.LastErrorMessage
-                }, tran);
-
-                // Insert Aggregate Roots
-                if (loan.Contract != null)
-                    await conn.ExecuteAsync("InsertContractInfo",
-                        new
-                        {
-                            LoanRequestId = loan.Id,
-                            loan.Contract.NationalCode,
-                            loan.Contract.CollateralType,
-                            loan.Contract.CollateralNo,
-                            loan.Contract.Address,
-                            loan.Contract.ApprovalCode,
-                            loan.Contract.ChequeSerial,
-                            loan.Contract.CollateralAmount,
-                            loan.Contract.CollateralDate,
-                            loan.Contract.CollateralIssuer,
-                            loan.Contract.GuarantorNC,
-                            loan.Contract.InstallmentCount,
-                            loan.Contract.LoanAmount,
-                            loan.Contract.MobileNumber,
-                            loan.Contract.PhoneNumber,
-                            loan.Contract.PostalCode,
-                            loan.Contract.BirthDate,
-                            loan.Contract.cbTrackingCode,
-                            loan.Contract.ContractPath
-
-                        }, tran);
-
-                if (loan.Inquiry != null)
-                    await conn.ExecuteAsync(@"
-                INSERT INTO InquiryInfo (LoanRequestId, Allowed, MaxApprovedAmount, Ics, IcsGrade, ExpireAt)
-                VALUES (@LoanRequestId, @Allowed, @MaxApprovedAmount, @Ics, @IcsGrade, @ExpireAt)",
-                        new { LoanRequestId = loan.Id, loan.Inquiry.Allowed, loan.Inquiry.MaxApprovedAmount, loan.Inquiry.Ics, loan.Inquiry.IcsGrade, loan.Inquiry.ExpireAt }, tran);
-
-                if (loan.PayResponse != null)
-                    await conn.ExecuteAsync(@"
-                INSERT INTO PayResponseInfo (LoanRequestId, Code, BankContractNo, ApprovedLoanAmount, ContractDate, CentralBankTraceCode, BankSignedContractBase64, ReceivedAtUtc)
-                VALUES (@LoanRequestId, @Code, @BankContractNo, @ApprovedLoanAmount, @ContractDate, @CentralBankTraceCode, @BankSignedContractBase64, @ReceivedAtUtc)",
-                        new { LoanRequestId = loan.Id, Code = (int)loan.PayResponse.Code, loan.PayResponse.BankContractNo, loan.PayResponse.ApprovedLoanAmount, loan.PayResponse.ContractDate, loan.PayResponse.CentralBankTraceCode, loan.PayResponse.BankSignedContractBase64, loan.PayResponse.ReceivedAtUtc }, tran);
-
-                if (loan.LastRepayment != null)
-                    await conn.ExecuteAsync(@"
-                INSERT INTO RepaymentSnapshot (LoanRequestId, TrackNumber, AccountNo, Amount, WhenUtc)
-                VALUES (@LoanRequestId, @TrackNumber, @AccountNo, @Amount, @WhenUtc)",
-                        new { LoanRequestId = loan.Id, loan.LastRepayment.TrackNumber, loan.LastRepayment.AccountNo, loan.LastRepayment.Amount, loan.LastRepayment.WhenUtc }, tran);
-
-                if (loan.Transfer != null)
-                    await conn.ExecuteAsync(@"
-                INSERT INTO TransferInfo (LoanRequestId, TransactionNumber, RegisterCode)
-                VALUES (@LoanRequestId, @TransactionNumber, @RegisterCode)",
-                        new { LoanRequestId = loan.Id, loan.Transfer.TransactionNumber, loan.Transfer.RegisterCode }, tran);
-
-                if (loan.InstallmentStatus != null)
-                    await conn.ExecuteAsync(@"
-                INSERT INTO InstallmentStatus (LoanRequestId, Status, DueDate, PaidAmount)
-                VALUES (@LoanRequestId, @Status, @DueDate, @PaidAmount)",
-                        new { LoanRequestId = loan.Id, loan.InstallmentStatus.Status, loan.InstallmentStatus.DueDate, loan.InstallmentStatus.PaidAmount }, tran);
-
-                tran.Commit();
-            }
-            catch
-            {
-                tran.Rollback();
-                throw;
-            }
+            loan.Customer = new CustomerInfo(
+                customerNationalCode,
+                customerBirthDate,
+                customerMobile,
+                customerPostalCode,
+                customerGender
+            );
         }
 
+        // Map Provider
+        var providerType = entry.Property("Provider_Type").CurrentValue as int?;
+        var providerApprovalCode = entry.Property("Provider_ApprovalCode").CurrentValue as decimal?;
+        var providerRequiresOtp = entry.Property("Provider_RequiresOtp").CurrentValue as bool?;
 
-
-        public async Task InsertInstallmentAsync(List<InstallmentStatus> installmentStatus, Guid loanId, CancellationToken ct)
+        if (providerType.HasValue)
         {
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-
-            await conn.ExecuteAsync("DELETE FROM [dbo].[InstallmentStatus] WHERE RequestId = @RequestId", new { RequestId = loanId });
-
-
-            const string insertSql = @"INSERT INTO [dbo].[InstallmentStatus]
-                                     ([RequestId], [InstallmentNo], [DueDate], [Amount], [PaidAmount], [Status], [LastUpdatedAt])
-                                     VALUES
-                                    (@RequestId, @InstallmentNo, @DueDate, @Amount, @PaidAmount, @Status, SYSUTCDATETIME());";
-
-            foreach (var item in installmentStatus)
-            {
-                await conn.ExecuteAsync(insertSql, new
-                {
-                    Id = Guid.NewGuid(),
-                    CreatedAtUtc = DateTime.UtcNow,
-                    UpdatedAtUtc = DateTime.UtcNow,
-                    State = item.Status,
-                    item.Amount,
-                    item.DueDate,
-                    item.PaidAmount,
-
-
-                });
-            }
+            loan.Provider = new ProviderInfo(
+                (ProviderType)providerType.Value,
+                providerApprovalCode,
+                providerRequiresOtp ?? false
+            );
         }
 
-        public async Task UpdateAsync(LoanRequest loan, CancellationToken ct)
+        // Map InqueryRequest
+        var inquiryRequestId = entry.Property("InquiryRequest_Id").CurrentValue as string;
+        loan.InqueryRequest = new InqueryRequest(inquiryRequestId);
+
+        // Map PayRequest
+        var payRequestId = entry.Property("PayRequest_Id").CurrentValue as string;
+        var payRequestAmount = entry.Property("PayRequest_RequestedAmount").CurrentValue as decimal?;
+        loan.PayRequest = new PayRequestInfo(payRequestId, payRequestAmount);
+
+        // Map LastDecision - Note: DecisionStamp parameter order is ReasonCode, ReasonMessage, ErrorCode, ErrorMessage
+        var decisionReasonCode = entry.Property("Decision_ReasonCode").CurrentValue as int?;
+        var decisionReasonMessage = entry.Property("Decision_ReasonMessage").CurrentValue as string;
+        var decisionErrorCode = entry.Property("Decision_ErrorCode").CurrentValue as int?;
+        var decisionErrorMessage = entry.Property("Decision_ErrorMessage").CurrentValue as string;
+        loan.LastDecision = new DecisionStamp(
+            decisionReasonCode,
+            decisionReasonMessage,
+            decisionErrorCode,
+            decisionErrorMessage
+        );
+
+        // Map GrantRequest
+        var grantContractId = entry.Property("Grant_ContractId").CurrentValue as decimal?;
+        var grantStatus = entry.Property("Grant_Status").CurrentValue as string;
+        var grantPayRequestId = entry.Property("PayRequest_Id").CurrentValue as string;
+        var grantRequestedAmount = entry.Property("Grant_RequestedAmount").CurrentValue as decimal?;
+        var grantSignedContract = entry.Property("Grant_SignedContractBase64").CurrentValue as string;
+        loan.GrantRequest = new GrantRequest(
+            grantContractId,
+            grantStatus,
+            grantPayRequestId,
+            grantRequestedAmount?.ToString(),
+            grantSignedContract
+        );
+    }
+
+    private void MapValueObjectsToColumns(LoanRequest loan)
+    {
+        var entry = _context.Entry(loan);
+
+        // Map Customer to columns
+        if (loan.Customer != null)
         {
-            using var conn = _transactionDBUtility.GetSqlConnection();
-            await conn.OpenAsync(ct);
-            using var tran = conn.BeginTransaction();
-            try
-            {
-                // -------- LoanRequest --------
-                var loanSql = @"
-                UPDATE LoanRequest SET
-                    UpdatedAtUtc = @UpdatedAtUtc,
-                    State = @State,
-                    RequiresOtp = @RequiresOtp,
-                    Customer_NationalCode=@Customer_NationalCode,
-                    Customer_BirthDate=@Customer_BirthDate,
-                    Customer_Mobile=@Customer_Mobile,
-                    Customer_PostalCode=@Customer_PostalCode,
-                    Customer_Gender=@Customer_Gender,
-                    Provider_Type=@Provider_Type,
-                    Provider_ApprovalCode=@Provider_ApprovalCode,
-                    Provider_RequiresOtp=@Provider_RequiresOtp,
-                    Decision_ErrorCode=@Decision_ErrorCode,
-                    Decision_ErrorMessage=@Decision_ErrorMessage,
-                    Decision_ReasonCode=@Decision_ReasonCode,
-                    Decision_ReasonMessage=@Decision_ReasonMessage,
-                    Grant_ContractId=@Grant_ContractId,
-                    InquiryRequest_Id=@InquiryRequest_Id,
-                    PayRequest_Id=@PayRequest_Id,
-                    LastReasonCode=@LastReasonCode,
-                    LastReasonMessage=@LastReasonMessage,
-                    LastErrorCode=@LastErrorCode,
-                    LastErrorMessage=@LastErrorMessage,
-                    RetryCount=@RetryCount
-                WHERE Id=@Id";
+            entry.Property("Customer_NationalCode").CurrentValue = loan.Customer.NationalCode;
+            entry.Property("Customer_BirthDate").CurrentValue = loan.Customer.BirthDate;
+            entry.Property("Customer_Mobile").CurrentValue = loan.Customer.Mobile;
+            entry.Property("Customer_PostalCode").CurrentValue = loan.Customer.PostalCode;
+            entry.Property("Customer_Gender").CurrentValue = loan.Customer.Gender;
+        }
 
-                await conn.ExecuteAsync(loanSql, new
-                {
-                    loan.Id,
-                    loan.UpdatedAtUtc,
-                    State = (int)loan.State,
-                    loan.RequiresOtp,
+        // Map Provider to columns
+        if (loan.Provider != null)
+        {
+            entry.Property("Provider_Type").CurrentValue = (int)loan.Provider.ProviderType;
+            entry.Property("Provider_ApprovalCode").CurrentValue = loan.Provider.ApprovalCode;
+            entry.Property("Provider_RequiresOtp").CurrentValue = loan.Provider.RequiresOtp;
+        }
 
-                    Customer_NationalCode = loan.Customer?.NationalCode,
-                    Customer_BirthDate = loan.Customer?.BirthDate,
-                    Customer_Mobile = loan.Customer?.Mobile,
-                    Customer_PostalCode = loan.Customer?.PostalCode,
-                    Customer_Gender = loan.Customer?.Gender,
+        // Map InqueryRequest to columns
+        entry.Property("InquiryRequest_Id").CurrentValue = loan.InqueryRequest?.RequestId;
 
-                    Provider_Type = (int)loan.Provider?.ProviderType,
-                    Provider_ApprovalCode = loan.Provider?.ApprovalCode,
-                    Provider_RequiresOtp = loan.Provider?.RequiresOtp,
+        // Map PayRequest to columns
+        if (loan.PayRequest != null)
+        {
+            entry.Property("PayRequest_Id").CurrentValue = loan.PayRequest.PayRequestId;
+            entry.Property("PayRequest_RequestedAmount").CurrentValue = loan.PayRequest.RequestedAmount;
+        }
 
-                    Decision_ErrorCode = loan.LastDecision?.ErrorCode,
-                    Decision_ErrorMessage = loan.LastDecision?.ErrorMessage,
-                    Decision_ReasonCode = loan.LastDecision?.ReasonCode,
-                    Decision_ReasonMessage = loan.LastDecision?.ReasonMessage,
+        // Map LastDecision to columns
+        if (loan.LastDecision != null)
+        {
+            entry.Property("Decision_ReasonCode").CurrentValue = loan.LastDecision.ReasonCode;
+            entry.Property("Decision_ReasonMessage").CurrentValue = loan.LastDecision.ReasonMessage;
+            entry.Property("Decision_ErrorCode").CurrentValue = loan.LastDecision.ErrorCode;
+            entry.Property("Decision_ErrorMessage").CurrentValue = loan.LastDecision.ErrorMessage;
+        }
 
-                    Grant_ContractId = loan.GrantRequest?.ContractId,
-                    InquiryRequest_Id = loan.InqueryRequest?.RequestId,
-                    PayRequest_Id = loan.PayRequest?.PayRequestId,
-
-                    loan.LastReasonCode,
-                    loan.LastReasonMessage,
-                    loan.LastErrorCode,
-                    loan.LastErrorMessage,
-                    loan.RetryCount
-                }, tran);
-
-                // -------- Aggregate Roots --------
-                if (loan.Contract is not null)
-                {
-                    await conn.ExecuteAsync("sp_ContractInfo_Upsert", new
-                    {
-                        LoanRequestId = loan.Id,
-                        loan.Contract.CollateralNo,
-                        loan.Contract.CollateralType,
-                        loan.Contract.CollateralDate,
-                        loan.Contract.ApprovalCode,
-                        loan.Contract.CollateralAmount,
-                        loan.Contract.Address,
-                        loan.Contract.BirthDate,
-                        loan.Contract.cbTrackingCode,
-                        loan.Contract.ChequeSerial,
-                        loan.Contract.CollateralIssuer,
-                        loan.Contract.GuarantorNC,
-                        loan.Contract.NationalCode,
-                        loan.Contract.InstallmentCount,
-                        loan.Contract.LoanAmount,
-                        loan.Contract.MobileNumber,
-                        loan.Contract.PhoneNumber,
-                        loan.Contract.PostalCode,
-                        loan.Contract.ContractPath,
-                        loan.Contract.ContractNumber
-                    }, tran, commandType: CommandType.StoredProcedure);
-                }
-                if (loan.Inquiry is not null)
-                {
-                    await conn.ExecuteAsync("sp_InquiryInfo_Upsert", new
-                    {
-                        LoanRequestId = loan.Id,
-                        loan.Inquiry.Allowed,
-                        loan.Inquiry.MaxApprovedAmount,
-                        loan.Inquiry.Ics,
-                        loan.Inquiry.IcsGrade,
-                        loan.Inquiry.ExpireAt
-
-                    }, tran, commandType: CommandType.StoredProcedure);
-                }
-                if (loan.PayResponse is not null)
-                {
-                    await conn.ExecuteAsync("sp_PayResponseInfo_Upsert", new
-                    {
-                        LoanRequestId = loan.Id,
-                        Code = (int)loan.PayResponse.Code,
-                        loan.PayResponse.BankContractNo,
-                        loan.PayResponse.ApprovedLoanAmount,
-                        loan.PayResponse.ContractDate,
-                        loan.PayResponse.CentralBankTraceCode,
-                        loan.PayResponse.BankSignedContractBase64,
-                        loan.PayResponse.ReceivedAtUtc
-
-                    }, tran, commandType: CommandType.StoredProcedure);
-                }
-
-                if (loan.Transfer is not null)
-                {
-                    await conn.ExecuteAsync("sp_TransferInfo_Upsert", new
-                    {
-                        LoanRequestId = loan.Id,
-                        loan.Transfer.TransactionNumber,
-                        loan.Transfer.RegisterCode
-
-                    }, tran, commandType: CommandType.StoredProcedure);
-                }
-                if (loan.LastRepayment is not null)
-                {
-                    await conn.ExecuteAsync("sp_RepaymentSnapshot_Upsert", new
-                    {
-                        LoanRequestId = loan.Id,
-                        loan.LastRepayment.TrackNumber,
-                        loan.LastRepayment.AccountNo,
-                        loan.LastRepayment.Amount,
-                        loan.LastRepayment.WhenUtc
-
-                    }, tran, commandType: CommandType.StoredProcedure);
-                }
-                if (loan.InstallmentStatus is not null)
-                {
-                    await conn.ExecuteAsync("sp_InstallmentStatus_Upsert", new
-                    {
-                        LoanRequestId = loan.Id,
-                        loan.InstallmentStatus.Status,
-                        loan.InstallmentStatus.DueDate,
-                        loan.InstallmentStatus.PaidAmount,
-                        loan.InstallmentStatus.NationalCode,
-                        loan.InstallmentStatus.ContractNumber,
-
-
-                    }, tran, commandType: CommandType.StoredProcedure);
-                }
-                tran.Commit();
-            }
-            catch
-            {
-                tran.Rollback();
-                throw;
-            }
+        // Map GrantRequest to columns
+        if (loan.GrantRequest != null)
+        {
+            entry.Property("Grant_ContractId").CurrentValue = loan.GrantRequest.ContractId;
+            entry.Property("Grant_Status").CurrentValue = loan.GrantRequest.Status;
+            entry.Property("Grant_RequestedAmount").CurrentValue = decimal.TryParse(loan.GrantRequest.RequestedAmount, out var amount) ? amount : (decimal?)null;
+            entry.Property("Grant_SignedContractBase64").CurrentValue = loan.GrantRequest.SignedContractBase64;
         }
     }
 }
-

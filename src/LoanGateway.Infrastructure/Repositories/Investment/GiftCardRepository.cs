@@ -1,35 +1,33 @@
-using Dapper;
-using LoanGateway.Infrastructure.Utility;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using LoanService.Domain.Entities.Investment;
 using LoanService.Domain.IRepository.Investment;
-using static System.Net.WebRequestMethods;
+using LoanService.Infrastructure.Persistence;
+using LoanService.Domain;
 
 namespace LoanService.Infrastructure.Repositories.Investment;
 
-public sealed class GiftCardRepository(TransactionDBUtility transactionDBUtility) : IGiftCardRepository
+public sealed class GiftCardRepository : IGiftCardRepository
 {
-    private readonly TransactionDBUtility _transactionDBUtility = transactionDBUtility;
+    private readonly AuthDbContext _context;
+    private readonly AuthUnitOfWork _unitOfWork;
 
+    public GiftCardRepository(AuthDbContext context, AuthUnitOfWork unitOfWork)
+    {
+        _context = context;
+        _unitOfWork = unitOfWork;
+    }
 
     public async Task<GiftCard?> GetByUserIdAsync(Guid userId, CancellationToken ct)
     {
-        const string sql = @"
-            SELECT TOP 1 
-                Id, UserId, ReceivedAtUtc, Description, IsReceived, OrderId,IsPending,
-                CreatedAtUtc, UpdatedAtUtc, RowVersion
-            FROM [dbo].[GiftCard]
-            WHERE UserId = @UserId
-            ORDER BY CreatedAtUtc DESC;";
-
-        await using var conn = _transactionDBUtility.GetSqlConnection1(); // KhanoumiCore
-        await conn.OpenAsync(ct);
-
         try
         {
-            return await conn.QueryFirstOrDefaultAsync<GiftCard>(
-                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
+            return await _context.GiftCards
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .FirstOrDefaultAsync(ct);
         }
-        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 208) // Invalid object name
+        catch (SqlException ex) when (ex.Number == 208) // Invalid object name
         {
             // اگر جدول GiftCard وجود نداشت، null برمی‌گرداند
             return null;
@@ -38,23 +36,12 @@ public sealed class GiftCardRepository(TransactionDBUtility transactionDBUtility
 
     public async Task<bool> HasUserReceivedGiftAsync(Guid userId, CancellationToken ct)
     {
-        const string sql = @"
-            SELECT COUNT(1)
-            FROM [dbo].[GiftCard]
-            WHERE UserId = @UserId 
-                AND IsReceived = 1;";
-
-        await using var conn = _transactionDBUtility.GetSqlConnection1(); // KhanoumiCore
-        await conn.OpenAsync(ct);
-
         try
         {
-            var count = await conn.ExecuteScalarAsync<int>(
-                new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
-
-            return count > 0;
+            return await _context.GiftCards
+                .AnyAsync(x => x.UserId == userId && x.IsReceived, ct);
         }
-        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 208) // Invalid object name
+        catch (SqlException ex) when (ex.Number == 208) // Invalid object name
         {
             // اگر جدول GiftCard وجود نداشت، یعنی کاربر هنوز کارت دریافت نکرده است
             return false;
@@ -63,39 +50,19 @@ public sealed class GiftCardRepository(TransactionDBUtility transactionDBUtility
 
     public async Task<GiftCard> CreateAsync(GiftCard giftCard, CancellationToken ct)
     {
-        // اگر Id set نشده باشد، یک GUID جدید ایجاد می‌کنیم
-        if (giftCard.Id == Guid.Empty)
-        {
-            giftCard.Id = Guid.NewGuid();
-        }
-
-        const string sql = @"
-            INSERT INTO [dbo].[GiftCard] 
-                (Id, UserId, ReceivedAtUtc, Description, IsReceived, IsPending, OrderId, CreatedAtUtc, UpdatedAtUtc)
-            VALUES 
-                (@Id, @UserId, @ReceivedAtUtc, @Description, @IsReceived, @IsPending, @OrderId, @CreatedAtUtc, @UpdatedAtUtc);";
-        
-        await using var conn = _transactionDBUtility.GetSqlConnection1(); // KhanoumiCore
-        await conn.OpenAsync(ct);
-
         try
         {
-            await conn.ExecuteAsync(new CommandDefinition(sql, new
+            // اگر Id set نشده باشد، یک GUID جدید ایجاد می‌کنیم
+            if (giftCard.Id == Guid.Empty)
             {
-                Id = giftCard.Id,
-                UserId = giftCard.UserId,
-                UpdatedAtUtc = giftCard.UpdatedAtUtc,
-                CreatedAtUtc = giftCard.CreatedAtUtc,
-                ReceivedAtUtc = giftCard.ReceivedAtUtc,
-                IsReceived = giftCard.IsReceived,
-                Description = giftCard.Description,
-                OrderId = giftCard.OrderId,
-                IsPending = giftCard.IsPending
-            }, cancellationToken: ct));
+                giftCard.Id = Guid.NewGuid();
+            }
 
+            _context.GiftCards.Add(giftCard);
+            await _unitOfWork.SaveChangesAsync(ct);
             return giftCard;
         }
-        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 208) // Invalid object name
+        catch (SqlException ex) when (ex.Number == 208) // Invalid object name
         {
             throw new InvalidOperationException(
                 "جدول GiftCard در دیتابیس وجود ندارد. لطفاً اسکریپت CreateGiftCardTable.sql را اجرا کنید.", ex);
@@ -104,38 +71,38 @@ public sealed class GiftCardRepository(TransactionDBUtility transactionDBUtility
 
     public async Task<bool> TryCreateIfNotExistsAsync(GiftCard giftCard, CancellationToken ct)
     {
-        // استفاده از MERGE برای عملیات Atomic (جلوگیری از Race Condition)
-        const string sql = @"
-            MERGE [dbo].[GiftCard] AS target
-            USING (SELECT @UserId AS UserId) AS source
-            ON target.UserId = source.UserId
-            WHEN NOT MATCHED THEN
-                INSERT (UserId, ReceivedAtUtc, Description, IsReceived, IsPending, OrderId, CreatedAtUtc, UpdatedAtUtc)
-                VALUES (@UserId, @ReceivedAtUtc, @Description, @IsReceived, @IsPending, @OrderId, @CreatedAtUtc, @UpdatedAtUtc)
-            OUTPUT INSERTED.Id;";
-
-        await using var conn = _transactionDBUtility.GetSqlConnection1(); // KhanoumiCore
-        await conn.OpenAsync(ct);
-
         try
         {
-            var insertedId = await conn.ExecuteScalarAsync<Guid?>(
-                new CommandDefinition(sql, giftCard, cancellationToken: ct));
+            // چک می‌کنیم که آیا برای این UserId قبلاً کارت هدیه ایجاد شده یا نه
+            var existing = await _context.GiftCards
+                .FirstOrDefaultAsync(x => x.UserId == giftCard.UserId, ct);
 
-            return insertedId.HasValue; // اگر insert شد true برمی‌گرداند
+            if (existing != null)
+            {
+                // اگر وجود داشت، false برمی‌گردانیم (کاربر قبلاً کارت دریافت کرده)
+                return false;
+            }
+
+            // اگر وجود نداشت، ایجاد می‌کنیم
+            if (giftCard.Id == Guid.Empty)
+            {
+                giftCard.Id = Guid.NewGuid();
+            }
+
+            _context.GiftCards.Add(giftCard);
+            await _unitOfWork.SaveChangesAsync(ct);
+            return true; // اگر insert شد true برمی‌گرداند
         }
-        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 208) // Invalid object name - جدول وجود ندارد
+        catch (SqlException ex) when (ex.Number == 208) // Invalid object name - جدول وجود ندارد
         {
             // اگر جدول وجود نداشت، نمی‌توانیم insert کنیم
-            // خطای 208 یعنی جدول یا view در دیتابیس یافت نشد
-            // ممکن است جدول در دیتابیس دیگری باشد یا connection string اشتباه باشد
             var errorMessage = $"خطا در دسترسی به جدول [dbo].[GiftCard]. " +
                               $"SQL Error: {ex.Message}. " +
                               $"لطفاً مطمئن شوید که جدول در دیتابیس KhanoumiCore (TransactionDB1) وجود دارد. " +
                               $"اگر جدول در دیتابیس دیگری است، لطفاً connection string را بررسی کنید.";
             throw new InvalidOperationException(errorMessage, ex);
         }
-        catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 2627) // Unique constraint violation
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException sqlEx && sqlEx.Number == 2627) // Unique constraint violation
         {
             // اگر unique constraint خطا داد، یعنی کاربر قبلاً کارت دریافت کرده
             return false;
@@ -144,75 +111,64 @@ public sealed class GiftCardRepository(TransactionDBUtility transactionDBUtility
 
     public async Task<bool> IsUserEligibleForGiftCardAsync(Guid userId, CancellationToken ct)
     {
-        // استفاده از TransactionDB1 که به KhanoumiCore اشاره می‌کند
         // چک می‌کند که آیا NationalCode کاربر در جدول GiftCardEligibleUsers وجود دارد
-        const string sql = @"
-                SELECT CASE WHEN EXISTS(
-                    SELECT 1 
-                    FROM [dbo].[GiftCardEligibleUsers] GCEU
-                    INNER JOIN [dbo].[User] U ON U.NationalCode = GCEU.NationalCode
-                    WHERE U.Id = @UserId
-                        AND U.NationalCode IS NOT NULL
-                        AND (U.IsDeleted = 0 OR U.IsDeleted IS NULL)
-                ) THEN 1 ELSE 0 END;";
+        try
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId && u.NationalCode != null, ct);
 
-        await using var conn = _transactionDBUtility.GetSqlConnection1();
-        await conn.OpenAsync(ct);
+            if (user == null || string.IsNullOrEmpty(user.NationalCode))
+                return false;
 
-        return await conn.ExecuteScalarAsync<bool>(
-            new CommandDefinition(sql, new { UserId = userId }, cancellationToken: ct));
+            // استفاده از LINQ برای چک کردن GiftCardEligibleUsers
+            return await _context.GiftCardEligibleUsers
+                .AnyAsync(gceu => gceu.NationalCode == user.NationalCode, ct);
+        }
+        catch
+        {
+            // اگر جدول GiftCardEligibleUsers وجود نداشت، false برمی‌گردانیم
+            return false;
+        }
     }
 
     public async Task UpdateOrderIdAsync(Guid userId, Guid orderId, CancellationToken ct)
     {
-        const string sql = @"
-            UPDATE [dbo].[GiftCard]
-            SET OrderId = @OrderId,
-                UpdatedAtUtc = SYSUTCDATETIME()
-            WHERE UserId = @UserId
-                AND (OrderId IS NULL OR OrderId != @OrderId);";
+        var giftCard = await _context.GiftCards
+            .FirstOrDefaultAsync(x => x.UserId == userId && (x.OrderId == null || x.OrderId != orderId), ct);
 
-        await using var conn = _transactionDBUtility.GetSqlConnection1(); 
-        await conn.OpenAsync(ct);
-
-        await conn.ExecuteAsync(
-            new CommandDefinition(sql, new { UserId = userId, OrderId = orderId }, cancellationToken: ct));
+        if (giftCard != null)
+        {
+            giftCard.OrderId = orderId;
+            giftCard.UpdatedAtUtc = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
 
     public async Task UpdateAsReceivedAsync(Guid userId, Guid? orderId, CancellationToken ct)
     {
-        const string sql = @"
-            UPDATE [dbo].[GiftCard]
-            SET IsReceived = 1,
-                OrderId = @OrderId,
-                ReceivedAtUtc = SYSUTCDATETIME(),
-                UpdatedAtUtc = SYSUTCDATETIME()
-            WHERE UserId = @UserId
-                AND IsReceived = 0;";
+        var giftCard = await _context.GiftCards
+            .FirstOrDefaultAsync(x => x.UserId == userId && !x.IsReceived, ct);
 
-        await using var conn = _transactionDBUtility.GetSqlConnection1(); 
-        await conn.OpenAsync(ct);
-
-        await conn.ExecuteAsync(
-            new CommandDefinition(sql, new { UserId = userId, OrderId = orderId }, cancellationToken: ct));
+        if (giftCard != null)
+        {
+            giftCard.IsReceived = true;
+            giftCard.OrderId = orderId;
+            giftCard.ReceivedAtUtc = DateTime.UtcNow;
+            giftCard.UpdatedAtUtc = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
 
     public async Task UpdateAsPendingAsync(Guid userId, bool isPending, CancellationToken ct)
     {
-        const string sql = @"
-            UPDATE [dbo].[GiftCard]
-            SET IsPending = @IsPending,
-                UpdatedAtUtc = SYSUTCDATETIME()
-            WHERE UserId = @UserId;";
+        var giftCard = await _context.GiftCards
+            .FirstOrDefaultAsync(x => x.UserId == userId, ct);
 
-        await using var conn = _transactionDBUtility.GetSqlConnection1(); 
-        await conn.OpenAsync(ct);
-
-        await conn.ExecuteAsync(
-            new CommandDefinition(sql, new { UserId = userId, IsPending = isPending }, cancellationToken: ct));
+        if (giftCard != null)
+        {
+            giftCard.IsPending = isPending;
+            giftCard.UpdatedAtUtc = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
 }
-
-
-
-

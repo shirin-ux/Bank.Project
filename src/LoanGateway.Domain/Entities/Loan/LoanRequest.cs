@@ -19,6 +19,7 @@ namespace LoanService.Domain.Entities.Loan
         public bool RequiresCollateral { get; private set; }
         public CollateralType CollateralType { get; private set; } = CollateralType.Unknown;
         public Guid CorrelationId { get; set; }
+        public string? IdempotencyKey { get; set; }
         // -------- Slices --------
 
         public int RetryCount { get; set; }

@@ -1,86 +1,66 @@
-﻿using Dapper;
-using LoanGateway.Infrastructure.Utility;
+﻿using Microsoft.EntityFrameworkCore;
 using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.IRepository.Loan;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static Dapper.SqlMapper;
+using LoanService.Infrastructure.Persistence;
+using LoanService.Domain;
 
 namespace LoanService.Infrastructure.Repositories.Loan;
 
-public class InstallmentRepository(TransactionDBUtility transactionDBUtility) : IInstallmentRepository
+public class InstallmentRepository : IInstallmentRepository
 {
-    private readonly TransactionDBUtility _transactionDBUtility = transactionDBUtility;
+    private readonly LoanDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
+
+    public InstallmentRepository(LoanDbContext context, IUnitOfWork unitOfWork)
+    {
+        _context = context;
+        _unitOfWork = unitOfWork;
+    }
+
     public async Task<int> InsertAsync(InstallmentStatus entity, CancellationToken ct)
     {
-        const string sql = @"
-            INSERT INTO Installments
-            (Id, LoanRequestId, ContractNumber, InstallmentNo, NationalCode, DueDate, Amount, PaidAmount, [Status])
-            VALUES
-            (@Id, @LoanRequestId, @ContractNumber, @InstallmentNo, @NationalCode, @DueDate, @Amount, @PaidAmount, @Status)";
-
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-        return await conn.ExecuteAsync(sql, entity);
+        _context.Set<InstallmentStatus>().Add(entity);
+        return await _unitOfWork.SaveChangesAsync(ct);
     }
 
     public async Task<int> UpdateAsync(InstallmentStatus entity, CancellationToken ct)
     {
-        const string sql = @"
-            UPDATE Installments
-            SET
-                LoanRequestId = @LoanRequestId,
-                ContractNumber = @ContractNumber,
-                InstallmentNo = @InstallmentNo,
-                NationalCode = @NationalCode,
-                DueDate = @DueDate,
-                Amount = @Amount,
-                PaidAmount = @PaidAmount,
-                [Status] = @Status
-            WHERE Id = @Id";
-
-
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-        return await conn.ExecuteAsync(sql, entity);
+        _context.Set<InstallmentStatus>().Update(entity);
+        return await _unitOfWork.SaveChangesAsync(ct);
     }
 
     public async Task<InstallmentStatus?> GetByIdAsync(Guid id, CancellationToken ct)
     {
-        const string sql = "SELECT * FROM Installments WHERE Id = @Id";
-
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-       
-        return await conn.QuerySingleOrDefaultAsync<InstallmentStatus>(sql, new { Id = id });
+        return await _context.Set<InstallmentStatus>()
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
     }
 
     public async Task<IEnumerable<InstallmentStatus>> GetByLoanRequestIdAsync(Guid loanRequestId, CancellationToken ct)
     {
-        const string sql = "SELECT * FROM Installments WHERE LoanRequestId = @LoanRequestId ORDER BY InstallmentNo ASC";
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-        return await conn.QueryAsync<InstallmentStatus>(sql, new { LoanRequestId = loanRequestId });
+        return await _context.Set<InstallmentStatus>()
+            .Where(x => x.LoanRequestId == loanRequestId)
+            .OrderBy(x => x.InstallmentNo)
+            .ToListAsync(ct);
     }
 
     public async Task<IEnumerable<InstallmentStatus>> GetAllAsync(CancellationToken ct)
     {
-        const string sql = "SELECT * FROM Installments ORDER BY DueDate ASC";
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-        return await conn.QueryAsync<InstallmentStatus>(sql);
+        return await _context.Set<InstallmentStatus>()
+            .OrderBy(x => x.DueDate)
+            .ToListAsync(ct);
     }
 
     public async Task<int> DeleteAsync(Guid id, CancellationToken ct)
     {
-        const string sql = "DELETE FROM Installments WHERE Id = @Id";
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-        return await conn.ExecuteAsync(sql, new { Id = id });
+        var entity = await _context.Set<InstallmentStatus>()
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
+        
+        if (entity != null)
+        {
+            _context.Set<InstallmentStatus>().Remove(entity);
+            return await _unitOfWork.SaveChangesAsync(ct);
+        }
+        
+        return 0;
     }
 }
-

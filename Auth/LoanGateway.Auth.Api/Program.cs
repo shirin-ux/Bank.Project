@@ -9,7 +9,9 @@ using LoanGateway.Auth.Infrastructure.Communication;
 using LoanGateway.Auth.Infrastructure.Persistence;
 using LoanGateway.Auth.Infrastructure.Repositories;
 using LoanGateway.Auth.Infrastructure.Services;
+using LoanGateway.Auth.Domain;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -130,7 +132,18 @@ builder.Services.AddScoped<IUserInfo, UserInfo>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddSingleton<TransactionDBUtility>();
+
+
+
+
+
+builder.Services.AddDbContext<AuthDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("AuthConnection")));
+
+// Unit of Work
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(AssemblyReference).Assembly));
 builder.Services.Configure<KavenegarOptions>(builder.Configuration.GetSection("Kavenegar"));
 builder.Services.Configure<UidApiOptions>(builder.Configuration.GetSection("UidApi"));

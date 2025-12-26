@@ -1,55 +1,38 @@
-using Dapper;
+using Microsoft.EntityFrameworkCore;
 using LoanGateway.Auth.Domain.IRepository;
 using LoanGateway.Auth.Infrastructure.Persistence;
+using LoanGateway.Auth.Domain;
+using LoanGateway.Auth.Domain.Entities;
 
 namespace LoanGateway.Auth.Infrastructure.Repositories;
 
 public sealed class GiftCardEligibleUserRepository : IGiftCardEligibleUserRepository
 {
-    private readonly TransactionDBUtility _transactionDBUtility;
+    private readonly AuthDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GiftCardEligibleUserRepository(TransactionDBUtility transactionDBUtility)
+    public GiftCardEligibleUserRepository(AuthDbContext context, IUnitOfWork unitOfWork)
     {
-        _transactionDBUtility = transactionDBUtility;
+        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<bool> IsEligibleByNationalCodeAsync(string nationalCode, CancellationToken ct)
     {
-        const string sql = @"
-            SELECT CASE WHEN EXISTS(
-                SELECT 1 FROM [dbo].[GiftCardEligibleUsers]
-                WHERE NationalCode = @NationalCode
-            ) THEN 1 ELSE 0 END;";
-
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-
-        return await conn.ExecuteScalarAsync<bool>(
-            new CommandDefinition(sql, new { NationalCode = nationalCode }, cancellationToken: ct));
+        return await _context.GiftCardEligibleUsers
+            .AnyAsync(x => x.NationalCode == nationalCode, ct);
     }
 
     public async Task MarkAsProcessedAsync(string nationalCode, CancellationToken ct)
     {
-        const string sql = @"
-            UPDATE [dbo].[GiftCardEligibleUsers]
-            SET 
-                IsProcessed = 1,
-                ProcessedAtUtc = SYSUTCDATETIME()
-            WHERE NationalCode = @NationalCode;";
+        var eligibleUser = await _context.GiftCardEligibleUsers
+            .FirstOrDefaultAsync(x => x.NationalCode == nationalCode, ct);
 
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-
-        await conn.ExecuteAsync(
-            new CommandDefinition(sql, new { NationalCode = nationalCode }, cancellationToken: ct));
+        if (eligibleUser != null)
+        {
+            eligibleUser.IsProcessed = true;
+            eligibleUser.ProcessedAtUtc = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
 }
-
-
-
-
-
-
-
-
-

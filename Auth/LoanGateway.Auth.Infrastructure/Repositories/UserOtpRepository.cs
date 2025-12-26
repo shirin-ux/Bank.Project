@@ -1,47 +1,39 @@
-﻿
-using Dapper;
+﻿using Microsoft.EntityFrameworkCore;
 using LoanGateway.Auth.Domain.Entities;
 using LoanGateway.Auth.Domain.Enum;
 using LoanGateway.Auth.Domain.IRepository;
 using LoanGateway.Auth.Infrastructure.Persistence;
+using LoanGateway.Auth.Domain;
+
 namespace LoanGateway.Auth.Infrastructure.Repositories;
 
 public sealed class UserOtpRepository : IUserOtpRepository
 {
-    private readonly TransactionDBUtility _transactionDBUtility;
+    private readonly AuthDbContext _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public UserOtpRepository(TransactionDBUtility transactionDBUtility)
+    public UserOtpRepository(AuthDbContext context, IUnitOfWork unitOfWork)
     {
-        _transactionDBUtility = transactionDBUtility;
+        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
-    public async Task<int> CountRequestsInWindowAsync(string phoneNumber,OtpPurpose purpose,DateTime utcFrom, CancellationToken ct = default)
+    public async Task<int> CountRequestsInWindowAsync(string phoneNumber, OtpPurpose purpose, DateTime utcFrom, CancellationToken ct = default)
     {
         try
         {
-            const string sql = @"SELECT COUNT(*) FROM [dbo].[OtpCode] WHERE PhoneNumber = @PhoneNumber 
-AND Purpose = @Purpose AND
-CreatedAtUtc >= @FromUtc  AND IsDeleted = 0;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            return await conn.ExecuteScalarAsync<int>(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        PhoneNumber = phoneNumber,
-                        Purpose = (byte)purpose,
-                        FromUtc = utcFrom
-                    },
-                    cancellationToken: ct));
+            return await _context.OtpCodes
+                .CountAsync(x => x.PhoneNumber == phoneNumber &&
+                                x.Purpose == purpose &&
+                                x.CreatedAtUtc >= utcFrom &&
+                                (x.IsDeleted == null || x.IsDeleted == false), ct);
         }
         catch (Exception ex)
         {
-
             throw;
         }
-  
     }
+
     public async Task<int> CountRequestsByIpInWindowAsync(
         string requestIp,
         DateTime utcFrom,
@@ -49,149 +41,76 @@ CreatedAtUtc >= @FromUtc  AND IsDeleted = 0;";
     {
         try
         {
-            // اگر IP خالی یا null باشد، 0 برمی‌گردانیم
             if (string.IsNullOrWhiteSpace(requestIp))
             {
                 return 0;
             }
 
-            const string sql = @"
-                SELECT COUNT(*) 
-                FROM [dbo].[OtpCode] 
-                WHERE RequestIp = @RequestIp 
-                    AND CreatedAtUtc >= @FromUtc  
-                    AND IsDeleted = 0;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-
-            return await conn.ExecuteScalarAsync<int>(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        RequestIp = requestIp,
-                        FromUtc = utcFrom
-                    },
-                    cancellationToken: ct));
+            return await _context.OtpCodes
+                .CountAsync(x => x.RequestIp == requestIp &&
+                                x.CreatedAtUtc >= utcFrom &&
+                                (x.IsDeleted == null || x.IsDeleted == false), ct);
         }
         catch (Exception ex)
         {
-            // Log error if needed
             throw;
         }
     }
 
-    public async Task<OtpCode> GetActiveAsync(string phoneNumber,OtpPurpose purpose,DateTime nowUtc,CancellationToken ct = default)
+    public async Task<OtpCode> GetActiveAsync(string phoneNumber, OtpPurpose purpose, DateTime nowUtc, CancellationToken ct = default)
     {
         try
         {
-            const string sql = @"SELECT TOP(1) * FROM [dbo].[OtpCode] WHERE PhoneNumber = @phoneNumber AND Purpose = @purpose AND IsDeleted = 0 AND ConsumedAtUtc IS NULL
-                                                                                                                    AND ExpiresAtUtc > @nowUtc ORDER BY CreatedAtUtc DESC;";
-
-            await using var conn = _transactionDBUtility.GetSqlConnection();
-            var test= await conn.QueryFirstOrDefaultAsync<OtpCode>(
-                new CommandDefinition(
-                    sql,
-                    new
-                    {
-                        PhoneNumber = phoneNumber,
-                        Purpose = (byte)purpose,
-                        NowUtc = nowUtc
-                    },
-                    cancellationToken: ct));
-            return test;
+            return await _context.OtpCodes
+                .Where(x => x.PhoneNumber == phoneNumber &&
+                           x.Purpose == purpose &&
+                           (x.IsDeleted == null || x.IsDeleted == false) &&
+                           x.ConsumedAtUtc == null &&
+                           x.ExpiresAtUtc > nowUtc)
+                .OrderByDescending(x => x.CreatedAtUtc)
+                .FirstOrDefaultAsync(ct);
         }
         catch (Exception ex)
         {
-
-            throw new Exception(ex.Message) ;
+            throw new Exception(ex.Message);
         }
-
- 
     }
 
     public async Task InsertAsync(OtpCode otp, CancellationToken ct = default)
     {
-        const string sql = @"
-                       INSERT INTO [dbo].[OtpCode]
-                       (Id,UserId, PhoneNumber, Purpose, CodeHash,ExpiresAtUtc, CreatedAtUtc, ConsumedAtUtc,FailedAttempts,MaxAttempts, RequestIp, UserAgent,IsDeleted
-                       )
-                       VALUES
-                       (@Id, @UserId, @PhoneNumber, @Purpose, @CodeHash, @ExpiresAtUtc, @CreatedAtUtc,@ConsumedAtUtc,@FailedAttempts, @MaxAttempts, @RequestIp,@UserAgent,@IsDeleted);";
-
-  
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.ExecuteAsync(new CommandDefinition(sql, new
-        {
-            otp.Id,
-            otp.UserId,
-            otp.PhoneNumber,
-            Purpose = (byte)otp.Purpose,
-            otp.CodeHash,
-            otp.ExpiresAtUtc,
-            otp.CreatedAtUtc,
-            otp.ConsumedAtUtc,
-            otp.FailedAttempts,
-            otp.MaxAttempts,
-            otp.RequestIp,
-            otp.UserAgent,
-            otp.IsDeleted
-        }, cancellationToken: ct));
+        _context.OtpCodes.Add(otp);
+        await _unitOfWork.SaveChangesAsync(ct);
     }
 
-    public  async Task MarkConsumedAsync(Guid id, DateTime consumedAtUtc, CancellationToken ct)
+    public async Task MarkConsumedAsync(Guid id, DateTime consumedAtUtc, CancellationToken ct)
     {
-        const string sql = @"UPDATE dbo.OtpCode SET ConsumedAtUtc = @ConsumedAtUtc WHERE Id = @Id;";
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.OpenAsync(ct);
-
-        await conn.ExecuteAsync(
-            new CommandDefinition(
-                sql,
-                new { Id = id, ConsumedAtUtc = consumedAtUtc },
-                cancellationToken: ct));
+        var otp = await _context.OtpCodes.FindAsync(new object[] { id }, ct);
+        if (otp != null)
+        {
+            otp.ConsumedAtUtc = consumedAtUtc;
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
-    
 
     public async Task UpdateAsync(OtpCode otp, CancellationToken ct = default)
     {
-        // این متد برای سناریویی استفاده می‌شود که OTP قبلی را باطل می‌کنیم
-        // (مثلاً وقتی کاربر مجدداً درخواست OTP می‌دهد).
-        // کافی است رکورد فعلی را بر اساس Id به حالت مصرف‌شده/حذف‌شده علامت بزنیم.
-
-        const string sql = @"
-UPDATE [dbo].[OtpCode]
-SET 
-    ConsumedAtUtc = @ConsumedAtUtc,
-    IsDeleted     = @IsDeleted
-WHERE Id = @Id;";
-
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-        await conn.ExecuteAsync(
-            new CommandDefinition(
-                sql,
-                new
-                {
-                    otp.Id,
-                    otp.ConsumedAtUtc,
-                    otp.IsDeleted
-                },
-                cancellationToken: ct));
+        var existing = await _context.OtpCodes.FindAsync(new object[] { otp.Id }, ct);
+        if (existing != null)
+        {
+            existing.ConsumedAtUtc = otp.ConsumedAtUtc;
+            existing.IsDeleted = otp.IsDeleted;
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
 
     public async Task UpdateFailedAttemptsAsync(Guid id, int failedAttempts, CancellationToken ct)
     {
-        const string sql = @"UPDATE dbo.OtpCode SET FailedAttempts = @FailedAttempts WHERE Id = @Id;";
-       
-        await using var conn = _transactionDBUtility.GetSqlConnection();
-
-        await conn.OpenAsync(ct);
-
-        await conn.ExecuteAsync(
-            new CommandDefinition(
-                sql,
-                new { Id = id, FailedAttempts = failedAttempts },
-                cancellationToken: ct));
+        var otp = await _context.OtpCodes.FindAsync(new object[] { id }, ct);
+        if (otp != null)
+        {
+            otp.FailedAttempts = failedAttempts;
+            await _unitOfWork.SaveChangesAsync(ct);
+        }
     }
 
     public bool Verify(string code, string phoneNumber, int purpose, byte[] storedHash)
@@ -199,5 +118,3 @@ WHERE Id = @Id;";
         throw new NotImplementedException();
     }
 }
-
-
