@@ -1,24 +1,91 @@
-# Build Folders
+## .NET Core / .NET 5+ ##
 bin/
 obj/
-
-# Visual Studio
 *.user
 *.suo
-*.vscode/
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio
 .vs/
+.vscode/
+*.user
+*.userosscache
+*.suo
+*.user
+*.sln.docstates
+*.swp
+*.cache
 
 # Rider
 .idea/
+*.sln.iml
 
-# Packages
-packages/
+# NuGet Packages
 *.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
 
-# Local settings
+# Local settings and secrets
 appsettings.Local.json
+appsettings.*.Local.json
 *.env
+*.secrets
+secrets.json
 
 # Logs and temp files
 *.log
 *.tmp
+*.temp
+*.cache
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python (if you have Python scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# PowerShell
+*.ps1.bak
+
+# SQL Server
+*.mdf
+*.ldf
+*.ndf

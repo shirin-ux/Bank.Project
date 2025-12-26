@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\providers\Shahkar.Provider\Shahkar.Provider.csproj" />
+    <ProjectReference Include="..\..\shared\Common\Common.csproj" />
+    <ProjectReference Include="..\LoanGateway.Auth.Domain\LoanGateway.Auth.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.0.0" />
+    <PackageReference Include="Kavenegar" Version="1.2.5" />
+    <PackageReference Include="MediatR" Version="13.1.0" />
+  </ItemGroup>
+
+</Project>
