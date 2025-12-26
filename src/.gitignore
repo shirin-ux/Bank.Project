@@ -1,0 +1,24 @@
+# Build Folders
+bin/
+obj/
+
+# Visual Studio
+*.user
+*.suo
+*.vscode/
+.vs/
+
+# Rider
+.idea/
+
+# Packages
+packages/
+*.nupkg
+
+# Local settings
+appsettings.Local.json
+*.env
+
+# Logs and temp files
+*.log
+*.tmp

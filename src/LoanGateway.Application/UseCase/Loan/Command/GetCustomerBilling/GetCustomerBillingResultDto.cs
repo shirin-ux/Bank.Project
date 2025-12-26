@@ -1,0 +1,34 @@
+﻿using Common;
+
+namespace LoanService.Application.UseCase.Loan.Command.GetCustomerBilling;
+
+public sealed record GetCustomerBillingResultDto : IBankResponse
+{
+    public IReadOnlyList<BillingItemDto> Billings { get; init; } = Array.Empty<BillingItemDto>();
+    public string? Message { get; init; }
+    public int? MessageCode { get; init; }
+    public string[] NextActions { get; init; }
+    public string State { get; set; }
+    public string ContractBase64 { get; set; }
+    public string RequestId { get; set; }
+    public Dictionary<string, string[]>? Details { get; set; }
+
+    public IEnumerable<BankStatusItem> GetStatusItems()
+    {
+        throw new NotImplementedException();
+    }
+
+    public sealed record BillingItemDto
+    {
+        public string? CustomerName { get; init; }
+        public int? PayDeadline { get; init; }
+        public decimal? TotalPurchase { get; init; }
+        public decimal? ContractNumber { get; init; }
+        public decimal? DebtPayableInInstallments { get; init; }
+        public decimal? PayableAmount { get; init; }
+        public int? IssueDate { get; init; }
+        public int? PeriodStartDate { get; init; }
+        public int? PeriodEndDate { get; init; }
+        public short? BillingNumber { get; init; }
+    }
+}
