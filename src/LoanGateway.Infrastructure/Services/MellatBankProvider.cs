@@ -45,7 +45,7 @@ namespace Bank.Mellat.Infrastructure.Services
                     birthDate = cmd.BirthDate,
                     mobileNo = cmd.MobileNo,
                     nationalCode = cmd.NationalCode,
-                    requestAmount = cmd.RequestAmount.ToString(),
+                    requestAmount = cmd.RequestAmount.HasValue ? ((decimal)cmd.RequestAmount.Value).ToString() : null,
                     approvalCode = cmd.ApprovalCode,
                     cbTrackingCode = cmd.CbTrackingCode,
                     //configType = cmd.ConfigType,

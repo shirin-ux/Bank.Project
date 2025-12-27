@@ -9,3 +9,4 @@ public class GiftCardEligibleUser
     public DateTime CreatedAtUtc { get; set; }
 }
 
+

@@ -39,23 +39,12 @@ public class CustomerInquiryCommandValidator : AbstractValidator<CustomerInquiry
             .When(x => !string.IsNullOrWhiteSpace(x.PostalCode))
             .WithMessage("کد پستی باید ۱۰ رقم باشد.");
 
-  
+
         RuleFor(x => x.RequestAmount)
-            .GreaterThan(0)
-            .When(x => x.RequestAmount.HasValue)
-            .WithMessage("مبلغ درخواست باید بزرگ‌تر از صفر باشد.");
+                 .IsInEnum()
+                 .When(x => x.RequestAmount.HasValue)
+                 .WithMessage("مبلغ درخواست نامعتبر است. مقادیر معتبر: 20 میلیون، 50 میلیون یا 60 میلیون تومان.");
 
-
-        //RuleFor(x => x.ApprovalCode)
-        //    .GreaterThan(0)
-        //    .When(x => x.ApprovalCode.HasValue)
-        //    .WithMessage("کد تأیید باید بزرگ‌تر از صفر باشد.");
-
-
-        //RuleFor(x => x.CbTrackingCode)
-        //    .GreaterThan(0)
-        //    .When(x => x.CbTrackingCode.HasValue)
-        //    .WithMessage("کد رهگیری بانک مرکزی باید بزرگ‌تر از صفر باشد.");
     }
 
     private bool BeValidIranianNationalCode(string nationalCode)

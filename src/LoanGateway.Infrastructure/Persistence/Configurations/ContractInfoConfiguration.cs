@@ -79,3 +79,4 @@ public class ContractInfoConfiguration : IEntityTypeConfiguration<ContractInfo>
     }
 }
 
+

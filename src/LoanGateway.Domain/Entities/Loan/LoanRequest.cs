@@ -1,8 +1,8 @@
 ﻿using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.Enum;
-using LoanService.Domain.ValueObjects;
 using System.Net;
 using static LoanService.Domain.Entities.Loan.InquiryInfo;
+using LoanService.Domain.ValueObjects;
 
 namespace LoanService.Domain.Entities.Loan
 {
@@ -13,9 +13,10 @@ namespace LoanService.Domain.Entities.Loan
         // -------- Core --------
         public LoanRequestState State { get;  set; } 
         public ProviderInfo Provider { get; set; } = default!;
-        public CustomerInfo? Customer { get; set; } = default!;
+        public Guid UserId { get; private set; }
         public bool RequiresOtp { get; private set; }
-        public decimal? RequestAmount { get; private set; }
+        public LoanAmount? RequestAmount { get; private set; }
+        public InstallmentCount InstallmentCount { get; private set; } = InstallmentCount.TwelveMonths;
         public bool RequiresCollateral { get; private set; }
         public CollateralType CollateralType { get; private set; } = CollateralType.Unknown;
         public Guid CorrelationId { get; set; }
@@ -55,20 +56,22 @@ namespace LoanService.Domain.Entities.Loan
         // ===================== Factory =====================
 
 
-        public static LoanRequest Create(string nationalCode,
-            string? birthDate, 
-            string? postalCode,
-            string? mobileNo,
+        public static LoanRequest Create(
+            Guid userId,
             ProviderType providerType,
             decimal? ApprovalCode,
-            bool requiresOtp)
+            bool requiresOtp,
+            LoanAmount? requestAmount = null,
+            InstallmentCount installmentCount = InstallmentCount.TwelveMonths)
         {
             return new LoanRequest
             {
                 Id = Guid.NewGuid(),
-                Customer = new CustomerInfo(nationalCode, birthDate, mobileNo, postalCode, null),
+                UserId = userId,
                 Provider = new ProviderInfo(providerType, ApprovalCode, requiresOtp),
                 State = LoanRequestState.Requested,
+                RequestAmount = requestAmount,
+                InstallmentCount = installmentCount,
                 InqueryRequest = new InqueryRequest(null),
                 GrantRequest = new GrantRequest(null, null, null, null, null),
                 PayRequest = new PayRequestInfo(null, null),
@@ -84,16 +87,24 @@ namespace LoanService.Domain.Entities.Loan
             Touch();
             return true;
         }
-        public void SetRequest(decimal? requestAmount, bool requiresCollateral, CollateralType collateralType)
+        public void SetRequest(LoanAmount? requestAmount, bool requiresCollateral, CollateralType collateralType)
         {
             if (requestAmount.HasValue)
             {
-                requiresCollateral = requestAmount.Value > 20_000_000;
+                var amountValue = (decimal)requestAmount.Value;
+                requiresCollateral = amountValue > 20_000_000;
                 collateralType = requiresCollateral ? CollateralType.PROMISSORY : CollateralType.Unknown;
             }
             RequestAmount = requestAmount;
             RequiresCollateral = requiresCollateral;
             CollateralType = collateralType;
+            Touch();
+        }
+        
+        public void SetInstallmentCount(InstallmentCount installmentCount)
+        {
+            InstallmentCount = installmentCount;
+            Touch();
         }
         public void SetCollateralType(CollateralType type)
         {
@@ -425,12 +436,6 @@ namespace LoanService.Domain.Entities.Loan
         public void SetInquiryDecision(bool allowed, decimal? maxApproved, List<StatusItem> statuses, string expire = null)
         {
             Inquiry = new InquiryInfo { Allowed = allowed, MaxApprovedAmount = maxApproved, Statuses = statuses, ExpireAt = expire };
-            Touch();
-        }
-        // --- Mutators (اختیاری) ---
-        public void UpdateCustomer(string? mobile = null, string? postalCode = null, string? birthDate = null, string? gender = null)
-        {
-            Customer = new CustomerInfo(Customer.NationalCode, birthDate, mobile ?? Customer.Mobile, postalCode ?? Customer.PostalCode, gender ?? Customer.Gender);
             Touch();
         }
     }

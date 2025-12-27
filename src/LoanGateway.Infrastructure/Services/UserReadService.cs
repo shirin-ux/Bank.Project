@@ -32,6 +32,7 @@ public sealed class UserReadService : IUserReadService
                     PostalCode = u.PostalCode,
                     BirthDate = u.BirthDate,
                     MobileNumber = u.MobileNumber,
+                    Address=u.Address,
                     IsActive = u.IsActive,
                     GiftStatus = u.GiftStatus ?? false
                 })

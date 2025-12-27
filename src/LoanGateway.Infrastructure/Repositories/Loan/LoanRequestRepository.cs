@@ -3,9 +3,9 @@ using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.Enum;
 using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.IRepository.Loan;
-using LoanService.Domain.ValueObjects;
 using LoanService.Infrastructure.Persistence;
 using LoanService.Domain;
+using LoanService.Domain.ValueObjects;
 
 namespace LoanService.Infrastructure.Repositories.Loan;
 
@@ -227,24 +227,6 @@ public class LoanRequestRepository : ILoanRequestRepository
     {
         var entry = _context.Entry(loan);
 
-        // Map Customer
-        var customerNationalCode = entry.Property("Customer_NationalCode").CurrentValue as string;
-        var customerBirthDate = entry.Property("Customer_BirthDate").CurrentValue as DateTime?;
-        var customerMobile = entry.Property("Customer_Mobile").CurrentValue as string;
-        var customerPostalCode = entry.Property("Customer_PostalCode").CurrentValue as string;
-        var customerGender = entry.Property("Customer_Gender").CurrentValue as string;
-
-        if (customerNationalCode != null)
-        {
-            loan.Customer = new CustomerInfo(
-                customerNationalCode,
-                customerBirthDate,
-                customerMobile,
-                customerPostalCode,
-                customerGender
-            );
-        }
-
         // Map Provider
         var providerType = entry.Property("Provider_Type").CurrentValue as int?;
         var providerApprovalCode = entry.Property("Provider_ApprovalCode").CurrentValue as decimal?;
@@ -298,16 +280,6 @@ public class LoanRequestRepository : ILoanRequestRepository
     private void MapValueObjectsToColumns(LoanRequest loan)
     {
         var entry = _context.Entry(loan);
-
-        // Map Customer to columns
-        if (loan.Customer != null)
-        {
-            entry.Property("Customer_NationalCode").CurrentValue = loan.Customer.NationalCode;
-            entry.Property("Customer_BirthDate").CurrentValue = loan.Customer.BirthDate;
-            entry.Property("Customer_Mobile").CurrentValue = loan.Customer.Mobile;
-            entry.Property("Customer_PostalCode").CurrentValue = loan.Customer.PostalCode;
-            entry.Property("Customer_Gender").CurrentValue = loan.Customer.Gender;
-        }
 
         // Map Provider to columns
         if (loan.Provider != null)

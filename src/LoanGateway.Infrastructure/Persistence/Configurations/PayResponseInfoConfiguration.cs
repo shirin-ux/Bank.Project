@@ -44,3 +44,4 @@ public class PayResponseInfoConfiguration : IEntityTypeConfiguration<PayResponse
     }
 }
 
+

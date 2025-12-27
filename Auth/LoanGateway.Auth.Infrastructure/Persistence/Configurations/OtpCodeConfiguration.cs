@@ -63,3 +63,4 @@ public class OtpCodeConfiguration : IEntityTypeConfiguration<OtpCode>
     }
 }
 
+

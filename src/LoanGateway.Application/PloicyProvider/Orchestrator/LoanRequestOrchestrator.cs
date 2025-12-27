@@ -19,6 +19,7 @@ using LoanService.Application.UseCase.Loan.Query.PayResponse;
 using LoanService.Application.UseCase.Loan.Query.TransferInquiry;
 using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.IRepository.Loan;
 using MapsterMapper;
 using MediatR;
@@ -37,6 +38,7 @@ public sealed class LoanRequestOrchestrator
     private readonly IMapper _mapper;
     private readonly IContractFileStorage _contractFileStorage;
     private readonly ILoanNotificationBus _loanNotification;
+    private readonly IUserReadService _userReadService;
     public LoanRequestOrchestrator(
         IMediator mediator,
         ILoanRequestRepository repo,
@@ -44,7 +46,8 @@ public sealed class LoanRequestOrchestrator
         IMapper mapper,
         IBankPolicyFactory bankPolicyFactory,
         IContractFileStorage contractFileStorage,
-        ILoanNotificationBus loanNotification)
+        ILoanNotificationBus loanNotification,
+        IUserReadService userReadService)
 
     {
         _mapper = mapper;
@@ -54,6 +57,7 @@ public sealed class LoanRequestOrchestrator
         _bankPolicyFactory = bankPolicyFactory;
         _contractFileStorage = contractFileStorage;
         _loanNotification = loanNotification;
+        _userReadService = userReadService;
     }
 
 
@@ -76,13 +80,10 @@ public sealed class LoanRequestOrchestrator
 
             var decision = decisionResult.Value!;
 
-            decimal? amount = cmd.RequestAmount;
-
-            //bool requiresCollateral = false;
-
-            //CollateralType collateralType = CollateralType.Unknown;
-
-            //loan.SetRequest(cmd.RequestAmount, requiresCollateral, collateralType);
+            if (cmd.RequestAmount.HasValue)
+            {
+                loan.SetRequest(cmd.RequestAmount.Value, false, CollateralType.Unknown);
+            }
 
             loan.SetInquiryRequestId(bankRes.RequestId);
             if (decision.NextState is not null)
@@ -208,11 +209,12 @@ public sealed class LoanRequestOrchestrator
 
         await _repo.UpdateAsync(loan, ct);
 
+        var userInfo = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
         await _loanNotification.PublishAsync(new LoanNotificationMessage
         {
             LoanId = loan.Id,
             EventType = (bankRes.Allowed ? LoanRequestState.Eligible : LoanRequestState.Ineligible).ToString(),
-            Mobile = loan.Customer!.Mobile,
+            Mobile = userInfo?.MobileNumber,
             Message = bankRes.Allowed ? $"استعلام اعتبار شما تأیید شد. سقف تأیید شده: {bankRes.MaxApprovedAmount:N0} ریال." : "استعلام اعتبار شما مورد تأیید قرار نگرفت.",
             Amount = bankRes.MaxApprovedAmount
         }, ct);
@@ -280,11 +282,12 @@ public sealed class LoanRequestOrchestrator
 
                 await _repo.UpdateAsync(loan, ct);
 
+                var userInfo1 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
                 await _loanNotification.PublishAsync(new LoanNotificationMessage
                 {
                     LoanId = loan.Id,
                     EventType = LoanRequestState.ContractsPrepared.ToString(),
-                    Mobile = loan.Customer!.Mobile,
+                    Mobile = userInfo1?.MobileNumber,
                     Message = "قرارداد وام شما آماده امضاء است.",
                     ExtraData = savedPath
                 }, ct);
@@ -403,11 +406,12 @@ public sealed class LoanRequestOrchestrator
 
             await _repo.UpdateAsync(loan, ct);
 
+            var userInfo2 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
             await _loanNotification.PublishAsync(new LoanNotificationMessage
             {
                 LoanId = loan.Id,
                 EventType = LoanRequestState.ContractsPrepared.ToString(),
-                Mobile = loan.Customer!.Mobile,
+                Mobile = userInfo2?.MobileNumber,
                 Message = "قرارداد وام شما آماده امضاء است.",
                 ExtraData = savedPath
             }, ct);
@@ -581,11 +585,12 @@ public sealed class LoanRequestOrchestrator
                 );
                 shouldUpdate = true;
 
+                var userInfo3 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
                 await _loanNotification.PublishAsync(new LoanNotificationMessage
                 {
                     LoanId = loan.Id,
                     EventType = LoanRequestState.Approved.ToString(),
-                    Mobile = loan.Customer.Mobile,
+                    Mobile = userInfo3?.MobileNumber,
                     Message = d.UiMessage
                 }, ct);
                 break;
@@ -615,11 +620,12 @@ public sealed class LoanRequestOrchestrator
 
                 shouldUpdate = true;
 
+                var userInfo4 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
                 await _loanNotification.PublishAsync(new LoanNotificationMessage
                 {
                     LoanId = loan.Id,
                     EventType = LoanRequestState.Ineligible.ToString(),
-                    Mobile = loan.Customer.Mobile,
+                    Mobile = userInfo4?.MobileNumber,
                     Message = d.UiMessage
                 }, ct);
                 break;
@@ -923,10 +929,14 @@ public sealed class LoanRequestOrchestrator
         loan.TransitionTo(LoanRequestState.InstallmentsFetching, null, "دریافت اقساط از بانک.");
         await _repo.UpdateAsync(loan, ct);
 
+        var userInfo5 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
+        if (string.IsNullOrWhiteSpace(userInfo5?.NationalCode))
+            return Result<GetInstallmentsResultDto>.Failure(
+                new Error(400, "کد ملی کاربر برای این وام موجود نیست."));
 
         var res = await _mediator.Send(new GetInstallmentsQuery
         {
-            NationalCode = loan.Customer.NationalCode,
+            NationalCode = userInfo5.NationalCode,
             ContractNumber = loan.Contract.ContractNumber,
             ProviderType = providerType
         }, ct);
@@ -991,12 +1001,17 @@ public sealed class LoanRequestOrchestrator
             return Result<GetCustomerCreditBalanceResultDto>.Failure(new Error(-2, "برای این درخواست، قرارداد نهایی نشده است."));
 
         var providerType = loan.Provider.ProviderType;
+        var userInfo6 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
+        if (string.IsNullOrWhiteSpace(userInfo6?.NationalCode))
+            return Result<GetCustomerCreditBalanceResultDto>.Failure(
+                new Error(400, "کد ملی کاربر برای این وام موجود نیست."));
+
         GetCustomerCreditBalanceResultDto res;
         try
         {
             res = await _mediator.Send(new GetCustomerCreditBalanceCommand
             {
-                NationalCode = loan.Customer!.NationalCode,
+                NationalCode = userInfo6.NationalCode,
                 ContractNumber = loan.Contract.ContractNumber,
                 ProviderType = providerType
             }, ct);
@@ -1070,10 +1085,15 @@ public sealed class LoanRequestOrchestrator
             return Result<GetCustomerBillingResultDto>.Failure(
                 new Error(404, "درخواست وام یافت نشد."));
 
+        var userInfo7 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
+        if (string.IsNullOrWhiteSpace(userInfo7?.NationalCode))
+            return Result<GetCustomerBillingResultDto>.Failure(
+                new Error(400, "کد ملی کاربر برای این وام موجود نیست."));
+
         GetCustomerBillingResultDto res;
         try
         {
-            res = await _mediator.Send(cmd with { ContractNumber = loan.Contract.ContractNumber, NationalCode = loan.Customer.NationalCode! }, ct);
+            res = await _mediator.Send(cmd with { ContractNumber = loan.Contract.ContractNumber, NationalCode = userInfo7.NationalCode! }, ct);
         }
         catch (ValidationException ex)
         {
@@ -1127,9 +1147,10 @@ public sealed class LoanRequestOrchestrator
                 new Error(400, "برای این وام قرارداد معتبری ثبت نشده است."));
 
 
-        if (string.IsNullOrWhiteSpace(loan.Customer?.NationalCode))
+        var userInfo8 = await _userReadService.GetUserByIdAsync(loan.UserId, ct);
+        if (string.IsNullOrWhiteSpace(userInfo8?.NationalCode))
             return Result<GetCustomerPurchaseDetailsResultDto>.Failure(
-                new Error(400, "کد ملی مشتری برای این وام موجود نیست."));
+                new Error(400, "کد ملی کاربر برای این وام موجود نیست."));
 
         var providerType = loan.Provider.ProviderType;
         GetCustomerPurchaseDetailsResultDto res;
@@ -1138,7 +1159,7 @@ public sealed class LoanRequestOrchestrator
             res = await _mediator.Send(cmd with
             {
                 ContractNumber = loan.Contract.ContractNumber,
-                NationalCode = loan.Customer.NationalCode!,
+                NationalCode = userInfo8.NationalCode!,
                 ProviderType = providerType
             }, ct);
         }

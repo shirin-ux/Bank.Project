@@ -28,3 +28,4 @@ public class InvestmentIndexHistoryConfiguration : IEntityTypeConfiguration<Inve
     }
 }
 
+

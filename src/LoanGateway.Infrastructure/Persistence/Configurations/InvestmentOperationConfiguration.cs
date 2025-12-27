@@ -56,3 +56,4 @@ public class InvestmentOperationConfiguration : IEntityTypeConfiguration<Investm
     }
 }
 
+

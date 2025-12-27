@@ -39,3 +39,4 @@ public class InvestmentPlanFaqConfiguration : IEntityTypeConfiguration<Investmen
     }
 }
 
+

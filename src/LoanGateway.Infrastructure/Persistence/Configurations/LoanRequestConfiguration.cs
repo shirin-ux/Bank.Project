@@ -25,9 +25,19 @@ public class LoanRequestConfiguration : IEntityTypeConfiguration<LoanRequest>
             .IsRequired()
             .HasColumnName("RequiresOtp");
 
+        builder.Property(x => x.UserId)
+            .IsRequired()
+            .HasColumnName("UserId");
+
         builder.Property(x => x.RequestAmount)
-            .HasColumnType("decimal(18,2)")
+            .HasConversion<int>()
             .HasColumnName("RequestAmount");
+
+        builder.Property(x => x.InstallmentCount)
+            .HasConversion<int>()
+            .IsRequired()
+            .HasDefaultValue((int)LoanService.Domain.Enum.Loan.InstallmentCount.TwelveMonths)
+            .HasColumnName("InstallmentCount");
 
         builder.Property(x => x.RequiresCollateral)
             .IsRequired()
@@ -52,28 +62,11 @@ public class LoanRequestConfiguration : IEntityTypeConfiguration<LoanRequest>
 
         // Value Objects stored as separate columns (matching existing DB structure)
         // Use shadow properties for database columns that map to value objects
-        builder.Ignore(x => x.Customer);
         builder.Ignore(x => x.Provider);
         builder.Ignore(x => x.InqueryRequest);
         builder.Ignore(x => x.PayRequest);
         builder.Ignore(x => x.LastDecision);
         builder.Ignore(x => x.GrantRequest);
-
-        // Define shadow properties for value object columns
-        builder.Property<string>("Customer_NationalCode")
-            .HasColumnName("Customer_NationalCode");
-
-        builder.Property<DateTime?>("Customer_BirthDate")
-            .HasColumnName("Customer_BirthDate");
-
-        builder.Property<string>("Customer_Mobile")
-            .HasColumnName("Customer_Mobile");
-
-        builder.Property<string>("Customer_PostalCode")
-            .HasColumnName("Customer_PostalCode");
-
-        builder.Property<string>("Customer_Gender")
-            .HasColumnName("Customer_Gender");
 
         builder.Property<int?>("Provider_Type")
             .HasColumnName("Provider_Type");

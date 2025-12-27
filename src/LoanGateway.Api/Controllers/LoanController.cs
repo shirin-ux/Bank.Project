@@ -1,4 +1,6 @@
 ﻿using Common;
+using LoanService.Api;
+using LoanService.Application.Contracts;
 using LoanService.Application.UseCase.Command.StartLoanRequestDto;
 using LoanService.Application.UseCase.Loan.Command.CustomerInquiry;
 using LoanService.Application.UseCase.Loan.Command.DepositRequest;
@@ -12,22 +14,37 @@ using LoanService.Application.UseCase.Loan.Command.SubmitPayRequest;
 using LoanService.Application.UseCase.Loan.Command.TransferRegister;
 using LoanService.Domain.Entities.Loan;
 using LoanService.Domain.Enum;
+using LoanService.Domain.Enum.Loan;
 using LoanService.Domain.IRepository.Loan;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace LoanGateway.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LoanController : ControllerBase
     {
         private readonly LoanRequestOrchestrator _orchestrator;
         private readonly ILoanRequestRepository _repo;
+        private readonly IUserContext _userContext;
+        private readonly IUserReadService _userReadService;
+        private readonly IOptions<MellatSettings> _options;
 
-        public LoanController(LoanRequestOrchestrator orchestrator, ILoanRequestRepository repo)
+        public LoanController(
+            LoanRequestOrchestrator orchestrator, 
+            ILoanRequestRepository repo,
+            IUserContext userContext,
+            IUserReadService userReadService,
+            IOptions<MellatSettings> option)
         {
             _orchestrator = orchestrator;
             _repo = repo;
+            _userContext = userContext;
+            _userReadService = userReadService;
+            _options = option;
         }
 
         /// <summary>
@@ -36,11 +53,43 @@ namespace LoanGateway.Api.Controllers
         /// <param name="cmd"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
+        
+        [Authorize]
         [HttpPost("start")]
-        public async Task<IActionResult> StartInquiry([FromBody] CustomerInquiryCommand cmd, CancellationToken ct)
+        public async Task<IActionResult> StartInquiry(ProviderType provider, CancellationToken ct)
         {
+            if (!_userContext.IsAuthenticated)
+            {
+                return Unauthorized(new { error = "کاربر احراز هویت نشده است." });
+            }
 
-            var entity = LoanRequest.Create(cmd.NationalCode, cmd.BirthDate, cmd.PostalCode, cmd.MobileNo, cmd.ProviderType, cmd.ApprovalCode, false);
+            var userId = _userContext.UserId;
+            
+
+            var userInfo = await _userReadService.GetUserByIdAsync(userId, ct);
+            if (userInfo == null)
+            {
+                return BadRequest(new { error = "اطلاعات کاربر یافت نشد." });
+            }
+
+            var cmd = new CustomerInquiryCommand();
+            cmd = cmd with
+            {
+                NationalCode = userInfo.NationalCode ?? cmd.NationalCode,
+                BirthDate = userInfo.BirthDate ?? cmd.BirthDate,
+                MobileNo = userInfo.MobileNumber ?? cmd.MobileNo,
+                PostalCode = userInfo.PostalCode ?? cmd.PostalCode,
+                Address=userInfo.Address??cmd.Address,
+               
+            };
+
+            var entity = LoanRequest.Create(
+                userId,
+                cmd.ProviderType,
+                _options.Value.ApprovalCode,
+                false,
+                cmd.RequestAmount,
+                InstallmentCount.TwelveMonths);
 
             var result = await _orchestrator.StartInquiryAsync(cmd, entity, ct);
 

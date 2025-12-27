@@ -14,12 +14,8 @@ public class LoanRequestFlat
     public LoanRequestState State { get; set; }
     public bool RequiresOtp { get; set; }
 
-    // CustomerInfo (ValueObject)
-    public string? Customer_NationalCode { get; set; }
-    public DateTime? Customer_BirthDate { get; set; }
-    public string? Customer_Mobile { get; set; }
-    public string? Customer_PostalCode { get; set; }
-    public string? Customer_Gender { get; set; }
+    // UserId
+    public Guid UserId { get; set; }
 
     // ProviderInfo (ValueObject)
     public int Provider_Type { get; set; }

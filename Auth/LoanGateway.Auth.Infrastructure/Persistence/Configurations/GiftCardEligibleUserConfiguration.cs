@@ -29,3 +29,4 @@ public class GiftCardEligibleUserConfiguration : IEntityTypeConfiguration<GiftCa
     }
 }
 
+
